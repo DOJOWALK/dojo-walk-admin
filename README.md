@@ -6,7 +6,7 @@ Next.js admin dashboard with Firebase Authentication and server-enforced admin p
 
 Copy `.env.example` to `.env.local` and fill the public Firebase web-app values from Firebase Console → Project settings → Your apps. These are Firebase client configuration values, not Razorpay secrets.
 
-Enable Email/Password Authentication. The admin account must have the Firebase custom claim `admin: true`. Assign this claim only from a trusted, access-controlled environment using the Firebase Admin SDK; never from the browser or a public callable.
+Enable Google Authentication in Firebase Console → Authentication → Sign-in method. The Admin Panel provides a **Continue with Google** button and accepts only `bapanrajbanshi9625@gmail.com`; the email is checked in the UI and the backend still requires the Firebase custom claim `admin: true`. Add the deployed Admin Panel domain under Authentication → Settings → Authorized domains. Email/Password sign-in remains available as a fallback, but it is also restricted to the same email and admin claim. Assign the claim only from a trusted, access-controlled environment using the Firebase Admin SDK; never from the browser or a public callable.
 
 ## Walk pricing
 
