@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut, User } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const firebaseConfig = {
@@ -16,6 +16,7 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const functions = getFunctions(app);
 const durations = ['30', '45', '60'] as const;
+const ADMIN_EMAIL = 'bapanrajbanshi9625@gmail.com';
 type Duration = typeof durations[number];
 type Pricing = Record<Duration, { amountPaise: number; amountRupees: number; active: boolean; currency: string }>;
 
@@ -51,6 +52,11 @@ export default function AdminHome() {
     setIsAdmin(false);
     if (!nextUser) return;
     try {
+      if ((nextUser.email || '').toLowerCase() !== ADMIN_EMAIL) {
+        await signOut(auth);
+        setMessage('Please sign in with the authorized admin Google account: ' + ADMIN_EMAIL);
+        return;
+      }
       const token = await nextUser.getIdTokenResult(true);
       if (token.claims.admin !== true) {
         setMessage('This account does not have the DOJO WALK admin role.');
@@ -72,6 +78,24 @@ export default function AdminHome() {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Sign in failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function googleLogin() {
+    setLoading(true);
+    setMessage('');
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const credential = await signInWithPopup(auth, provider);
+      if ((credential.user.email || '').toLowerCase() !== ADMIN_EMAIL) {
+        await signOut(auth);
+        setMessage('Please choose the authorized admin Google account: ' + ADMIN_EMAIL);
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Google sign in failed.');
     } finally {
       setLoading(false);
     }
@@ -114,7 +138,9 @@ export default function AdminHome() {
       <label style={labelStyle}>Password</label>
       <input type="password" required value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} />
       <button disabled={loading} type="submit" style={primaryStyle}>{loading ? 'Please wait…' : 'Sign in'}</button>
-      <p style={{ color: '#666', fontSize: 13 }}>Only Firebase accounts with the custom admin claim can manage prices.</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}><span style={{ height: 1, background: '#ddd', flex: 1 }} /><span style={{ color: '#777', fontSize: 13 }}>OR</span><span style={{ height: 1, background: '#ddd', flex: 1 }} /></div>
+      <button disabled={loading} type="button" onClick={googleLogin} style={{ ...buttonStyle, width: '100%', padding: 12, fontWeight: 700 }}>{loading ? 'Please wait…' : 'Continue with Google'}</button>
+      <p style={{ color: '#666', fontSize: 13 }}>Use {ADMIN_EMAIL}. Only this email with the Firebase admin role can manage prices.</p>
     </form>}
 
     {user && isAdmin && <>
