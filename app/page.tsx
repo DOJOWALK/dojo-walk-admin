@@ -18,6 +18,7 @@ const functions = getFunctions(app);
 const durations = ['30', '45', '60'] as const;
 const ADMIN_EMAIL = 'bapanrajbanshi9625@gmail.com';
 type Duration = typeof durations[number];
+type WalkerApplication = { walkerId: string; displayName: string; email: string; phone: string; city: string; pincode: string; createdAt: string | null };
 type Pricing = Record<Duration, { amountPaise: number; amountRupees: number; active: boolean; currency: string }>;
 
 const emptyPricing: Pricing = {
@@ -35,6 +36,30 @@ export default function AdminHome() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [walkerApplications, setWalkerApplications] = useState<WalkerApplication[]>([]);
+
+  async function loadWalkerApplications() {
+    const callable = httpsCallable<Record<string, never>, { applications: WalkerApplication[] }>(functions, 'listPendingWalkerApplications');
+    const result = await callable({});
+    setWalkerApplications(result.data.applications || []);
+  }
+
+  async function reviewWalker(walkerId: string, decision: 'approve' | 'reject') {
+    setLoading(true);
+    setMessage('');
+    try {
+      const callable = httpsCallable(functions, 'reviewWalkerApplication');
+      await callable({ walkerId, decision });
+      await loadWalkerApplications();
+      setMessage(decision === 'approve'
+        ? 'Walker approved. The application pincode must already be enabled in service areas.'
+        : 'Walker application rejected.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not review walker application.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function loadPricing() {
     const callable = httpsCallable<Record<string, never>, Pricing>(functions, 'getBookingPricing');
@@ -63,7 +88,7 @@ export default function AdminHome() {
         return;
       }
       setIsAdmin(true);
-      await loadPricing();
+      await Promise.all([loadPricing(), loadWalkerApplications()]);
       setMessage('');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not load pricing.');
@@ -144,6 +169,27 @@ export default function AdminHome() {
     </form>}
 
     {user && isAdmin && <>
+      <section style={panelStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <h2 style={{ marginTop: 0 }}>Walker applications</h2>
+          <button disabled={loading} onClick={() => loadWalkerApplications().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh applications.'))} style={buttonStyle}>Refresh</button>
+        </div>
+        <p style={{ color: '#555' }}>Review new walker registrations. Approval is allowed only when the applicant's pincode is already enabled in Firebase service areas.</p>
+        {walkerApplications.length === 0
+          ? <p style={{ color: '#666' }}>No pending walker applications.</p>
+          : <div style={{ display: 'grid', gap: 12 }}>
+            {walkerApplications.map(walker => <article key={walker.walkerId} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16 }}>
+              <h3 style={{ margin: '0 0 8px' }}>{walker.displayName}</h3>
+              <p style={{ margin: '4px 0', color: '#555' }}>{walker.email} · {walker.phone}</p>
+              <p style={{ margin: '4px 0', color: '#555' }}>{walker.city} · Pincode {walker.pincode}</p>
+              <p style={{ margin: '4px 0', color: '#777', fontSize: 12 }}>Application ID: {walker.walkerId}</p>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
+                <button disabled={loading} onClick={() => reviewWalker(walker.walkerId, 'approve')} style={{ ...primaryStyle, width: 'auto', marginTop: 0 }}>Approve</button>
+                <button disabled={loading} onClick={() => reviewWalker(walker.walkerId, 'reject')} style={buttonStyle}>Reject</button>
+              </div>
+            </article>)}
+          </div>}
+      </section>
       <section style={panelStyle}>
         <h2 style={{ marginTop: 0 }}>Walk pricing</h2>
         <p style={{ color: '#555' }}>Set customer prices in rupees. ₹0 means this walk duration is disabled for payment. Customer app always fetches the latest active price from the server when a payment order is created.</p>
