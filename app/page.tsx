@@ -19,6 +19,7 @@ const durations = ['30', '45', '60'] as const;
 const ADMIN_EMAIL = 'bapanrajbanshi9625@gmail.com';
 type Duration = typeof durations[number];
 type WalkerApplication = { walkerId: string; displayName: string; email: string; phone: string; city: string; pincode: string; createdAt: string | null };
+type AdminBooking = { bookingId: string; customerId: string; walkerId: string | null; petName: string; city: string; pincode: string; address: string; durationMinutes: number; scheduledAt: string | null; status: string; paymentStatus: string; paymentReviewRequired: boolean; createdAt: string | null };
 type Pricing = Record<Duration, { amountPaise: number; amountRupees: number; active: boolean; currency: string }>;
 
 const emptyPricing: Pricing = {
@@ -37,11 +38,18 @@ export default function AdminHome() {
   const [message, setMessage] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [walkerApplications, setWalkerApplications] = useState<WalkerApplication[]>([]);
+  const [adminBookings, setAdminBookings] = useState<AdminBooking[]>([]);
 
   async function loadWalkerApplications() {
     const callable = httpsCallable<Record<string, never>, { applications: WalkerApplication[] }>(functions, 'listPendingWalkerApplications');
     const result = await callable({});
     setWalkerApplications(result.data.applications || []);
+  }
+
+  async function loadAdminBookings() {
+    const callable = httpsCallable<Record<string, never>, { bookings: AdminBooking[] }>(functions, 'listAdminBookings');
+    const result = await callable({});
+    setAdminBookings(result.data.bookings || []);
   }
 
   async function reviewWalker(walkerId: string, decision: 'approve' | 'reject') {
@@ -88,7 +96,7 @@ export default function AdminHome() {
         return;
       }
       setIsAdmin(true);
-      await Promise.all([loadPricing(), loadWalkerApplications()]);
+      await Promise.all([loadPricing(), loadWalkerApplications(), loadAdminBookings()]);
       setMessage('');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not load pricing.');
@@ -191,7 +199,29 @@ export default function AdminHome() {
           </div>}
       </section>
       <section style={panelStyle}>
-        <h2 style={{ marginTop: 0 }}>Walk pricing</h2>
+        <section style={panelStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <h2 style={{ marginTop: 0 }}>Booking operations</h2>
+          <button disabled={loading} onClick={() => loadAdminBookings().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh bookings.'))} style={buttonStyle}>Refresh</button>
+        </div>
+        <p style={{ color: '#555' }}>Latest 100 bookings, payment state and walker assignment. This panel is read-only for booking status; status changes are recorded by the booking and walker workflows.</p>
+        {adminBookings.length === 0
+          ? <p style={{ color: '#666' }}>No bookings found.</p>
+          : <div style={{ display: 'grid', gap: 12 }}>
+            {adminBookings.map(booking => <article key={booking.bookingId} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <h3 style={{ margin: '0 0 8px' }}>{booking.petName || 'Pet walk'} · {booking.durationMinutes} min</h3>
+                <strong>{booking.status.replaceAll('_', ' ')}</strong>
+              </div>
+              <p style={{ margin: '4px 0', color: '#555' }}>{booking.city} · {booking.pincode} · {booking.address}</p>
+              <p style={{ margin: '4px 0', color: '#555' }}>Scheduled: {booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleString('en-IN') : 'Not set'}</p>
+              <p style={{ margin: '4px 0', color: '#555' }}>Payment: {booking.paymentStatus} · Walker: {booking.walkerId || 'Not assigned'}</p>
+              {booking.paymentReviewRequired && <p role="alert" style={{ margin: '8px 0 0', color: '#a33', fontWeight: 700 }}>Payment requires manual review</p>}
+              <p style={{ margin: '8px 0 0', color: '#777', fontSize: 12 }}>Booking ID: {booking.bookingId} · Customer UID: {booking.customerId}</p>
+            </article>)}
+          </div>}
+      </section>
+      <h2 style={{ marginTop: 0 }}>Walk pricing</h2>
         <p style={{ color: '#555' }}>Set customer prices in rupees. ₹0 means this walk duration is disabled for payment. Customer app always fetches the latest active price from the server when a payment order is created.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16 }}>
           {durations.map(duration => <article key={duration} style={{ border: '1px solid #ddd', borderRadius: 12, padding: 18 }}>
