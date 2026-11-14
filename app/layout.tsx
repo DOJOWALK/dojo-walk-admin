@@ -6,5 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body style={{ margin: 0, background: '#fafafa' }}>{children}</body></html>;
+  return <html lang="en"><body style={{ margin: 0, background: '#FFFDF9', color: '#263442' }}>{children}</body></html>;
 }
