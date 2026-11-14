@@ -208,9 +208,9 @@ export default function AdminHome() {
           <button disabled={loading} onClick={() => loadServiceAreas().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh service areas.'))} style={buttonStyle}>Refresh</button>
         </div>
         <p style={{ color: '#555' }}>Enable verified pincodes before approving walkers. Disabling a pincode prevents new walker matching there; existing bookings are not changed.</p>
-        <form onSubmit={event => { event.preventDefault(); if (!/^\\d{6}$/.test(servicePincode.trim())) { setMessage('Enter a valid 6-digit pincode.'); return; } saveServiceArea(serviceCity, servicePincode.trim(), true); }} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'end' }}>
+        <form onSubmit={event => { event.preventDefault(); if (!/^\d{6}$/.test(servicePincode.trim())) { setMessage('Enter a valid 6-digit pincode.'); return; } saveServiceArea(serviceCity, servicePincode.trim(), true); }} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'end' }}>
           <label style={labelStyle}>City<select value={serviceCity} onChange={event => setServiceCity(event.target.value)} style={inputStyle}><option>Noida</option><option>Greater Noida</option><option>Ghaziabad</option></select></label>
-          <label style={labelStyle}>6-digit pincode<input inputMode="numeric" maxLength={6} value={servicePincode} onChange={event => setServicePincode(event.target.value.replace(/\\D/g, '').slice(0, 6))} style={inputStyle} /></label>
+          <label style={labelStyle}>6-digit pincode<input inputMode="numeric" maxLength={6} value={servicePincode} onChange={event => setServicePincode(event.target.value.replace(/\D/g, '').slice(0, 6))} style={inputStyle} /></label>
           <button disabled={loading || servicePincode.length !== 6} type="submit" style={{ ...primaryStyle, marginTop: 0 }}>Enable pincode</button>
         </form>
         <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
