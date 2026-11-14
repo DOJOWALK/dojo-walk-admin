@@ -20,6 +20,7 @@ const ADMIN_EMAIL = 'bapanrajbanshi9625@gmail.com';
 type Duration = typeof durations[number];
 type WalkerApplication = { walkerId: string; displayName: string; email: string; phone: string; city: string; pincode: string; createdAt: string | null };
 type AdminBooking = { bookingId: string; customerId: string; walkerId: string | null; petName: string; city: string; pincode: string; address: string; durationMinutes: number; scheduledAt: string | null; status: string; paymentStatus: string; paymentReviewRequired: boolean; createdAt: string | null };
+type ServiceArea = { city: string; pincode: string; enabled: boolean; walkerCount: number };
 type Pricing = Record<Duration, { amountPaise: number; amountRupees: number; active: boolean; currency: string }>;
 
 const emptyPricing: Pricing = {
@@ -39,11 +40,35 @@ export default function AdminHome() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [walkerApplications, setWalkerApplications] = useState<WalkerApplication[]>([]);
   const [adminBookings, setAdminBookings] = useState<AdminBooking[]>([]);
+  const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
+  const [serviceCity, setServiceCity] = useState('Ghaziabad');
+  const [servicePincode, setServicePincode] = useState('');
 
   async function loadWalkerApplications() {
     const callable = httpsCallable<Record<string, never>, { applications: WalkerApplication[] }>(functions, 'listPendingWalkerApplications');
     const result = await callable({});
     setWalkerApplications(result.data.applications || []);
+  }
+
+  async function loadServiceAreas() {
+    const callable = httpsCallable<Record<string, never>, { areas: ServiceArea[] }>(functions, 'getAdminServiceAreas');
+    const result = await callable({});
+    setServiceAreas(result.data.areas || []);
+  }
+
+  async function saveServiceArea(city: string, pincode: string, enabled: boolean) {
+    setLoading(true);
+    setMessage('');
+    try {
+      const callable = httpsCallable(functions, 'setAdminServiceArea');
+      await callable({ city, pincode, enabled });
+      await loadServiceAreas();
+      setMessage(city + ' pincode ' + pincode + (enabled ? ' enabled for service.' : ' disabled for new bookings.'));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not update service area.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function loadAdminBookings() {
@@ -96,7 +121,7 @@ export default function AdminHome() {
         return;
       }
       setIsAdmin(true);
-      await Promise.all([loadPricing(), loadWalkerApplications(), loadAdminBookings()]);
+      await Promise.all([loadPricing(), loadWalkerApplications(), loadAdminBookings(), loadServiceAreas()]);
       setMessage('');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not load pricing.');
@@ -177,6 +202,25 @@ export default function AdminHome() {
     </form>}
 
     {user && isAdmin && <>
+      <section style={panelStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <h2 style={{ marginTop: 0 }}>Service areas & pincodes</h2>
+          <button disabled={loading} onClick={() => loadServiceAreas().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh service areas.'))} style={buttonStyle}>Refresh</button>
+        </div>
+        <p style={{ color: '#555' }}>Enable verified pincodes before approving walkers. Disabling a pincode prevents new walker matching there; existing bookings are not changed.</p>
+        <form onSubmit={event => { event.preventDefault(); if (!/^\\d{6}$/.test(servicePincode.trim())) { setMessage('Enter a valid 6-digit pincode.'); return; } saveServiceArea(serviceCity, servicePincode.trim(), true); }} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'end' }}>
+          <label style={labelStyle}>City<select value={serviceCity} onChange={event => setServiceCity(event.target.value)} style={inputStyle}><option>Noida</option><option>Greater Noida</option><option>Ghaziabad</option></select></label>
+          <label style={labelStyle}>6-digit pincode<input inputMode="numeric" maxLength={6} value={servicePincode} onChange={event => setServicePincode(event.target.value.replace(/\\D/g, '').slice(0, 6))} style={inputStyle} /></label>
+          <button disabled={loading || servicePincode.length !== 6} type="submit" style={{ ...primaryStyle, marginTop: 0 }}>Enable pincode</button>
+        </form>
+        <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
+          {serviceAreas.length === 0 ? <p style={{ color: '#666' }}>No service pincodes configured yet.</p> : serviceAreas.map(area => <article key={area.city + area.pincode} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <div><strong>{area.city} · {area.pincode}</strong><p style={{ margin: '4px 0 0', color: '#666', fontSize: 13 }}>{area.walkerCount} linked walker(s) · {area.enabled ? 'Enabled' : 'Disabled'}</p></div>
+            <button disabled={loading} onClick={() => saveServiceArea(area.city, area.pincode, !area.enabled)} style={buttonStyle}>{area.enabled ? 'Disable' : 'Enable'}</button>
+          </article>)}
+        </div>
+      </section>
+
       <section style={panelStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <h2 style={{ marginTop: 0 }}>Walker applications</h2>
