@@ -12,9 +12,18 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const functions = getFunctions(app);
+// Firebase Auth/Functions must only initialize in the browser. Next.js can
+// prerender client components on the server, where public Firebase config may
+// intentionally be absent (for example, in CI).
+const app = typeof window === 'undefined'
+  ? null
+  : (getApps().length ? getApps()[0] : initializeApp(firebaseConfig));
+const auth: ReturnType<typeof getAuth> = app
+  ? getAuth(app)
+  : (null as unknown as ReturnType<typeof getAuth>);
+const functions: ReturnType<typeof getFunctions> = app
+  ? getFunctions(app)
+  : (null as unknown as ReturnType<typeof getFunctions>);
 const durations = ['30', '45', '60'] as const;
 const ADMIN_EMAIL = 'bapanrajbanshi9625@gmail.com';
 type Duration = typeof durations[number];
