@@ -22,6 +22,7 @@ type WalkerApplication = { walkerId: string; displayName: string; email: string;
 type AdminBooking = { bookingId: string; customerId: string; walkerId: string | null; petName: string; city: string; pincode: string; address: string; durationMinutes: number; scheduledAt: string | null; status: string; paymentStatus: string; paymentReviewRequired: boolean; createdAt: string | null };
 type ServiceArea = { city: string; pincode: string; enabled: boolean; walkerCount: number };
 type Pricing = Record<Duration, { amountPaise: number; amountRupees: number; active: boolean; currency: string }>;
+type PricingAuditLog = { id: string; durationMinutes: number; previousAmountPaise: number | null; newAmountPaise: number; previousActive: boolean; newActive: boolean; version: number; changedAt: string | null; changedBy: string };
 
 const emptyPricing: Pricing = {
   '30': { amountPaise: 0, amountRupees: 0, active: false, currency: 'INR' },
@@ -43,6 +44,7 @@ export default function AdminHome() {
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
   const [serviceCity, setServiceCity] = useState('Ghaziabad');
   const [servicePincode, setServicePincode] = useState('');
+  const [pricingAuditLogs, setPricingAuditLogs] = useState<PricingAuditLog[]>([]);
 
   async function loadWalkerApplications() {
     const callable = httpsCallable<Record<string, never>, { applications: WalkerApplication[] }>(functions, 'listPendingWalkerApplications');
@@ -105,6 +107,12 @@ export default function AdminHome() {
     });
   }
 
+  async function loadPricingAuditLogs() {
+    const callable = httpsCallable<Record<string, never>, { logs: PricingAuditLog[] }>(functions, 'getPricingAuditLogs');
+    const result = await callable({});
+    setPricingAuditLogs(result.data.logs || []);
+  }
+
   useEffect(() => onAuthStateChanged(auth, async (nextUser) => {
     setUser(nextUser);
     setIsAdmin(false);
@@ -121,7 +129,7 @@ export default function AdminHome() {
         return;
       }
       setIsAdmin(true);
-      await Promise.all([loadPricing(), loadWalkerApplications(), loadAdminBookings(), loadServiceAreas()]);
+      await Promise.all([loadPricing(), loadPricingAuditLogs(), loadWalkerApplications(), loadAdminBookings(), loadServiceAreas()]);
       setMessage('');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not load pricing.');
@@ -170,7 +178,7 @@ export default function AdminHome() {
     try {
       const callable = httpsCallable(functions, 'setBookingPricing');
       await callable({ duration, amountRupees });
-      await loadPricing();
+      await Promise.all([loadPricing(), loadPricingAuditLogs()]);
       setMessage(amountRupees === 0
         ? duration + '-minute booking payments remain disabled at ₹0.'
         : duration + '-minute price updated. New payment orders will use ₹' + amountRupees + '.');
@@ -266,7 +274,7 @@ export default function AdminHome() {
           </div>}
       </section>
       <h2 style={{ marginTop: 0 }}>Walk pricing</h2>
-        <p style={{ color: '#555' }}>Set customer prices in rupees. ₹0 means this walk duration is disabled for payment. Customer app always fetches the latest active price from the server when a payment order is created.</p>
+        <p style={{ color: '#555' }}>Set customer prices in rupees. ₹0 means this walk duration is disabled for payment. Each new booking receives a server-side price quote. Once shown to and accepted by the customer, that quote is preserved for the booking.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16 }}>
           {durations.map(duration => <article key={duration} style={{ border: '1px solid #ddd', borderRadius: 12, padding: 18 }}>
             <h3>{duration} minute walk</h3>
@@ -276,7 +284,32 @@ export default function AdminHome() {
             <button disabled={loading} onClick={() => savePrice(duration)} style={primaryStyle}>Save {duration}-minute price</button>
           </article>)}
         </div>
-        <p style={{ fontSize: 13, color: '#666' }}>Prices are stored in Firestore as paise. Changes apply to newly created payment orders; existing orders retain their original amount.</p>
+        <p style={{ fontSize: 13, color: '#666' }}>Prices are stored in paise. Price edits apply to new booking quotes; existing quotes and payment orders retain their original amount.</p>
+      </section>
+      <section style={panelStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <h2 style={{ marginTop: 0 }}>Price change history</h2>
+          <button disabled={loading} onClick={() => loadPricingAuditLogs().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh price history.'))} style={buttonStyle}>Refresh history</button>
+        </div>
+        <p style={{ color: '#555' }}>Admin audit trail: previous price, new price, version, time and admin account that made each change.</p>
+        {pricingAuditLogs.length === 0
+          ? <p style={{ color: '#666' }}>No price changes have been recorded yet.</p>
+          : <div style={{ display: 'grid', gap: 10 }}>
+            {pricingAuditLogs.map(log => <article key={log.id} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 12 }}>
+              <strong>{log.durationMinutes}-minute walk · Version {log.version}</strong>
+              <p style={{ margin: '6px 0', color: '#555' }}>
+                {log.previousAmountPaise == null ? 'Initial price' : currency.format(log.previousAmountPaise / 100)}
+                {' → '}
+                {currency.format(log.newAmountPaise / 100)}
+                {' · '}
+                {log.newActive ? 'Active' : 'Disabled'}
+              </p>
+              <p style={{ margin: 0, color: '#777', fontSize: 12 }}>
+                {log.changedAt ? new Date(log.changedAt).toLocaleString('en-IN') : 'Time unavailable'}
+                {' · Admin UID: '}{log.changedBy}
+              </p>
+            </article>)}
+          </div>}
       </section>
     </>}
 
