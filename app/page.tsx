@@ -32,6 +32,8 @@ type AdminBooking = { bookingId: string; customerId: string; walkerId: string | 
 type ServiceArea = { city: string; pincode: string; enabled: boolean; walkerCount: number };
 type Pricing = Record<Duration, { amountPaise: number; amountRupees: number; active: boolean; currency: string }>;
 type PricingAuditLog = { id: string; durationMinutes: number; previousAmountPaise: number | null; newAmountPaise: number; previousActive: boolean; newActive: boolean; version: number; changedAt: string | null; changedBy: string };
+type AdminSeriesOccurrence = { bookingId: string; localServiceDate: string; localServiceTime: string; status: string; paymentStatus: string; availabilityStatus: string; walkerId: string | null; quotedAmountPaise: number | null };
+type AdminBookingSeries = { seriesId: string; customerId: string; petName: string; city: string; pincode: string; address: string; durationMinutes: number; timezone: string; startDate: string; endDate: string; weekdays: number[]; timeSlots: { id: string; localTime: string }[]; allowBackupWalker: boolean; status: string; occurrenceCount: number; candidateOccurrenceCount: number; noCandidateWindowCount: number; createdAt: string | null; occurrences: AdminSeriesOccurrence[] };
 
 const emptyPricing: Pricing = {
   '30': { amountPaise: 0, amountRupees: 0, active: false, currency: 'INR' },
@@ -54,6 +56,7 @@ export default function AdminHome() {
   const [serviceCity, setServiceCity] = useState('Ghaziabad');
   const [servicePincode, setServicePincode] = useState('');
   const [pricingAuditLogs, setPricingAuditLogs] = useState<PricingAuditLog[]>([]);
+  const [bookingSeries, setBookingSeries] = useState<AdminBookingSeries[]>([]);
 
   async function loadWalkerApplications() {
     const callable = httpsCallable<Record<string, never>, { applications: WalkerApplication[] }>(functions, 'listPendingWalkerApplications');
@@ -86,6 +89,12 @@ export default function AdminHome() {
     const callable = httpsCallable<Record<string, never>, { bookings: AdminBooking[] }>(functions, 'listAdminBookings');
     const result = await callable({});
     setAdminBookings(result.data.bookings || []);
+  }
+
+  async function loadBookingSeries() {
+    const callable = httpsCallable<Record<string, never>, { series: AdminBookingSeries[] }>(functions, 'listAdminBookingSeries');
+    const result = await callable({});
+    setBookingSeries(result.data.series || []);
   }
 
   async function reviewWalker(walkerId: string, decision: 'approve' | 'reject') {
@@ -138,7 +147,7 @@ export default function AdminHome() {
         return;
       }
       setIsAdmin(true);
-      await Promise.all([loadPricing(), loadPricingAuditLogs(), loadWalkerApplications(), loadAdminBookings(), loadServiceAreas()]);
+      await Promise.all([loadPricing(), loadPricingAuditLogs(), loadWalkerApplications(), loadAdminBookings(), loadServiceAreas(), loadBookingSeries()]);
       setMessage('');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not load pricing.');
@@ -279,6 +288,39 @@ export default function AdminHome() {
               <p style={{ margin: '4px 0', color: '#555' }}>Payment: {booking.paymentStatus} · Walker: {booking.walkerId || 'Not assigned'}</p>
               {booking.paymentReviewRequired && <p role="alert" style={{ margin: '8px 0 0', color: '#a33', fontWeight: 700 }}>Payment requires manual review</p>}
               <p style={{ margin: '8px 0 0', color: '#777', fontSize: 12 }}>Booking ID: {booking.bookingId} · Customer UID: {booking.customerId}</p>
+            </article>)}
+          </div>}
+      </section>
+      <section style={panelStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <h2 style={{ marginTop: 0 }}>Recurring booking schedules</h2>
+          <button disabled={loading} onClick={() => loadBookingSeries().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh recurring schedules.'))} style={buttonStyle}>Refresh schedules</button>
+        </div>
+        <p style={{ color: '#555' }}>Draft recurring series and their individual walk occurrences. “Candidate window” is only a preliminary availability match—not a confirmed walker reservation. No payment or walker hold is created by recurring schedule drafts.</p>
+        {bookingSeries.length === 0
+          ? <p style={{ color: '#666' }}>No recurring schedules have been created.</p>
+          : <div style={{ display: 'grid', gap: 14 }}>
+            {bookingSeries.map(series => <article key={series.seriesId} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <h3 style={{ margin: '0 0 8px' }}>{series.petName || 'Pet'} · {series.durationMinutes}-minute walks</h3>
+                <strong>{series.status.replaceAll('_', ' ')}</strong>
+              </div>
+              <p style={{ margin: '4px 0', color: '#555' }}>{series.city} · {series.pincode} · {series.address}</p>
+              <p style={{ margin: '4px 0', color: '#555' }}>Range: {series.startDate} to {series.endDate} · Timezone: {series.timezone}</p>
+              <p style={{ margin: '4px 0', color: '#555' }}>Occurrences: {series.occurrenceCount} · Candidate windows: {series.candidateOccurrenceCount} · No candidate window: {series.noCandidateWindowCount}</p>
+              <p style={{ margin: '4px 0', color: '#555' }}>Backup walker consent: {series.allowBackupWalker ? 'Allowed' : 'Not allowed'} · Slots: {series.timeSlots.map(slot => slot.localTime).join(', ')}</p>
+              <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
+                {series.occurrences.map(occurrence => <div key={occurrence.bookingId} style={{ background: '#f7fafc', borderRadius: 8, padding: 10 }}>
+                  <strong>{occurrence.localServiceDate} · {occurrence.localServiceTime}</strong>
+                  <p style={{ margin: '4px 0', color: '#555', fontSize: 13 }}>
+                    {occurrence.status.replaceAll('_', ' ')} · {occurrence.paymentStatus} · {occurrence.availabilityStatus.replaceAll('_', ' ')} · Walker: {occurrence.walkerId || 'Not assigned'}
+                  </p>
+                  <p style={{ margin: 0, color: '#777', fontSize: 12 }}>
+                    Quote: {occurrence.quotedAmountPaise == null ? 'Not quoted' : currency.format(occurrence.quotedAmountPaise / 100)} · Booking ID: {occurrence.bookingId}
+                  </p>
+                </div>)}
+              </div>
+              <p style={{ margin: '10px 0 0', color: '#777', fontSize: 12 }}>Series ID: {series.seriesId} · Customer UID: {series.customerId}</p>
             </article>)}
           </div>}
       </section>
