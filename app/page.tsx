@@ -183,9 +183,9 @@ export default function AdminHome() {
 
   const currency = useMemo(() => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }), []);
 
-  return <main style={{ fontFamily: 'Arial,sans-serif', padding: 32, maxWidth: 920, margin: 'auto', color: '#171717' }}>
+  return <main style={{ fontFamily: 'Arial,sans-serif', padding: 32, maxWidth: 920, margin: 'auto', color: '#263442' }}>
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
-      <div><h1 style={{ marginBottom: 4 }}>DOJO WALK Admin</h1><p style={{ color: '#666', marginTop: 0 }}>Operations and booking prices</p></div>
+      <div><h1 style={{ marginBottom: 4, color: '#174A78' }}>DOJO WALK Admin</h1><p style={{ color: '#666', marginTop: 0 }}>Operations and booking prices</p></div>
       {user && <button onClick={() => signOut(auth)} style={buttonStyle}>Sign out</button>}
     </header>
 
@@ -288,4 +288,4 @@ const panelStyle = { border: '1px solid #ddd', borderRadius: 14, padding: 24, ma
 const labelStyle = { display: 'block', fontSize: 14, fontWeight: 600 as const, margin: '14px 0 6px' };
 const inputStyle = { width: '100%', padding: 12, border: '1px solid #bbb', borderRadius: 8, boxSizing: 'border-box' as const, fontSize: 16 };
 const buttonStyle = { padding: '10px 16px', border: '1px solid #bbb', borderRadius: 8, background: 'white', cursor: 'pointer' };
-const primaryStyle = { width: '100%', marginTop: 14, padding: 12, border: 0, borderRadius: 8, background: '#f58220', color: 'white', fontWeight: 700 as const, cursor: 'pointer' };
+const primaryStyle = { width: '100%', marginTop: 14, padding: 12, border: 0, borderRadius: 8, background: '#F28C28', color: 'white', fontWeight: 700 as const, cursor: 'pointer' };
