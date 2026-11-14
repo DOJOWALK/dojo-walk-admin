@@ -181,7 +181,7 @@ export default function AdminHome() {
       await Promise.all([loadPricing(), loadPricingAuditLogs()]);
       setMessage(amountRupees === 0
         ? duration + '-minute booking payments remain disabled at ₹0.'
-        : duration + '-minute price updated. New payment orders will use ₹' + amountRupees + '.');
+        : duration + '-minute price updated. New booking quotes will use ₹' + amountRupees + '.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not save price. Check admin access.');
     } finally {
