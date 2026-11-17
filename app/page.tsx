@@ -15,6 +15,7 @@ const firebaseConfig = {
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const functions = getFunctions(app);
+const mumbaiFunctions = getFunctions(app, 'asia-south1');
 const durations = ['30', '45', '60'] as const;
 const ADMIN_EMAIL = 'bapanrajbanshi9625@gmail.com';
 type Duration = typeof durations[number];
@@ -51,7 +52,7 @@ export default function AdminHome() {
   }
 
   async function loadServiceAreas() {
-    const callable = httpsCallable<Record<string, never>, { areas: ServiceArea[] }>(functions, 'getAdminServiceAreas');
+    const callable = httpsCallable<Record<string, never>, { areas: ServiceArea[] }>(mumbaiFunctions, 'getAdminServiceAreasMumbai');
     const result = await callable({});
     setServiceAreas(result.data.areas || []);
   }
@@ -60,7 +61,7 @@ export default function AdminHome() {
     setLoading(true);
     setMessage('');
     try {
-      const callable = httpsCallable(functions, 'setAdminServiceArea');
+      const callable = httpsCallable(mumbaiFunctions, 'setAdminServiceAreaMumbai');
       await callable({ city, pincode, enabled });
       await loadServiceAreas();
       setMessage(city + ' pincode ' + pincode + (enabled ? ' enabled for service.' : ' disabled for new bookings.'));
