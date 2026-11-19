@@ -328,7 +328,6 @@ export default function AdminHome() {
           </div>}
       </section>
       <section style={panelStyle}>
-        <section style={panelStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <h2 id="booking-operations" style={{ marginTop: 0 }}>Booking operations</h2>
           <button disabled={loading} onClick={() => loadAdminBookings().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh bookings.'))} style={buttonStyle}>Refresh</button>
@@ -408,8 +407,7 @@ export default function AdminHome() {
           </article>)}
         </div>
         <p style={{ fontSize: 13, color: '#666' }}>Prices are stored in Firestore as paise. Changes apply to newly created payment orders; existing orders retain their original amount.</p>
-      </section>
-    </>}
+    </>
 
     {message && <p role="status" style={{ background: '#fff7e6', border: '1px solid #f1d59a', padding: 12, borderRadius: 8 }}>{message}</p>}
   </main>;
