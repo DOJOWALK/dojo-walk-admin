@@ -3,8 +3,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut, type User } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
-import { ADMIN_EMAIL, auth, durations, emptyPricing, functions } from '../lib/firebase-client';
-import type { AdminBooking, AssignableWalker, Duration, Pricing, ServiceArea, WalkerApplication } from '../types/admin';
+import { ADMIN_EMAIL, auth, durations, emptyPricing, functions } from '../../lib/firebase-client';
+import type { AdminBooking, AssignableWalker, Duration, Pricing, ServiceArea, WalkerApplication } from '../../types/admin';
 import AdminOverview from './admin-overview';
 
 export default function AdminHome() {
