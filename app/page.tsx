@@ -1,34 +1,10 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut, User } from 'firebase/auth';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'dojo-platform-b68a3',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const functions = getFunctions(app);
-const durations = ['30', '45', '60'] as const;
-const ADMIN_EMAIL = 'bapanrajbanshi9625@gmail.com';
-type Duration = typeof durations[number];
-type WalkerApplication = { walkerId: string; displayName: string; email: string; phone: string; city: string; pincode: string; createdAt: string | null };
-type AdminBooking = { bookingId: string; customerId: string; walkerId: string | null; petName: string; city: string; pincode: string; address: string; durationMinutes: number; scheduledAt: string | null; status: string; paymentStatus: string; paymentReviewRequired: boolean; createdAt: string | null };
-type AssignableWalker = { walkerId: string; displayName: string; city: string; pincode: string };
-type ServiceArea = { city: string; pincode: string; enabled: boolean; walkerCount: number };
-type Pricing = Record<Duration, { amountPaise: number; amountRupees: number; active: boolean; currency: string }>;
-
-const emptyPricing: Pricing = {
-  '30': { amountPaise: 0, amountRupees: 0, active: false, currency: 'INR' },
-  '45': { amountPaise: 0, amountRupees: 0, active: false, currency: 'INR' },
-  '60': { amountPaise: 0, amountRupees: 0, active: false, currency: 'INR' },
-};
+import { onAuthStateChanged, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut, type User } from 'firebase/auth';
+import { httpsCallable } from 'firebase/functions';
+import { ADMIN_EMAIL, auth, durations, emptyPricing, functions } from '../lib/firebase-client';
+import type { AdminBooking, AssignableWalker, Duration, Pricing, ServiceArea, WalkerApplication } from '../types/admin';
 
 export default function AdminHome() {
   const [user, setUser] = useState<User | null>(null);
