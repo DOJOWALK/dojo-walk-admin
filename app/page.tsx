@@ -20,6 +20,7 @@ const ADMIN_EMAIL = 'bapanrajbanshi9625@gmail.com';
 type Duration = typeof durations[number];
 type WalkerApplication = { walkerId: string; displayName: string; email: string; phone: string; city: string; pincode: string; createdAt: string | null };
 type AdminBooking = { bookingId: string; customerId: string; walkerId: string | null; petName: string; city: string; pincode: string; address: string; durationMinutes: number; scheduledAt: string | null; status: string; paymentStatus: string; paymentReviewRequired: boolean; createdAt: string | null };
+type AssignableWalker = { walkerId: string; displayName: string; city: string; pincode: string };
 type ServiceArea = { city: string; pincode: string; enabled: boolean; walkerCount: number };
 type Pricing = Record<Duration, { amountPaise: number; amountRupees: number; active: boolean; currency: string }>;
 
@@ -40,6 +41,8 @@ export default function AdminHome() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [walkerApplications, setWalkerApplications] = useState<WalkerApplication[]>([]);
   const [adminBookings, setAdminBookings] = useState<AdminBooking[]>([]);
+  const [assignableWalkers, setAssignableWalkers] = useState<Record<string, AssignableWalker[]>>({});
+  const [selectedWalkerByBooking, setSelectedWalkerByBooking] = useState<Record<string, string>>({});
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
   const [serviceCity, setServiceCity] = useState('Ghaziabad');
   const [servicePincode, setServicePincode] = useState('');
@@ -75,6 +78,67 @@ export default function AdminHome() {
     const callable = httpsCallable<Record<string, never>, { bookings: AdminBooking[] }>(functions, 'listAdminBookings');
     const result = await callable({});
     setAdminBookings(result.data.bookings || []);
+  }
+
+  async function loadAssignableWalkers(booking: AdminBooking) {
+    setLoading(true);
+    setMessage('');
+    try {
+      const callable = httpsCallable<
+        { city: string; pincode: string },
+        { walkers: AssignableWalker[] }
+      >(functions, 'listAssignableWalkers');
+      const result = await callable({
+        city: booking.city,
+        pincode: booking.pincode,
+      });
+      setAssignableWalkers(old => ({
+        ...old,
+        [booking.bookingId]: result.data.walkers || [],
+      }));
+      setSelectedWalkerByBooking(old => ({
+        ...old,
+        [booking.bookingId]: '',
+      }));
+      if (!result.data.walkers?.length) {
+        setMessage('No approved, active walker matches this booking location.');
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not load eligible walkers.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function assignWalker(booking: AdminBooking) {
+    const walkerId = selectedWalkerByBooking[booking.bookingId];
+    if (!walkerId) {
+      setMessage('Please select a walker first.');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+    try {
+      const callable = httpsCallable(functions, 'assignWalkerToBooking');
+      await callable({ bookingId: booking.bookingId, walkerId });
+      await loadAdminBookings();
+      setAssignableWalkers(old => {
+        const next = { ...old };
+        delete next[booking.bookingId];
+        return next;
+      });
+      setSelectedWalkerByBooking(old => {
+        const next = { ...old };
+        delete next[booking.bookingId];
+        return next;
+      });
+      setMessage('Walker assigned successfully.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not assign walker.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function reviewWalker(walkerId: string, decision: 'approve' | 'reject') {
@@ -260,6 +324,45 @@ export default function AdminHome() {
               <p style={{ margin: '4px 0', color: '#555' }}>{booking.city} · {booking.pincode} · {booking.address}</p>
               <p style={{ margin: '4px 0', color: '#555' }}>Scheduled: {booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleString('en-IN') : 'Not set'}</p>
               <p style={{ margin: '4px 0', color: '#555' }}>Payment: {booking.paymentStatus} · Walker: {booking.walkerId || 'Not assigned'}</p>
+              {booking.status === 'confirmed' && !booking.walkerId && <>
+                <button
+                  disabled={loading}
+                  onClick={() => loadAssignableWalkers(booking)}
+                  style={{ ...buttonStyle, marginTop: 10 }}
+                >
+                  Find eligible walkers
+                </button>
+                {Object.prototype.hasOwnProperty.call(assignableWalkers, booking.bookingId) && (
+                  assignableWalkers[booking.bookingId].length === 0
+                    ? <p style={{ color: '#666' }}>No approved walker available for this city and pincode.</p>
+                    : <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, marginTop: 10, alignItems: 'end' }}>
+                        <label style={labelStyle}>Select Walker
+                          <select
+                            value={selectedWalkerByBooking[booking.bookingId] || ''}
+                            onChange={event => setSelectedWalkerByBooking(old => ({
+                              ...old,
+                              [booking.bookingId]: event.target.value,
+                            }))}
+                            style={inputStyle}
+                          >
+                            <option value="">Choose a walker</option>
+                            {assignableWalkers[booking.bookingId].map(walker => (
+                              <option key={walker.walkerId} value={walker.walkerId}>
+                                {walker.displayName} · {walker.pincode}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          disabled={loading || !selectedWalkerByBooking[booking.bookingId]}
+                          onClick={() => assignWalker(booking)}
+                          style={{ ...primaryStyle, width: 'auto', marginTop: 0 }}
+                        >
+                          Assign Walker
+                        </button>
+                      </div>
+                )}
+              </>}
               {booking.paymentReviewRequired && <p role="alert" style={{ margin: '8px 0 0', color: '#a33', fontWeight: 700 }}>Payment requires manual review</p>}
               <p style={{ margin: '8px 0 0', color: '#777', fontSize: 12 }}>Booking ID: {booking.bookingId} · Customer UID: {booking.customerId}</p>
             </article>)}
