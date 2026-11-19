@@ -65,10 +65,7 @@ export default function BookingOperations({ bookings, totalBookings, loading, se
                       <label style={labelStyle}>Select Walker
                         <select
                           value={selectedWalkerByBooking[booking.bookingId] || ''}
-                          onChange={event => setSelectedWalkerByBooking(old => ({
-                            ...old,
-                            [booking.bookingId]: event.target.value,
-                          }))}
+                          onChange={event => onSelectedWalkerChange(booking.bookingId, event.target.value)}
                           style={inputStyle}
                         >
                           <option value="">Choose a walker</option>
