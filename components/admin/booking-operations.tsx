@@ -29,15 +29,15 @@ export default function BookingOperations({ bookings, totalBookings, loading, se
     <section style={panelStyle}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
         <h2 id="booking-operations" style={{ marginTop: 0 }}>Booking operations</h2>
-        <button disabled={loading} onClick={() => loadAdminBookings().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh bookings.'))} style={buttonStyle}>Refresh</button>
+        <button disabled={loading} onClick={() => onRefresh} style={buttonStyle}>Refresh</button>
       </div>
       <p style={{ color: '#555' }}>Latest 100 bookings, payment state and walker assignment. This panel is read-only for booking status; status changes are recorded by the booking and walker workflows.</p>
       <div className="dojo-booking-tools">
-        <input aria-label="Search bookings" placeholder="Search pet, city, pincode or booking ID…" value={bookingSearch} onChange={event => setBookingSearch(event.target.value)} />
-        <select aria-label="Filter bookings by status" value={bookingFilter} onChange={event => setBookingFilter(event.target.value)}>
+        <input aria-label="Search bookings" placeholder="Search pet, city, pincode or booking ID…" value={search} onChange={event => onSearchChange(event.target.value)} />
+        <select aria-label="Filter bookings by status" value={statusFilter} onChange={event => onStatusFilterChange(event.target.value)}>
           <option value="all">All statuses</option><option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
         </select>
-        <span>{filteredBookings.length} of {adminBookings.length} bookings</span>
+        <span>{bookings.length} of {totalBookings} bookings</span>
       </div>
       {filteredBookings.length === 0
         ? <p style={{ color: '#666' }}>No bookings found.</p>
@@ -53,7 +53,7 @@ export default function BookingOperations({ bookings, totalBookings, loading, se
             {booking.status === 'confirmed' && !booking.walkerId && <>
               <button
                 disabled={loading}
-                onClick={() => loadAssignableWalkers(booking)}
+                onClick={() => onFindWalkers(booking)}
                 style={{ ...buttonStyle, marginTop: 10 }}
               >
                 Find eligible walkers
@@ -81,7 +81,7 @@ export default function BookingOperations({ bookings, totalBookings, loading, se
                       </label>
                       <button
                         disabled={loading || !selectedWalkerByBooking[booking.bookingId]}
-                        onClick={() => assignWalker(booking)}
+                        onClick={() => onAssignWalker(booking)}
                         style={{ ...primaryStyle, width: 'auto', marginTop: 0 }}
                       >
                         Assign Walker
