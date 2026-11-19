@@ -6,6 +6,7 @@ import { httpsCallable } from 'firebase/functions';
 import { ADMIN_EMAIL, auth, durations, emptyPricing, functions } from '../../lib/firebase-client';
 import type { AdminBooking, AssignableWalker, Duration, Pricing, ServiceArea, WalkerApplication } from '../../types/admin';
 import AdminOverview from './admin-overview';
+import BookingOperations from './booking-operations';
 
 export default function AdminHome() {
   const [user, setUser] = useState<User | null>(null);
@@ -292,74 +293,21 @@ export default function AdminHome() {
             </article>)}
           </div>}
       </section>
-      <section style={panelStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <h2 id="booking-operations" style={{ marginTop: 0 }}>Booking operations</h2>
-          <button disabled={loading} onClick={() => loadAdminBookings().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh bookings.'))} style={buttonStyle}>Refresh</button>
-        </div>
-        <p style={{ color: '#555' }}>Latest 100 bookings, payment state and walker assignment. This panel is read-only for booking status; status changes are recorded by the booking and walker workflows.</p>
-        <div className="dojo-booking-tools">
-          <input aria-label="Search bookings" placeholder="Search pet, city, pincode or booking ID…" value={bookingSearch} onChange={event => setBookingSearch(event.target.value)} />
-          <select aria-label="Filter bookings by status" value={bookingFilter} onChange={event => setBookingFilter(event.target.value)}>
-            <option value="all">All statuses</option><option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
-          </select>
-          <span>{filteredBookings.length} of {adminBookings.length} bookings</span>
-        </div>
-        {filteredBookings.length === 0
-          ? <p style={{ color: '#666' }}>No bookings found.</p>
-          : <div style={{ display: 'grid', gap: 12 }}>
-            {filteredBookings.map(booking => <article key={booking.bookingId} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                <h3 style={{ margin: '0 0 8px' }}>{booking.petName || 'Pet walk'} · {booking.durationMinutes} min</h3>
-                <strong>{booking.status.replaceAll('_', ' ')}</strong>
-              </div>
-              <p style={{ margin: '4px 0', color: '#555' }}>{booking.city} · {booking.pincode} · {booking.address}</p>
-              <p style={{ margin: '4px 0', color: '#555' }}>Scheduled: {booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleString('en-IN') : 'Not set'}</p>
-              <p style={{ margin: '4px 0', color: '#555' }}>Payment: {booking.paymentStatus} · Walker: {booking.walkerId || 'Not assigned'}</p>
-              {booking.status === 'confirmed' && !booking.walkerId && <>
-                <button
-                  disabled={loading}
-                  onClick={() => loadAssignableWalkers(booking)}
-                  style={{ ...buttonStyle, marginTop: 10 }}
-                >
-                  Find eligible walkers
-                </button>
-                {Object.prototype.hasOwnProperty.call(assignableWalkers, booking.bookingId) && (
-                  assignableWalkers[booking.bookingId].length === 0
-                    ? <p style={{ color: '#666' }}>No approved walker available for this city and pincode.</p>
-                    : <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, marginTop: 10, alignItems: 'end' }}>
-                        <label style={labelStyle}>Select Walker
-                          <select
-                            value={selectedWalkerByBooking[booking.bookingId] || ''}
-                            onChange={event => setSelectedWalkerByBooking(old => ({
-                              ...old,
-                              [booking.bookingId]: event.target.value,
-                            }))}
-                            style={inputStyle}
-                          >
-                            <option value="">Choose a walker</option>
-                            {assignableWalkers[booking.bookingId].map(walker => (
-                              <option key={walker.walkerId} value={walker.walkerId}>
-                                {walker.displayName} · {walker.pincode}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <button
-                          disabled={loading || !selectedWalkerByBooking[booking.bookingId]}
-                          onClick={() => assignWalker(booking)}
-                          style={{ ...primaryStyle, width: 'auto', marginTop: 0 }}
-                        >
-                          Assign Walker
-                        </button>
-                      </div>
-                )}
-              </>}
-              {booking.paymentReviewRequired && <p role="alert" style={{ margin: '8px 0 0', color: '#a33', fontWeight: 700 }}>Payment requires manual review</p>}
-              <p style={{ margin: '8px 0 0', color: '#777', fontSize: 12 }}>Booking ID: {booking.bookingId} · Customer UID: {booking.customerId}</p>
-            </article>)}
-          </div>}
-      </section>
+      <BookingOperations
+        bookings={filteredBookings}
+        totalBookings={adminBookings.length}
+        loading={loading}
+        search={bookingSearch}
+        onSearchChange={setBookingSearch}
+        statusFilter={bookingFilter}
+        onStatusFilterChange={setBookingFilter}
+        assignableWalkers={assignableWalkers}
+        selectedWalkerByBooking={selectedWalkerByBooking}
+        onSelectedWalkerChange={(bookingId, walkerId) => setSelectedWalkerByBooking(old => ({ ...old, [bookingId]: walkerId }))}
+        onRefresh={() => loadAdminBookings().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh bookings.'))}
+        onFindWalkers={loadAssignableWalkers}
+        onAssignWalker={assignWalker}
+      />
       <section style={panelStyle}>
       <h2 id="walk-pricing" style={{ marginTop: 0 }}>Walk pricing</h2>
         <p style={{ color: '#555' }}>Set customer prices in rupees. ₹0 means this walk duration is disabled for payment. Customer app always fetches the latest active price from the server when a payment order is created.</p>
