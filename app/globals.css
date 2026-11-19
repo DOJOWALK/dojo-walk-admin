@@ -183,3 +183,38 @@ main > section > section:last-child article p:first-of-type { color: #B85A18 !im
   main article { padding: 14px !important; }
   main > form { padding: 22px !important; }
 }
+
+/* Admin overview, KPI cards and booking tools */
+.dojo-overview { padding:0 !important; overflow:hidden; }
+.dojo-overview-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:24px 26px 18px; }
+.dojo-eyebrow { color:var(--dojo-orange); font-size:10px; font-weight:800; letter-spacing:1.5px; }
+.dojo-overview-heading h2 { margin:7px 0 4px !important; font:800 23px/1.2 'Manrope',sans-serif !important; letter-spacing:-.7px; }
+.dojo-overview-heading p { margin:0; color:var(--dojo-muted); font-size:13px; }
+.dojo-live { display:inline-flex; align-items:center; gap:8px; border:1px solid #BFE8D0; border-radius:999px; padding:8px 11px; color:#18794E; background:#F0FDF4; font-size:11px; font-weight:700; white-space:nowrap; }
+.dojo-live i { width:7px; height:7px; border-radius:50%; background:#22C55E; box-shadow:0 0 0 3px #DCFCE7; }
+.dojo-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; padding:0 26px 22px; }
+.dojo-metrics article { padding:17px !important; min-width:0; }
+.dojo-metrics article p { margin:11px 0 5px; font-size:12px; font-weight:600; color:#667085; }
+.dojo-metrics article strong { display:block; font:800 27px/1.1 'Manrope',sans-serif; color:#172033; letter-spacing:-1px; }
+.dojo-metrics article small { display:block; margin-top:6px; color:#98A2B3; font-size:10px; }
+.dojo-metric-icon { display:grid; place-items:center; width:32px; height:32px; border-radius:10px; font-weight:800; }
+.dojo-metric-icon.orange { color:#C65A12; background:#FFF1E6; }
+.dojo-metric-icon.blue { color:#2458C6; background:#EAF1FF; }
+.dojo-metric-icon.violet { color:#7047C6; background:#F2ECFF; }
+.dojo-metric-icon.amber { color:#A56A08; background:#FFF6DB; }
+.dojo-shortcuts { display:flex; gap:8px; flex-wrap:wrap; padding:13px 26px; border-top:1px solid #EEF0F4; background:#FBFCFE; }
+.dojo-shortcuts a { color:#475467; text-decoration:none; font-size:11px; font-weight:700; padding:8px 11px; border:1px solid #E6EAF0; border-radius:9px; background:white; }
+.dojo-shortcuts a:hover { color:#C65A12; border-color:#F4C6A4; background:#FFF8F2; }
+.dojo-booking-tools { display:grid; grid-template-columns:minmax(0,1fr) 180px auto; gap:10px; align-items:center; margin:14px 0; }
+.dojo-booking-tools input,.dojo-booking-tools select { margin:0 !important; }
+.dojo-booking-tools span { color:#98A2B3; font-size:11px; white-space:nowrap; }
+@media(max-width:760px) {
+ .dojo-overview-heading { padding:19px 17px 14px; flex-direction:column; }
+ .dojo-overview-heading h2 { font-size:20px !important; }
+ .dojo-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); padding:0 16px 16px; gap:9px; }
+ .dojo-metrics article { padding:13px !important; }
+ .dojo-metrics article strong { font-size:23px; }
+ .dojo-shortcuts { padding:11px 16px; }
+ .dojo-booking-tools { grid-template-columns:1fr; }
+ .dojo-booking-tools span { white-space:normal; }
+}
