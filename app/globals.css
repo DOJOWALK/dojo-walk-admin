@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap');
 
 :root {
-  --dojo-orange: #F47721;
+  --dojo-orange: #F58220;
   --dojo-blue: #2563EB;
   --dojo-ink: #172033;
   --dojo-muted: #667085;
@@ -127,8 +127,9 @@ main button {
   border: 1px solid #DCE2EB !important;
   border-radius: 11px !important;
   padding: 9px 14px !important;
-  color: #344054 !important;
+  color: var(--dojo-blue) !important;
   background: #fff !important;
+  border-color: #D6E4FF !important;
   font-size: 13px !important;
   font-weight: 700 !important;
 }
@@ -218,3 +219,8 @@ main > section > section:last-child article p:first-of-type { color: #B85A18 !im
  .dojo-booking-tools { grid-template-columns:1fr; }
  .dojo-booking-tools span { white-space:normal; }
 }
+
+/* Brand palette: orange primary, blue secondary */
+:root { --dojo-orange: #F58220; --dojo-blue: #2563EB; }
+main button:not([style*="background: rgb(245, 130, 32)"]):not([style*="background: #f58220"]) { color: var(--dojo-blue) !important; border-color: #D6E4FF !important; }
+main button:not([style*="background: rgb(245, 130, 32)"]):not([style*="background: #f58220"]):hover { background: #F4F8FF !important; }
