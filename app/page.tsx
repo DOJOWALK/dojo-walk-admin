@@ -395,6 +395,7 @@ export default function AdminHome() {
             </article>)}
           </div>}
       </section>
+      <section style={panelStyle}>
       <h2 id="walk-pricing" style={{ marginTop: 0 }}>Walk pricing</h2>
         <p style={{ color: '#555' }}>Set customer prices in rupees. ₹0 means this walk duration is disabled for payment. Customer app always fetches the latest active price from the server when a payment order is created.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16 }}>
@@ -407,6 +408,7 @@ export default function AdminHome() {
           </article>)}
         </div>
         <p style={{ fontSize: 13, color: '#666' }}>Prices are stored in Firestore as paise. Changes apply to newly created payment orders; existing orders retain their original amount.</p>
+      </section>
     </>
 
     {message && <p role="status" style={{ background: '#fff7e6', border: '1px solid #f1d59a', padding: 12, borderRadius: 8 }}>{message}</p>}
