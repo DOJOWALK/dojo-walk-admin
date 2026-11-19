@@ -5,6 +5,7 @@ import { onAuthStateChanged, GoogleAuthProvider, signInWithEmailAndPassword, sig
 import { httpsCallable } from 'firebase/functions';
 import { ADMIN_EMAIL, auth, durations, emptyPricing, functions } from '../lib/firebase-client';
 import type { AdminBooking, AssignableWalker, Duration, Pricing, ServiceArea, WalkerApplication } from '../types/admin';
+import AdminOverview from './admin-overview';
 
 export default function AdminHome() {
   const [user, setUser] = useState<User | null>(null);
@@ -237,19 +238,7 @@ export default function AdminHome() {
       {user && <button onClick={() => signOut(auth)} style={buttonStyle}>Sign out</button>}
     </header>
 
-    {user && isAdmin && <section className="dojo-overview">
-      <div className="dojo-overview-heading">
-        <div><span className="dojo-eyebrow">OPERATIONS OVERVIEW</span><h2>Good to see you, Admin 👋</h2><p>Your DOJO WALK operations at a glance.</p></div>
-        <span className="dojo-live"><i /> Firebase connected</span>
-      </div>
-      <div className="dojo-metrics">
-        <article><span className="dojo-metric-icon orange">▣</span><p>Bookings loaded</p><strong>{adminBookings.length}</strong><small>Latest 100 records</small></article>
-        <article><span className="dojo-metric-icon blue">♧</span><p>Pending applications</p><strong>{walkerApplications.length}</strong><small>Awaiting review</small></article>
-        <article><span className="dojo-metric-icon violet">↗</span><p>Unassigned bookings</p><strong>{unassignedBookings}</strong><small>Confirmed bookings</small></article>
-        <article><span className="dojo-metric-icon amber">₹</span><p>Payment review</p><strong>{pendingPayments}</strong><small>Need manual attention</small></article>
-      </div>
-      <nav className="dojo-shortcuts"><a href="#service-areas">Service areas</a><a href="#walker-applications">Walker applications</a><a href="#booking-operations">Bookings</a><a href="#walk-pricing">Pricing</a></nav>
-    </section>}
+    {user && isAdmin && <AdminOverview bookingCount={adminBookings.length} pendingApplicationCount={walkerApplications.length} unassignedCount={unassignedBookings} paymentReviewCount={pendingPayments} />}
     {!user && <form onSubmit={login} style={panelStyle}>
       <h2>Admin sign in</h2>
       <label style={labelStyle}>Admin email</label>
