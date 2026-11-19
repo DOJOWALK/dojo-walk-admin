@@ -29,7 +29,7 @@ export default function BookingOperations({ bookings, totalBookings, loading, se
     <section style={panelStyle}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
         <h2 id="booking-operations" style={{ marginTop: 0 }}>Booking operations</h2>
-        <button disabled={loading} onClick={() => onRefresh} style={buttonStyle}>Refresh</button>
+        <button disabled={loading} onClick={onRefresh} style={buttonStyle}>Refresh</button>
       </div>
       <p style={{ color: '#555' }}>Latest 100 bookings, payment state and walker assignment. This panel is read-only for booking status; status changes are recorded by the booking and walker workflows.</p>
       <div className="dojo-booking-tools">
@@ -39,10 +39,10 @@ export default function BookingOperations({ bookings, totalBookings, loading, se
         </select>
         <span>{bookings.length} of {totalBookings} bookings</span>
       </div>
-      {filteredBookings.length === 0
+      {bookings.length === 0
         ? <p style={{ color: '#666' }}>No bookings found.</p>
         : <div style={{ display: 'grid', gap: 12 }}>
-          {filteredBookings.map(booking => <article key={booking.bookingId} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16 }}>
+          {bookings.map(booking => <article key={booking.bookingId} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
               <h3 style={{ margin: '0 0 8px' }}>{booking.petName || 'Pet walk'} · {booking.durationMinutes} min</h3>
               <strong>{booking.status.replaceAll('_', ' ')}</strong>
