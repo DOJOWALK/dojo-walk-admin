@@ -46,6 +46,8 @@ export default function AdminHome() {
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
   const [serviceCity, setServiceCity] = useState('Ghaziabad');
   const [servicePincode, setServicePincode] = useState('');
+  const [bookingSearch, setBookingSearch] = useState('');
+  const [bookingFilter, setBookingFilter] = useState('all');
 
   async function loadWalkerApplications() {
     const callable = httpsCallable<Record<string, never>, { applications: WalkerApplication[] }>(functions, 'listPendingWalkerApplications');
@@ -246,6 +248,12 @@ export default function AdminHome() {
   }
 
   const currency = useMemo(() => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }), []);
+  const filteredBookings = useMemo(() => adminBookings.filter(booking => {
+    const search = [booking.petName, booking.city, booking.pincode, booking.bookingId, booking.customerId].join(' ').toLowerCase();
+    return search.includes(bookingSearch.toLowerCase()) && (bookingFilter === 'all' || booking.status.toLowerCase() === bookingFilter);
+  }), [adminBookings, bookingSearch, bookingFilter]);
+  const pendingPayments = adminBookings.filter(booking => booking.paymentReviewRequired).length;
+  const unassignedBookings = adminBookings.filter(booking => booking.status === 'confirmed' && !booking.walkerId).length;
 
   return <main style={{ fontFamily: 'Arial,sans-serif', padding: 32, maxWidth: 920, margin: 'auto', color: '#171717' }}>
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
@@ -253,6 +261,19 @@ export default function AdminHome() {
       {user && <button onClick={() => signOut(auth)} style={buttonStyle}>Sign out</button>}
     </header>
 
+    {user && isAdmin && <section className="dojo-overview">
+      <div className="dojo-overview-heading">
+        <div><span className="dojo-eyebrow">OPERATIONS OVERVIEW</span><h2>Good to see you, Admin 👋</h2><p>Your DOJO WALK operations at a glance.</p></div>
+        <span className="dojo-live"><i /> Firebase connected</span>
+      </div>
+      <div className="dojo-metrics">
+        <article><span className="dojo-metric-icon orange">▣</span><p>Bookings loaded</p><strong>{adminBookings.length}</strong><small>Latest 100 records</small></article>
+        <article><span className="dojo-metric-icon blue">♧</span><p>Pending applications</p><strong>{walkerApplications.length}</strong><small>Awaiting review</small></article>
+        <article><span className="dojo-metric-icon violet">↗</span><p>Unassigned bookings</p><strong>{unassignedBookings}</strong><small>Confirmed bookings</small></article>
+        <article><span className="dojo-metric-icon amber">₹</span><p>Payment review</p><strong>{pendingPayments}</strong><small>Need manual attention</small></article>
+      </div>
+      <nav className="dojo-shortcuts"><a href="#service-areas">Service areas</a><a href="#walker-applications">Walker applications</a><a href="#booking-operations">Bookings</a><a href="#walk-pricing">Pricing</a></nav>
+    </section>}
     {!user && <form onSubmit={login} style={panelStyle}>
       <h2>Admin sign in</h2>
       <label style={labelStyle}>Admin email</label>
@@ -268,7 +289,7 @@ export default function AdminHome() {
     {user && isAdmin && <>
       <section style={panelStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <h2 style={{ marginTop: 0 }}>Service areas & pincodes</h2>
+          <h2 id="service-areas" style={{ marginTop: 0 }}>Service areas & pincodes</h2>
           <button disabled={loading} onClick={() => loadServiceAreas().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh service areas.'))} style={buttonStyle}>Refresh</button>
         </div>
         <p style={{ color: '#555' }}>Enable verified pincodes before approving walkers. Disabling a pincode prevents new walker matching there; existing bookings are not changed.</p>
@@ -287,7 +308,7 @@ export default function AdminHome() {
 
       <section style={panelStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <h2 style={{ marginTop: 0 }}>Walker applications</h2>
+          <h2 id="walker-applications" style={{ marginTop: 0 }}>Walker applications</h2>
           <button disabled={loading} onClick={() => loadWalkerApplications().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh applications.'))} style={buttonStyle}>Refresh</button>
         </div>
         <p style={{ color: '#555' }}>Review new walker registrations. Approval is allowed only when the applicant's pincode is already enabled in Firebase service areas.</p>
@@ -309,14 +330,21 @@ export default function AdminHome() {
       <section style={panelStyle}>
         <section style={panelStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <h2 style={{ marginTop: 0 }}>Booking operations</h2>
+          <h2 id="booking-operations" style={{ marginTop: 0 }}>Booking operations</h2>
           <button disabled={loading} onClick={() => loadAdminBookings().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh bookings.'))} style={buttonStyle}>Refresh</button>
         </div>
         <p style={{ color: '#555' }}>Latest 100 bookings, payment state and walker assignment. This panel is read-only for booking status; status changes are recorded by the booking and walker workflows.</p>
-        {adminBookings.length === 0
+        <div className="dojo-booking-tools">
+          <input aria-label="Search bookings" placeholder="Search pet, city, pincode or booking ID…" value={bookingSearch} onChange={event => setBookingSearch(event.target.value)} />
+          <select aria-label="Filter bookings by status" value={bookingFilter} onChange={event => setBookingFilter(event.target.value)}>
+            <option value="all">All statuses</option><option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
+          </select>
+          <span>{filteredBookings.length} of {adminBookings.length} bookings</span>
+        </div>
+        {filteredBookings.length === 0
           ? <p style={{ color: '#666' }}>No bookings found.</p>
           : <div style={{ display: 'grid', gap: 12 }}>
-            {adminBookings.map(booking => <article key={booking.bookingId} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16 }}>
+            {filteredBookings.map(booking => <article key={booking.bookingId} style={{ border: '1px solid #ddd', borderRadius: 10, padding: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <h3 style={{ margin: '0 0 8px' }}>{booking.petName || 'Pet walk'} · {booking.durationMinutes} min</h3>
                 <strong>{booking.status.replaceAll('_', ' ')}</strong>
@@ -368,7 +396,7 @@ export default function AdminHome() {
             </article>)}
           </div>}
       </section>
-      <h2 style={{ marginTop: 0 }}>Walk pricing</h2>
+      <h2 id="walk-pricing" style={{ marginTop: 0 }}>Walk pricing</h2>
         <p style={{ color: '#555' }}>Set customer prices in rupees. ₹0 means this walk duration is disabled for payment. Customer app always fetches the latest active price from the server when a payment order is created.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16 }}>
           {durations.map(duration => <article key={duration} style={{ border: '1px solid #ddd', borderRadius: 12, padding: 18 }}>
