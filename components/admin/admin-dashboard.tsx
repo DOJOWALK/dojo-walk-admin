@@ -322,7 +322,7 @@ export default function AdminHome() {
         </div>
         <p style={{ fontSize: 13, color: '#666' }}>Prices are stored in Firestore as paise. Changes apply to newly created payment orders; existing orders retain their original amount.</p>
       </section>
-    </>
+    </>}
 
     {message && <p role="status" style={{ background: '#fff7e6', border: '1px solid #f1d59a', padding: 12, borderRadius: 8 }}>{message}</p>}
   </main>;
