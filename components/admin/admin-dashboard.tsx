@@ -277,7 +277,7 @@ export default function AdminHome() {
           <h2 id="walker-applications" style={{ marginTop: 0 }}>Walker applications</h2>
           <button disabled={loading} onClick={() => loadWalkerApplications().catch(error => setMessage(error instanceof Error ? error.message : 'Could not refresh applications.'))} style={buttonStyle}>Refresh</button>
         </div>
-        <p style={{ color: '#555' }}>Review new walker registrations. Approval is allowed only when the applicant's pincode is already enabled in Firebase service areas.</p>
+        <p style={{ color: '#555' }}>Review new walker registrations. Approval is allowed only when the applicant&apos;s pincode is already enabled in Firebase service areas.</p>
         {walkerApplications.length === 0
           ? <p style={{ color: '#666' }}>No pending walker applications.</p>
           : <div style={{ display: 'grid', gap: 12 }}>
