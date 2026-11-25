@@ -115,14 +115,14 @@ export async function POST(request: NextRequest) {
 
   try {
     // Match owners by the last 10 digits so +91 and local number formats do not create duplicates.
-    const allCustomers = await env.DB.prepare("SELECT id, phone, status, blocked_until FROM customers").all();
+    const allCustomers = await env.DB.prepare("SELECT id, phone, status, blocked_until, customer_state FROM customers").all();
     const normalizedPhone = phone.replace(/\D/g, "").slice(-10);
     const matched = (allCustomers.results ?? []).find(c => String(c.phone ?? "").replace(/\D/g, "").slice(-10) === normalizedPhone);
     let customerId = matched ? String(matched.id) : "";
     if (matched && String(matched.status || "active") === "inactive") {
       const until = matched.blocked_until ? new Date(String(matched.blocked_until)).getTime() : null;
       if (until === null || until > Date.now()) return NextResponse.json({ error: "New bookings are blocked for this customer. Unblock the customer profile first." }, { status: 403 });
-      await env.DB.prepare("UPDATE customers SET status='active',blocked_until=NULL,block_reason=NULL WHERE id=?").bind(String(matched.id)).run();
+      await env.DB.prepare("UPDATE customers SET status='active',customer_state='active',blocked_until=NULL,block_reason=NULL WHERE id=?").bind(String(matched.id)).run();
     }
 
     if (!customerId) {
