@@ -21,7 +21,8 @@
       "database_id": "041e1b93-c472-48cf-9752-0a00118a270d",
       "migrations_dir": "migrations"
     }
-  ],"vars": {
+  ],
+  "vars": {
     "APP_NAME": "Dojo Walk",
     "APP_TIMEZONE": "Asia/Kolkata"
   }
