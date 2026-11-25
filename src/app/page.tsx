@@ -44,9 +44,9 @@ export default async function DashboardPage() {
         <section className="grid-two">
           <div className="panel"><div className="panel-head"><div><div className="panel-title">Today’s walk schedule</div><div className="panel-note">Morning and evening rounds · 30 minutes each</div></div><span className="admin-pill">No walks added</span></div><div className="empty"><strong>Your walk schedule will appear here</strong>Once customers and bookings are added, you can mark attendance and upload 2–3 walk photos for each visit.</div></div>
           <div className="panel"><div className="panel-head"><div><div className="panel-title">Quick actions</div><div className="panel-note">Common admin tasks</div></div></div><div className="quick-list">
-            <div className="quick-item"><div className="quick-icon"><Users size={17}/></div><div><div className="quick-title">Add a customer</div><div className="quick-desc">Save contact and booking source</div></div></div>
-            <div className="quick-item"><div className="quick-icon"><PawPrint size={17}/></div><div><div className="quick-title">Register a dog</div><div className="quick-desc">Keep each dog under its customer</div></div></div>
-            <div className="quick-item"><div className="quick-icon"><CalendarDays size={17}/></div><div><div className="quick-title">Create a booking</div><div className="quick-desc">Choose plan, timing and advance</div></div></div>
+            <a className="quick-item" href="/customers"><div className="quick-icon"><Users size={17}/></div><div><div className="quick-title">Add a customer</div><div className="quick-desc">Save contact and booking source</div></div></a>
+            <a className="quick-item" href="/dogs"><div className="quick-icon"><PawPrint size={17}/></div><div><div className="quick-title">Register a dog</div><div className="quick-desc">Keep each dog under its customer</div></div></a>
+            <a className="quick-item" href="/bookings"><div className="quick-icon"><CalendarDays size={17}/></div><div><div className="quick-title">Create a booking</div><div className="quick-desc">Choose plan, timing and advance</div></div></a>
             <div className="quick-item"><div className="quick-icon"><MessageCircle size={17}/></div><div><div className="quick-title">Send WhatsApp update</div><div className="quick-desc">Review message before sending</div></div></div>
           </div></div>
         </section>
