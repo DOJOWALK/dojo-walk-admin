@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dojo-walk-admin",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "dojo-walk-admin"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dojo-walk-db",
+      "database_id": "REPLACE_AFTER_CREATING_D1",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "WALK_PHOTOS",
+      "bucket_name": "dojo-walk-private-photos"
+    }
+  ],
+  "vars": {
+    "APP_NAME": "Dojo Walk",
+    "APP_TIMEZONE": "Asia/Kolkata"
+  }
+}
