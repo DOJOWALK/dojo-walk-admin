@@ -22,7 +22,8 @@ export async function GET() {
   try {
     const result = await env.DB.prepare(
       `SELECT b.*, c.full_name AS customer_name, c.phone AS customer_phone,
-       d.name AS dog_name,
+       d.name AS dog_name, d.breed AS dog_breed, d.age_text AS dog_age, d.size AS dog_size,
+       c.whatsapp_phone, c.address, c.area,
        COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed' AND w.walk_date>=COALESCE(b.billing_start_date,b.start_date)),0) AS completed_walks,
        COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed' AND w.walk_date>=COALESCE(b.billing_start_date,b.start_date)),0)*b.price_per_walk_inr AS accrued_inr,
        COALESCE((SELECT SUM(p.amount_inr) FROM payments p WHERE p.booking_id=b.id AND p.payment_date>=COALESCE(b.billing_start_date,b.start_date)),0) AS paid_inr,
@@ -32,6 +33,56 @@ export async function GET() {
     return NextResponse.json({ bookings: result.results ?? [], price_options: WALK_RATES });
   } catch {
     return NextResponse.json({ error: "Bookings are not available. Apply database migrations 0001–0004 first." }, { status: 503 });
+  }
+}
+
+
+export async function PATCH(request: NextRequest) {
+  const env = await adminEnv();
+  if (!env) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let body: Record<string, unknown>;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
+  const id = typeof body.id === "string" ? body.id : "";
+  const ownerName = typeof body.owner_name === "string" ? body.owner_name.trim() : "";
+  const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+  const whatsapp = typeof body.whatsapp_phone === "string" ? body.whatsapp_phone.trim() : "";
+  const dogName = typeof body.dog_name === "string" ? body.dog_name.trim() : "";
+  const startDate = typeof body.start_date === "string" ? body.start_date : "";
+  const endDate = typeof body.end_date === "string" && body.end_date ? body.end_date : null;
+  const duration = Number(body.walk_duration_minutes);
+  const rate = WALK_RATES[duration];
+  const walksPerDay = Number(body.walks_per_day);
+  const startSlot = String(body.start_slot || "");
+  const status = String(body.status || "");
+  const source = String(body.booking_source || "");
+  const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+  const morning = typeof body.morning_time === "string" && timePattern.test(body.morning_time) ? body.morning_time : null;
+  const evening = typeof body.evening_time === "string" && timePattern.test(body.evening_time) ? body.evening_time : null;
+  if (!id || ownerName.length < 2 || ownerName.length > 100 || !/^[+0-9()\-\s]{7,20}$/.test(phone) || !dogName || dogName.length > 80 || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+    return NextResponse.json({ error: "Owner, valid mobile, dog name and start date are required." }, { status: 400 });
+  }
+  if (!rate || ![1,2].includes(walksPerDay) || !["morning","evening"].includes(startSlot) || !["active","paused","completed","cancelled"].includes(status) || !["whatsapp","phone","walk_in","other"].includes(source) || (endDate && (!/^\d{4}-\d{2}-\d{2}$/.test(endDate) || endDate < startDate))) {
+    return NextResponse.json({ error: "Please check the booking dates, status, walk schedule and duration." }, { status: 400 });
+  }
+  try {
+    const found = await env.DB.prepare("SELECT customer_id,dog_id FROM bookings WHERE id=?").bind(id).all();
+    const record = found.results?.[0];
+    if (!record) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
+    const customerId = String(record.customer_id);
+    const dogId = String(record.dog_id);
+    const address = typeof body.address === "string" ? body.address.trim() : "";
+    const city = typeof body.city === "string" ? body.city.trim() : "";
+    const state = typeof body.state === "string" ? body.state.trim() : "";
+    const area = [city,state].filter(Boolean).join(", ");
+    await env.DB.prepare("UPDATE customers SET full_name=?,phone=?,whatsapp_phone=?,address=?,area=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
+      .bind(ownerName,phone,whatsapp || null,address || null,area || null,customerId).run();
+    await env.DB.prepare("UPDATE dogs SET name=?,breed=?,age_text=?,size=? WHERE id=?")
+      .bind(dogName,typeof body.dog_breed==="string"?body.dog_breed.trim()||null:null,typeof body.dog_age==="string"?body.dog_age.trim()||null:null,["Small","Medium","Large"].includes(String(body.dog_size))?String(body.dog_size):null,dogId).run();
+    await env.DB.prepare("UPDATE bookings SET start_date=?,end_date=?,start_slot=?,morning_time=?,evening_time=?,walks_per_day=?,walk_duration_minutes=?,price_per_walk_inr=?,status=?,booking_source=?,notes=? WHERE id=?")
+      .bind(startDate,endDate,startSlot,morning,evening,walksPerDay,duration,rate,status,source,typeof body.notes==="string"?body.notes.slice(0,1000):null,id).run();
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Booking changes could not be saved. Please try again." }, { status: 503 });
   }
 }
 
