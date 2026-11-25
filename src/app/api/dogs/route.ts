@@ -4,7 +4,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getAdminCookieName, verifyAdminSession } from "@/lib/auth";
 
 type Result = { results?: unknown[] };
-type DBLike = { prepare(sql: string): { bind(...values: unknown[]): { all(): Promise<Result>; run(): Promise<unknown> } } };
+type DBLike = { prepare(sql: string): { all(): Promise<Result>; bind(...values: unknown[]): { all(): Promise<Result>; run(): Promise<unknown> } } };
 type Env = { DB: DBLike; SESSION_SECRET?: string };
 
 async function adminEnv() {
