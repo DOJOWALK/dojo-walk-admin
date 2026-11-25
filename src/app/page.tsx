@@ -27,7 +27,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/dashboard")
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+    fetch("/api/walks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: today }) })
+      .then(async response => {
+        if (response.status === 401) { window.location.assign("/login"); throw new Error("Please sign in again."); }
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Today's walk schedule could not be prepared.");
+      })
+      .then(() => fetch("/api/dashboard"))
       .then(async response => {
         if (response.status === 401) { window.location.assign("/login"); throw new Error("Please sign in again."); }
         const result = await response.json();
