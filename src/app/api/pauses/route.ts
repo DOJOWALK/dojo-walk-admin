@@ -51,20 +51,22 @@ export async function PATCH(request:NextRequest){
  const resumeSlot=String(body.resume_slot||"");
  if(!id||!validDate(resumeDate)||!["morning","evening"].includes(resumeSlot))return NextResponse.json({error:"Choose when walks should resume."},{status:400});
  try{
-  const found=await env.DB.prepare("SELECT p.*,b.end_date,b.walks_per_day FROM booking_pauses p JOIN bookings b ON b.id=p.booking_id WHERE p.id=? AND p.status='active'").bind(id).all();
-  const pause=found.results?.[0] as {id:string;booking_id:string;pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;end_date:string|null;walks_per_day:number}|undefined;
+  const found=await env.DB.prepare("SELECT p.*,b.start_date,b.end_date,b.walks_per_day FROM booking_pauses p JOIN bookings b ON b.id=p.booking_id WHERE p.id=? AND p.status='active'").bind(id).all();
+  const pause=found.results?.[0] as {id:string;booking_id:string;pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;start_date:string;end_date:string|null;walks_per_day:number}|undefined;
   if(!pause)return NextResponse.json({error:"Active away record not found."},{status:404});
   if(key(resumeDate,resumeSlot)<=key(pause.pause_from_date,pause.pause_from_slot))return NextResponse.json({error:"Return time must be after the pause start."},{status:400});
   await env.DB.prepare("UPDATE walks SET status='cancelled',notes='Customer away pause' WHERE booking_id=? AND status='scheduled' AND (walk_date>? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END >= CASE ? WHEN 'morning' THEN 0 ELSE 1 END)) AND (walk_date<? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END < CASE ? WHEN 'morning' THEN 0 ELSE 1 END))").bind(pause.booking_id,pause.expected_resume_date,pause.expected_resume_date,pause.expected_resume_slot,resumeDate,resumeDate,resumeSlot).run();
   await env.DB.prepare("UPDATE booking_pauses SET actual_resume_date=?,actual_resume_slot=?,status='resumed',resumed_at=CURRENT_TIMESTAMP WHERE id=?").bind(resumeDate,resumeSlot,id).run();
   let fullDays=0;
   if(pause.end_date){
-   const d=new Date(pause.pause_from_date+"T00:00:00Z"),end=new Date(resumeDate+"T00:00:00Z");
+   const firstDate=pause.pause_from_date>pause.start_date?pause.pause_from_date:pause.start_date;
+   const lastDate=resumeDate<pause.end_date?resumeDate:pause.end_date;
+   const d=new Date(firstDate+"T00:00:00Z"),end=new Date(lastDate+"T00:00:00Z");
    while(d<=end){
     const day=d.toISOString().slice(0,10);
     const morningBlocked=key(day,"morning")>=key(pause.pause_from_date,pause.pause_from_slot)&&key(day,"morning")<key(resumeDate,resumeSlot);
     const eveningBlocked=key(day,"evening")>=key(pause.pause_from_date,pause.pause_from_slot)&&key(day,"evening")<key(resumeDate,resumeSlot);
-    if(d.getUTCDay()!==0&&pause.pause_from_date<=pause.end_date&&(pause.walks_per_day===1?morningBlocked:morningBlocked&&eveningBlocked))fullDays++;
+    if(d.getUTCDay()!==0&&(pause.walks_per_day===1?morningBlocked:morningBlocked&&eveningBlocked))fullDays++;
     d.setUTCDate(d.getUTCDate()+1);
    }
    if(fullDays>0)await env.DB.prepare("UPDATE bookings SET end_date=? WHERE id=?").bind(addWorkingDays(pause.end_date,fullDays),pause.booking_id).run();
