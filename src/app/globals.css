@@ -91,7 +91,7 @@
 .dashboard-text-link{display:inline-flex;align-items:center;gap:5px;color:#d95d0b;font-size:10px;font-weight:800;white-space:nowrap}
 .walk-progress-layout{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:5px 5px 16px}
 .walk-progress-number{display:flex;flex-direction:column;gap:5px}.walk-progress-number>strong{font:800 38px Manrope;letter-spacing:-1.5px;color:var(--ink)}.walk-progress-number>strong span{font-size:19px;color:#9a958f;font-weight:600}.walk-progress-number>small{font-size:10px;color:var(--muted)}
-.walk-progress-ring{--progress:0;width:112px;height:112px;flex:0 0 112px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#2e8b57 calc(var(--progress)*1%),#edf0ed 0);position:relative}
+.walk-progress-ring{--progress:0;width:112px;height:112px;flex:0 0 112px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#2e8b57 var(--progress),#edf0ed 0);position:relative}
 .walk-progress-ring:before{content:'';position:absolute;inset:9px;background:white;border-radius:50%}.walk-progress-ring>div{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px}.walk-progress-ring strong{font:800 20px Manrope;color:#252525}.walk-progress-ring small{font-size:9px;color:#77716c}
 .walk-progress-track{height:9px;border-radius:99px;background:#f0f0ed;overflow:hidden}.walk-progress-track>span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#2e8b57,#78b88a);transition:width .3s}
 .walk-slot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:17px}
