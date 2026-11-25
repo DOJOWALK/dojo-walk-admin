@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
     ).bind(id,customerId,dogId,plan,startDate,body.morning_time || null,body.evening_time || null,selected.walks,selected.duration,totalPrice,sundayExtra?1:0,source,advance,typeof body.notes==="string"?body.notes:null).run();
     if (advance > 0) {
-      await env.DB.prepare("INSERT INTO payments (id,customer_id,booking_id,amount_inr,payment_date,payment_method,reference_note) VALUES (?,?,?,?,?,?,?)").bind(crypto.randomUUID(),customerId,id,advance,new Date().toISOString().slice(0,10),paymentMethod,"Initial booking payment").run();
+      await env.DB.prepare("INSERT INTO payments (id,customer_id,booking_id,amount_inr,payment_date,payment_method,reference_note) VALUES (?,?,?,?,?,?,?)").bind(crypto.randomUUID(),customerId,id,advance,new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date()),paymentMethod,"Initial booking payment").run();
     }
     return NextResponse.json({ok:true,id,price_inr:totalPrice,received_inr:advance,balance_inr:totalPrice-advance,sunday_extra_enabled:sundayExtra},{status:201});
   } catch {
