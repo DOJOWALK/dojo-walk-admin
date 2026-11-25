@@ -20,7 +20,7 @@ export default function DogDetail() {
   const [error,setError] = useState("");
   const [success,setSuccess] = useState("");
   const money=(v:any)=>"₹"+Number(v||0).toLocaleString("en-IN");
-  const date=(v:string)=>v?new Date(v+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—";
+  const date=(v:string)=>v?new Date(v+"T12:00:00Z").toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—";
   async function load(){
     const r=await fetch("/api/dogs/"+id);
     if(r.status===401){location.assign("/login");return;}
