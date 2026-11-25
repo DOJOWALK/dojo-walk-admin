@@ -76,6 +76,7 @@ export async function PATCH(request: NextRequest) {
   const flatTower = typeof body.flat_tower === "string" ? body.flat_tower.trim() : "";
   const society = typeof body.society === "string" ? body.society.trim() : "";
   const locality = typeof body.locality === "string" ? body.locality.trim() : "";
+  const notes = typeof body.notes === "string" ? body.notes.trim().slice(0, 1000) : "";
   if (!id || fullName.length < 2 || fullName.length > 100 || !/^[+0-9()\\-\\s]{7,20}$/.test(phone)) {
     return NextResponse.json({ error: "Name and a valid mobile number are required." }, { status: 400 });
   }
@@ -87,8 +88,8 @@ export async function PATCH(request: NextRequest) {
   try {
     const exists = await env.DB.prepare("SELECT id FROM customers WHERE id=?").bind(id).all();
     if (!exists.results?.length) return NextResponse.json({ error: "Customer not found." }, { status: 404 });
-    await env.DB.prepare("UPDATE customers SET full_name=?,phone=?,whatsapp_phone=?,address=?,area=?,flat_tower=?,society=?,locality=?,city=?,state=?,pincode=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
-      .bind(fullName, phone, whatsapp || null, address || null, area || null, flatTower || null, society || null, locality || null, city, state, pincode, id).run();
+    await env.DB.prepare("UPDATE customers SET full_name=?,phone=?,whatsapp_phone=?,address=?,area=?,flat_tower=?,society=?,locality=?,city=?,state=?,pincode=?,notes=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
+      .bind(fullName, phone, whatsapp || null, address || null, area || null, flatTower || null, society || null, locality || null, city, state, pincode, notes || null, id).run();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Customer details could not be updated. Please try again." }, { status: 503 });
