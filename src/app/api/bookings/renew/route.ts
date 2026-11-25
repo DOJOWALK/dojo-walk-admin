@@ -21,10 +21,10 @@ export async function POST(request:NextRequest){
  if(!sourceId||!selected||!/^\d{4}-\d{2}-\d{2}$/.test(startDate)||(choice!=="full"&&choice!=="later"))return NextResponse.json({error:"Select a customer booking, new plan, start date and payment option."},{status:400});
  const received=choice==="full"?total:0;const method=["cash","upi","bank","other"].includes(String(body.payment_method))?String(body.payment_method):"upi";
  try{
-  const found=await env.DB.prepare("SELECT id,customer_id,dog_id,start_date,status FROM bookings WHERE id=?").bind(sourceId).all();
-  const old=found.results?.[0] as {id:string;customer_id:string;dog_id:string;start_date:string;status:string}|undefined;
+  const found=await env.DB.prepare("SELECT id,customer_id,dog_id,start_date,end_date,status FROM bookings WHERE id=?").bind(sourceId).all();
+  const old=found.results?.[0] as {id:string;customer_id:string;dog_id:string;start_date:string;end_date:string|null;status:string}|undefined;
   if(!old||old.status==="cancelled")return NextResponse.json({error:"Original booking not found or cancelled."},{status:404});
-  if(startDate<=old.start_date)return NextResponse.json({error:"New plan start date must be after the original booking start date."},{status:400});
+  if(startDate<=old.start_date||(old.end_date&&startDate<=old.end_date))return NextResponse.json({error:"New plan must start after the original booking period."},{status:400});
   const id=crypto.randomUUID();
   const statements:Statement[]=[
    env.DB.prepare("UPDATE bookings SET end_date=?,status='completed' WHERE id=?").bind(new Date(new Date(startDate+"T00:00:00Z").getTime()-86400000).toISOString().slice(0,10),sourceId),
