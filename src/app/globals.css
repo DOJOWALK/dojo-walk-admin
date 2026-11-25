@@ -49,3 +49,27 @@
 .record-side>strong{font-size:12px;color:#b95712;font-weight:800}
 .record-open{font-size:10px;font-weight:800;color:#d95d0b}
 @media(max-width:560px){.list-toolbar{align-items:stretch;flex-direction:column}.record-card{align-items:flex-start;padding:13px;gap:10px}.record-side{align-items:flex-end;min-width:94px}.record-side>strong{font-size:11px}}
+
+
+/* Compact customer and booking cards */
+.customer-record-card{align-items:stretch;flex-direction:column;gap:11px;padding:15px 17px}
+.customer-record-meta{display:flex;gap:14px;flex-wrap:wrap;color:#6f6963;font-size:10px}
+.customer-area{display:block}
+.customer-record-footer{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:10px;border-top:1px solid #f1e9e2}
+.customer-dog-count{font-size:10px;font-weight:800;color:#4f5e50}
+.customer-source{font-size:9px;font-weight:800;text-transform:capitalize;color:#a45a26;background:#fff1e6;border-radius:99px;padding:5px 9px}
+.customer-record-footer .record-open{margin-left:auto}
+.booking-record-card{display:flex;flex-direction:column;align-items:stretch;gap:11px;padding:15px 17px}
+.booking-record-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.booking-record-head>div{display:flex;flex-direction:column;gap:4px}
+.booking-record-dog{font-size:14px;color:#252525;font-weight:800}
+.booking-record-owner{font-size:11px;color:#77716c}
+.booking-record-meta{display:flex;align-items:center;gap:8px 15px;flex-wrap:wrap;color:#77716c;font-size:10px}
+.booking-record-money{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.booking-record-money>div{display:flex;flex-direction:column;gap:5px;padding:10px 12px;border-radius:10px;background:#faf8f5;border:1px solid #f0ebe5;min-width:0}
+.booking-record-money span{font-size:9px;color:#77716c}
+.booking-record-money strong{font:800 15px Manrope;color:#252525;overflow-wrap:anywhere}
+.booking-record-money .received-value{color:#27834d}
+.booking-record-money .due-value{color:#c44c38}
+.booking-record-open{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:9px;border-top:1px solid #f1e9e2}
+@media(max-width:560px){.customer-record-card,.booking-record-card{padding:13px}.booking-record-money{gap:6px}.booking-record-money>div{padding:9px 8px}.booking-record-money strong{font-size:13px}.customer-record-footer{gap:8px}.customer-record-footer .record-open{width:100%;margin-left:0}.booking-record-open{align-items:flex-start;flex-direction:column}}
