@@ -6,8 +6,7 @@ import { getAdminCookieName, verifyAdminSession } from "@/lib/auth";
 type Result = { results?: unknown[] };
 type DBLike = { prepare(sql: string): { bind(...values: unknown[]): { all(): Promise<Result>; run(): Promise<unknown> } } };
 type Env = { DB: DBLike; SESSION_SECRET?: string };
-
-function planEndDate(start:string, monthly:boolean){const d=new Date(start+"T00:00:00Z");if(!monthly)return start;let days=0;while(days<26){if(d.getUTCDay()!==0)days++;if(days<26)d.setUTCDate(d.getUTCDate()+1);}return d.toISOString().slice(0,10);}
+const WALK_RATE = 65;
 
 async function adminEnv() {
   const { env } = getCloudflareContext();
@@ -22,11 +21,16 @@ export async function GET() {
   if (!env) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const result = await env.DB.prepare(
-      "SELECT b.*, c.full_name AS customer_name, d.name AS dog_name, CASE WHEN b.advance_received_inr >= b.price_inr THEN 'paid' WHEN b.advance_received_inr > 0 THEN 'partial' ELSE 'unpaid' END AS payment_status FROM bookings b JOIN customers c ON c.id=b.customer_id JOIN dogs d ON d.id=b.dog_id ORDER BY b.created_at DESC"
+      `SELECT b.*, c.full_name AS customer_name, d.name AS dog_name,
+       COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed'),0) AS completed_walks,
+       COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed'),0)*b.price_per_walk_inr AS accrued_inr,
+       COALESCE((SELECT SUM(p.amount_inr) FROM payments p WHERE p.booking_id=b.id),0) AS paid_inr,
+       MAX(0,COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed'),0)*b.price_per_walk_inr-COALESCE((SELECT SUM(p.amount_inr) FROM payments p WHERE p.booking_id=b.id),0)) AS due_inr
+       FROM bookings b JOIN customers c ON c.id=b.customer_id JOIN dogs d ON d.id=b.dog_id ORDER BY b.created_at DESC`
     ).all();
-    return NextResponse.json({ bookings: result.results ?? [] });
+    return NextResponse.json({ bookings: result.results ?? [], price_per_walk_inr: WALK_RATE });
   } catch {
-    return NextResponse.json({ error: "Bookings are not available. Check D1 setup." }, { status: 503 });
+    return NextResponse.json({ error: "Bookings are not available. Apply database migrations 0001–0004 first." }, { status: 503 });
   }
 }
 
@@ -37,41 +41,26 @@ export async function POST(request: NextRequest) {
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   const customerId = typeof body.customer_id === "string" ? body.customer_id : "";
   const dogId = typeof body.dog_id === "string" ? body.dog_id : "";
-  const plan = String(body.plan_type || "");
   const startDate = typeof body.start_date === "string" ? body.start_date : "";
   const startSlot = String(body.start_slot || "morning");
+  const walksPerDay = Number(body.walks_per_day || 1);
   const source = ["whatsapp","phone","walk_in","other"].includes(String(body.booking_source)) ? String(body.booking_source) : "whatsapp";
-  const plans: Record<string,{price:number;walks:number;duration:number}> = {
-    monthly_am_pm: {price:2999,walks:2,duration:30},
-    monthly_once: {price:1999,walks:1,duration:30},
-    temporary_am_pm: {price:150,walks:2,duration:30},
-    single_walk: {price:100,walks:1,duration:30}
-  };
-  const selected = plans[plan];
-  const sundayExtra = body.sunday_extra_enabled === true && (plan === "monthly_am_pm" || plan === "monthly_once");
-  const totalPrice = selected ? selected.price + (sundayExtra ? 500 : 0) : 0;
-  if (!customerId || !dogId || !selected || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-    return NextResponse.json({ error: "Customer, dog, plan and start date are required." }, { status: 400 });
-  }
-  if (!["morning","evening"].includes(startSlot)) return NextResponse.json({ error: "Choose a morning or evening start." }, { status: 400 });
-  const paymentChoice = String(body.payment_choice || "later");
-  if (!["full","later"].includes(paymentChoice)) return NextResponse.json({ error: "Choose full payment now or pay later." }, { status: 400 });
-  const advance = paymentChoice === "full" ? totalPrice : 0;
-  const paymentMethod = ["cash","upi","bank","other"].includes(String(body.payment_method)) ? String(body.payment_method) : "upi";
-  if (!Number.isInteger(advance) || advance < 0 || advance > totalPrice || advance > 10000000) return NextResponse.json({ error: "Invalid booking payment amount." }, { status: 400 });
+  const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+  if (!customerId || !dogId || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return NextResponse.json({ error: "Customer, dog and start date are required." }, { status: 400 });
+  if (!["morning","evening"].includes(startSlot) || ![1,2].includes(walksPerDay)) return NextResponse.json({ error: "Choose a valid starting walk and daily walk count." }, { status: 400 });
+  const morningTime = typeof body.morning_time === "string" && timePattern.test(body.morning_time) ? body.morning_time : null;
+  const eveningTime = typeof body.evening_time === "string" && timePattern.test(body.evening_time) ? body.evening_time : null;
   try {
     const dog = await env.DB.prepare("SELECT id FROM dogs WHERE id=? AND customer_id=?").bind(dogId,customerId).all();
     if (!dog.results?.length) return NextResponse.json({ error: "This dog does not belong to the selected customer." }, { status: 400 });
+    const existing = await env.DB.prepare("SELECT id FROM bookings WHERE dog_id=? AND status='active'").bind(dogId).all();
+    if (existing.results?.length) return NextResponse.json({ error: "This dog already has an active walking booking. Continue using that booking or cancel it first." }, { status: 409 });
     const id = crypto.randomUUID();
-    const endDate = planEndDate(startDate, plan.startsWith("monthly_"));
     await env.DB.prepare(
-      "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,end_date,start_slot,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-    ).bind(id,customerId,dogId,plan,startDate,endDate,startSlot,body.morning_time || null,body.evening_time || null,selected.walks,selected.duration,totalPrice,sundayExtra?1:0,source,advance,typeof body.notes==="string"?body.notes:null).run();
-    if (advance > 0) {
-      await env.DB.prepare("INSERT INTO payments (id,customer_id,booking_id,amount_inr,payment_date,payment_method,reference_note) VALUES (?,?,?,?,?,?,?)").bind(crypto.randomUUID(),customerId,id,advance,new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date()),paymentMethod,"Initial booking payment").run();
-    }
-    return NextResponse.json({ok:true,id,price_inr:totalPrice,received_inr:advance,balance_inr:totalPrice-advance,sunday_extra_enabled:sundayExtra},{status:201});
+      "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,end_date,start_slot,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes,price_per_walk_inr) VALUES (?,?,?,'single_walk',?,NULL,?,?,?,?,30,0,0,?,0,?,?)"
+    ).bind(id,customerId,dogId,startDate,startSlot,morningTime,eveningTime,walksPerDay,source,typeof body.notes==="string"?body.notes.slice(0,1000):null,WALK_RATE).run();
+    return NextResponse.json({ok:true,id,price_per_walk_inr:WALK_RATE,walks_per_day:walksPerDay},{status:201});
   } catch {
-    return NextResponse.json({error:"Booking could not be saved. Check database setup."},{status:503});
+    return NextResponse.json({error:"Booking could not be saved. Check that migration 0004 has been applied."},{status:503});
   }
 }
