@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
     const owner = await env.DB.prepare("SELECT id FROM customers WHERE id = ?").bind(customerId).all();
     if (!owner.results?.length) return NextResponse.json({ error: "Customer not found." }, { status: 404 });
     await env.DB.prepare(
-      "INSERT INTO dogs (id, customer_id, name, breed, age_text, size, temperament, medical_notes, emergency_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).bind(id, customerId, name, body.breed || null, body.age_text || null, body.size || null, body.temperament || null, body.medical_notes || null, body.emergency_notes || null).run();
+      "INSERT INTO dogs (id, customer_id, name, breed, age_text, size, gender, temperament, medical_notes, emergency_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(id, customerId, name, body.breed || null, body.age_text || null, body.size || null, ["Male","Female"].includes(String(body.gender)) ? body.gender : null, body.temperament || null, body.medical_notes || null, body.emergency_notes || null).run();
     return NextResponse.json({ ok: true, id }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Dog could not be saved. Check database setup." }, { status: 503 });
