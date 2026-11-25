@@ -9,13 +9,13 @@ const navigation = [
   { label: "Customers", href: "/customers", key: "customers", icon: Users },
   { label: "Dogs", href: "/dogs", key: "dogs", icon: Dog },
   { label: "Bookings", href: "/bookings", key: "bookings", icon: ClipboardList },
-  { label: "Walk Schedule", href: "/schedule", key: "schedule", icon: CalendarDays },
-  { label: "Attendance", href: "/attendance", key: "attendance", icon: Activity },
-  { label: "Payments", href: "/payments", key: "payments", icon: CircleDollarSign },
-  { label: "Expenses", href: "/expenses", key: "expenses", icon: Wallet },
-  { label: "Reports", href: "/reports", key: "reports", icon: ChartNoAxesCombined },
-  { label: "WhatsApp", href: "/whatsapp", key: "whatsapp", icon: MessageCircle },
-  { label: "Settings", href: "/settings", key: "settings", icon: Settings }
+  { label: "Walk Schedule", href: "/schedule", key: "schedule", icon: CalendarDays, comingSoon: true },
+  { label: "Attendance", href: "/attendance", key: "attendance", icon: Activity, comingSoon: true },
+  { label: "Payments", href: "/payments", key: "payments", icon: CircleDollarSign, comingSoon: true },
+  { label: "Expenses", href: "/expenses", key: "expenses", icon: Wallet, comingSoon: true },
+  { label: "Reports", href: "/reports", key: "reports", icon: ChartNoAxesCombined, comingSoon: true },
+  { label: "WhatsApp", href: "/whatsapp", key: "whatsapp", icon: MessageCircle, comingSoon: true },
+  { label: "Settings", href: "/settings", key: "settings", icon: Settings, comingSoon: true }
 ];
 
 export default async function AppShell({ children, active }: { children: React.ReactNode; active: string }) {
@@ -32,7 +32,7 @@ export default async function AppShell({ children, active }: { children: React.R
           <div><div className="brand-name">Dojo Walk</div><div className="brand-sub">ADMIN WORKSPACE</div></div>
         </a>
         <div><p className="nav-label">WORKSPACE</p><nav className="nav-list" aria-label="Main navigation">
-          {navigation.map(({ label, href, key, icon: Icon }) => <a key={key} href={href} aria-current={active === key ? "page" : undefined} className={`nav-link ${active === key ? "active" : ""}`}><Icon size={16}/>{label}</a>)}
+          {navigation.map(({ label, href, key, icon: Icon, comingSoon }) => comingSoon ? <span key={key} className="nav-link disabled" aria-disabled="true"><Icon size={16}/>{label}<small>Soon</small></span> : <a key={key} href={href} aria-current={active === key ? "page" : undefined} className={`nav-link ${active === key ? "active" : ""}`}><Icon size={16}/>{label}</a>)}
         </nav></div>
         <div className="sidebar-foot">Gaur City · Crossings Republik<br/>Ghaziabad, Uttar Pradesh<br/><strong>Single-admin system</strong></div>
       </aside>
