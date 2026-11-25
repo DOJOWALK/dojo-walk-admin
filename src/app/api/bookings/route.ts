@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
   if (!customerId || !dogId || !selected || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
     return NextResponse.json({ error: "Customer, dog, plan and start date are required." }, { status: 400 });
   }
+  if (!["morning","evening"].includes(startSlot)) return NextResponse.json({ error: "Choose a morning or evening start." }, { status: 400 });
   const paymentChoice = String(body.payment_choice || "later");
   if (!["full","later"].includes(paymentChoice)) return NextResponse.json({ error: "Choose full payment now or pay later." }, { status: 400 });
   const advance = paymentChoice === "full" ? totalPrice : 0;
