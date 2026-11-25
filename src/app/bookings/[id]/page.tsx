@@ -123,12 +123,20 @@ export default function BookingDetail() {
       <div className="booking-people-grid">
         <div className="booking-person">
           <div className="booking-avatar"><UserRound size={20}/></div>
-          <div className="booking-person-copy"><span className="booking-label">OWNER</span><strong>{booking.customer_name}</strong><span className="booking-meta"><Phone size={13}/>{booking.customer_phone || "No mobile number"}</span><Link className="booking-profile-link" href={"/customers/"+booking.customer_id}>View customer profile <span>→</span></Link></div>
+          <div className="booking-person-copy"><span className="booking-label">OWNER</span><strong>{booking.customer_name}</strong><span className="booking-meta"><Phone size={13}/>{booking.customer_phone || "No mobile number"}</span>{booking.whatsapp_phone&&<span className="booking-meta">WhatsApp: {booking.whatsapp_phone}</span>}<Link className="booking-profile-link" href={"/customers/"+booking.customer_id}>View customer profile <span>→</span></Link></div>
         </div>
         <div className="booking-person">
           <div className="booking-avatar dog-avatar"><PawPrint size={20}/></div>
-          <div className="booking-person-copy"><span className="booking-label">DOG</span><strong>{booking.dog_name}</strong><span className="booking-meta">{[booking.dog_breed, booking.dog_age, booking.dog_size, booking.dog_gender, booking.dog_temperament].filter(Boolean).join(" · ") || "Dog profile"}</span><Link className="booking-profile-link" href={"/dogs/"+booking.dog_id}>View dog profile <span>→</span></Link></div>
+          <div className="booking-person-copy"><span className="booking-label">DOG</span><strong>{booking.dog_name}</strong><Link className="booking-profile-link" href={"/dogs/"+booking.dog_id}>View dog profile <span>→</span></Link></div>
         </div>
+      </div>
+      <div className="booking-section-heading"><PawPrint size={17}/> Dog details</div>
+      <div className="booking-facts-grid">
+        <div className="booking-fact"><span>Breed</span><strong>{booking.dog_breed || "Not added"}</strong></div>
+        <div className="booking-fact"><span>Age</span><strong>{booking.dog_age || "Not added"}</strong></div>
+        <div className="booking-fact"><span>Size</span><strong>{booking.dog_size || "Not added"}</strong></div>
+        <div className="booking-fact"><span>Gender</span><strong>{booking.dog_gender || "Not added"}</strong></div>
+        <div className="booking-fact"><span>Temperament</span><strong>{booking.dog_temperament || "Not added"}</strong></div>
       </div>
       <div className="booking-section-heading"><CalendarDays size={17}/> Walk schedule</div>
       <div className="booking-facts-grid">
@@ -139,7 +147,14 @@ export default function BookingDetail() {
         <div className="booking-fact"><span>Completed walks</span><strong>{booking.completed_walks ?? 0}</strong></div>
         <div className="booking-fact"><span>Usual time</span><strong>{Number(booking.walks_per_day) === 1 ? (booking.start_slot === "evening" ? booking.evening_time : booking.morning_time) || "—" : `AM ${booking.morning_time || "—"} · PM ${booking.evening_time || "—"}`}</strong></div>
       </div>
-      {(booking.flat_tower || booking.society || booking.locality || booking.city || booking.state || booking.pincode || booking.address || booking.area) && <div className="booking-address"><MapPin size={14}/><span>{[booking.flat_tower,booking.society,booking.locality,booking.city,booking.state,booking.pincode].filter(Boolean).join(", ") || [booking.address,booking.area].filter(Boolean).join(", ")}</span></div>}
+      {(booking.flat_tower || booking.society || booking.locality || booking.city || booking.state || booking.pincode || booking.address || booking.area) && <><div className="booking-section-heading"><MapPin size={17}/> Full address</div><div className="booking-facts-grid">
+        <div className="booking-fact"><span>Flat / Tower</span><strong>{booking.flat_tower || "—"}</strong></div>
+        <div className="booking-fact"><span>Society / Address</span><strong>{booking.society || booking.address || "—"}</strong></div>
+        <div className="booking-fact"><span>Area / Locality</span><strong>{booking.locality || "—"}</strong></div>
+        <div className="booking-fact"><span>City</span><strong>{booking.city || "—"}</strong></div>
+        <div className="booking-fact"><span>State</span><strong>{booking.state || "—"}</strong></div>
+        <div className="booking-fact"><span>PIN code</span><strong>{booking.pincode || "—"}</strong></div>
+      </div>{!(booking.flat_tower || booking.society || booking.locality || booking.city || booking.state || booking.pincode) && <div className="booking-address"><MapPin size={14}/><span>{[booking.address,booking.area].filter(Boolean).join(", ")}</span></div>}</>}
       {booking.notes && <div className="booking-notes"><strong>Notes:</strong> {booking.notes}</div>}
     </section>
     <section className="booking-billing panel">
