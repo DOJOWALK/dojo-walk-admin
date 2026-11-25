@@ -71,8 +71,6 @@ export default function CustomerDetail() {
     finally{setSavingDog(false);}
   }
 
-  const totalDue = bookings.reduce((sum, b) => sum + Number(b.due_inr || 0), 0);
-  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount_inr || 0), 0);
   if (loading) return <main className="main"><Link href="/customers" className="back-link"><ArrowLeft size={15}/> Customers</Link><section className="panel">Loading customer profile…</section></main>;
   if (!customer) return <main className="main"><Link href="/customers" className="back-link"><ArrowLeft size={15}/> Customers</Link><section className="panel"><h1 className="panel-title">Customer not found</h1><p className="panel-note">This customer may have been removed or the link may be incorrect.</p></section></main>;
   const address = [customer.flat_tower, customer.society, customer.locality, customer.city, customer.state, customer.pincode].filter(Boolean).join(", ") || [customer.address, customer.area].filter(Boolean).join(", ") || "Address not added";
