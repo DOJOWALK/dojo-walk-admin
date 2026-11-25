@@ -21,14 +21,7 @@
       "database_id": "041e1b93-c472-48cf-9752-0a00118a270d",
       "migrations_dir": "migrations"
     }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "WALK_PHOTOS",
-      "bucket_name": "dojo-walk-private-photos"
-    }
-  ],
-  "vars": {
+  ],"vars": {
     "APP_NAME": "Dojo Walk",
     "APP_TIMEZONE": "Asia/Kolkata"
   }
