@@ -8,8 +8,11 @@ import ManagementTabs from "@/components/management-tabs";
 
 type Booking={id:string;customer_id:string;dog_id:string;customer_name:string;customer_phone?:string;dog_name:string;start_date:string;walks_per_day:number;walk_duration_minutes:number;price_per_walk_inr:number;completed_walks:number;accrued_inr:number;paid_inr:number;due_inr:number;status:string};
 const STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry"];
+const BREEDS = ["Indie / Indian Pariah","Labrador Retriever","Golden Retriever","German Shepherd","Beagle","Pug","Shih Tzu","Rottweiler","Siberian Husky","Boxer","Dachshund","Pomeranian","German Spitz","Cocker Spaniel","French Bulldog","Doberman","Great Dane","Chihuahua","Lhasa Apso","Other"];
+const LOCALITIES = ["Gaur City 1","Gaur City 2","Crossings Republik","Techzone 4","Noida Extension","Bisrakh","Char Murti","Sector 1 Greater Noida West","Sector 2 Greater Noida West","Sector 3 Greater Noida West","Sector 4 Greater Noida West","Sector 10 Greater Noida West","Other"];
+const CITIES = ["Greater Noida West","Greater Noida","Noida","Ghaziabad","Dadri","Delhi","Other"];
 function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}
-const initialForm=()=>({owner_name:"",phone:"",whatsapp_phone:"",dog_name:"",dog_breed:"",dog_age:"",dog_size:"",address:"",city:"",state:"Uttar Pradesh",start_date:localDate(),start_slot:"morning",walks_per_day:"1",walk_duration_minutes:"30",morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",notes:""});
+const initialForm=()=>({owner_name:"",phone:"",whatsapp_phone:"",dog_name:"",dog_breed:"",dog_age_range:"",dog_exact_age:"",dog_size:"",dog_gender:"",dog_temperament:"",flat_tower:"",society:"",locality:"",city:"Greater Noida West",state:"Uttar Pradesh",pincode:"",start_date:localDate(),start_slot:"morning",walks_per_day:"1",walk_duration_minutes:"30",morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",notes:""});
 
 export default function BookingsPage(){
  const router=useRouter();
@@ -30,7 +33,8 @@ export default function BookingsPage(){
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");setSuccess("");
   try{
-   const r=await fetch("/api/bookings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...form,walks_per_day:Number(form.walks_per_day),walk_duration_minutes:Number(form.walk_duration_minutes)})});
+   const payload={...form,dog_age: [form.dog_age_range,form.dog_exact_age].filter(Boolean).join(" · "),walks_per_day:Number(form.walks_per_day),walk_duration_minutes:Number(form.walk_duration_minutes)};
+   const r=await fetch("/api/bookings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
    const j=await r.json();if(!r.ok)throw new Error(j.error||"Booking could not be saved.");
    setSuccess("Booking saved! Owner and dog profiles have been added or matched automatically.");
    setShow(false);setForm(initialForm());await load();
@@ -38,28 +42,37 @@ export default function BookingsPage(){
   finally{setSaving(false);}
  }
  return <main className="main">
-  <div className="topbar"><div><Link href="/" className="back-link"><ArrowLeft size={15}/> Dashboard</Link><div className="eyebrow">Booking-first workflow</div><h1 className="page-title">Bookings</h1><p className="subtle">Add the owner and dog here. Their profiles are created or matched automatically.</p></div><button className="action" onClick={()=>{setShow(!show);setSuccess("");}}><Plus size={15}/> Add booking</button></div>
+  <div className="topbar"><div><Link href="/" className="back-link"><ArrowLeft size={15}/> Dashboard</Link><div className="eyebrow">Booking-first workflow</div><h1 className="page-title">Bookings</h1><p className="subtle">Add the owner, dog and complete address here. Their profiles are created or matched automatically.</p></div><button className="action" onClick={()=>{setShow(!show);setSuccess("");}}><Plus size={15}/> Add booking</button></div>
   <ManagementTabs active="bookings"/>
   {error&&<div className="error-box">{error}</div>}{success&&<div className="success-box">{success}</div>}
-  {show&&<form className="panel customer-form" onSubmit={submit}><div className="panel-head"><div><div className="panel-title">New booking · Owner + Dog</div><div className="panel-note">Existing owners are matched by mobile number; an existing dog with the same name is reused.</div></div><button type="button" className="plain-button" onClick={()=>setShow(false)}>Close</button></div>
+  {show&&<form className="panel customer-form" onSubmit={submit}>
+   <div className="panel-head"><div><div className="panel-title">New booking · Owner + Dog</div><div className="panel-note">Existing owners are matched by mobile number; an existing dog with the same name is reused.</div></div><button type="button" className="plain-button" onClick={()=>setShow(false)}>Close</button></div>
    <div className="form-grid">
     <label>Owner name *<input required minLength={2} maxLength={100} autoComplete="name" value={form.owner_name} onChange={e=>setForm({...form,owner_name:e.target.value})} placeholder="Owner full name"/></label>
     <label>Mobile number *<input required type="tel" inputMode="tel" autoComplete="tel" maxLength={20} value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="+91 98XXXXXXXX"/></label>
     <label>WhatsApp number<input type="tel" inputMode="tel" maxLength={20} value={form.whatsapp_phone} onChange={e=>setForm({...form,whatsapp_phone:e.target.value})} placeholder="If different from mobile"/></label>
     <label>Dog name *<input required maxLength={80} value={form.dog_name} onChange={e=>setForm({...form,dog_name:e.target.value})} placeholder="Dog's name"/></label>
-    <label>Breed<input maxLength={80} value={form.dog_breed} onChange={e=>setForm({...form,dog_breed:e.target.value})} placeholder="Dog breed"/></label>
-    <label>Age<input maxLength={40} value={form.dog_age} onChange={e=>setForm({...form,dog_age:e.target.value})} placeholder="e.g. 2 years"/></label>
-    <label>Dog size<select value={form.dog_size} onChange={e=>setForm({...form,dog_size:e.target.value})}><option value="">Select size</option><option value="Small">Small</option><option value="Medium">Medium</option><option value="Large">Large</option></select></label>
-    <label className="full-field">Address / Flat / Tower<input maxLength={200} value={form.address} onChange={e=>setForm({...form,address:e.target.value})} placeholder="Flat number, tower, society"/></label>
-    <label>City *<input required maxLength={100} value={form.city} onChange={e=>setForm({...form,city:e.target.value})} placeholder="e.g. Greater Noida West"/></label>
+    <label>Breed (type to search)<input list="dog-breeds" value={form.dog_breed} onChange={e=>setForm({...form,dog_breed:e.target.value})} placeholder="Choose or type breed"/><datalist id="dog-breeds">{BREEDS.map(x=><option key={x} value={x}/>)}</datalist></label>
+    <label>Age range<select value={form.dog_age_range} onChange={e=>setForm({...form,dog_age_range:e.target.value})}><option value="">Select age range</option><option>Below 6 months</option><option>6–12 months</option><option>1–2 years</option><option>3–5 years</option><option>6–8 years</option><option>9–12 years</option><option>12+ years</option></select></label>
+    <label>Exact age (optional)<input maxLength={30} value={form.dog_exact_age} onChange={e=>setForm({...form,dog_exact_age:e.target.value})} placeholder="e.g. 18 months / 2 years 4 months"/></label>
+    <label>Dog size<select required value={form.dog_size} onChange={e=>setForm({...form,dog_size:e.target.value})}><option value="">Select size</option><option>Small</option><option>Medium</option><option>Large</option><option>Extra Large</option></select></label>
+    <label>Gender<select required value={form.dog_gender} onChange={e=>setForm({...form,dog_gender:e.target.value})}><option value="">Select gender</option><option>Male</option><option>Female</option></select></label>
+    <label>Temperament<select value={form.dog_temperament} onChange={e=>setForm({...form,dog_temperament:e.target.value})}><option value="">Select temperament</option><option>Friendly</option><option>Shy</option><option>Energetic</option><option>Calm</option><option>Anxious</option><option>Reactive</option><option>Other</option></select></label>
+    <div className="full-field"><div className="panel-title">Owner address</div><div className="panel-note">Address ko alag fields mein save kiya jayega, taaki baad mein search karna aasaan ho.</div></div>
+    <label>Flat / Tower<input maxLength={80} value={form.flat_tower} onChange={e=>setForm({...form,flat_tower:e.target.value})} placeholder="e.g. A-1204, Tower 7"/></label>
+    <label>Society / Address<input maxLength={150} value={form.society} onChange={e=>setForm({...form,society:e.target.value})} placeholder="e.g. Gaur City 2"/></label>
+    <label>Area / Locality (type to search)<input required list="localities" value={form.locality} onChange={e=>setForm({...form,locality:e.target.value})} placeholder="Choose or type locality"/><datalist id="localities">{LOCALITIES.map(x=><option key={x} value={x}/>)}</datalist></label>
+    <label>City (type to search)<input required list="cities" value={form.city} onChange={e=>setForm({...form,city:e.target.value})} placeholder="Choose or type city"/><datalist id="cities">{CITIES.map(x=><option key={x} value={x}/>)}</datalist></label>
     <label>State *<select required value={form.state} onChange={e=>setForm({...form,state:e.target.value})}>{STATES.map(s=><option key={s} value={s}>{s}</option>)}</select></label>
+    <label>PIN Code *<input required inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} value={form.pincode} onChange={e=>setForm({...form,pincode:e.target.value.replace(/\D/g,"").slice(0,6)})} placeholder="6-digit PIN code"/></label>
+    <div className="full-field"><div className="panel-title">Walk schedule</div></div>
     <label>Start date *<input type="date" required value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/></label>
     <label>Walk duration *<select value={form.walk_duration_minutes} onChange={e=>setForm({...form,walk_duration_minutes:e.target.value})}><option value="20">20 minutes · ₹45</option><option value="30">30 minutes · ₹65</option><option value="45">45 minutes · ₹95</option><option value="60">60 minutes · ₹125</option></select></label>
     <label>Walks per day *<select value={form.walks_per_day} onChange={e=>setForm({...form,walks_per_day:e.target.value})}><option value="1">1 walk per day</option><option value="2">2 walks per day</option></select></label>
     <label>First walk from *<select value={form.start_slot} onChange={e=>setForm({...form,start_slot:e.target.value})}><option value="morning">Morning</option><option value="evening">Evening</option></select></label>
     {form.walks_per_day==="1"?<label>{form.start_slot==="morning"?"Morning":"Evening"} time<input required type="time" value={form.start_slot==="morning"?form.morning_time:form.evening_time} onChange={e=>setForm({...form,[form.start_slot==="morning"?"morning_time":"evening_time"]:e.target.value})}/></label>:<><label>Morning time<input required type="time" value={form.morning_time} onChange={e=>setForm({...form,morning_time:e.target.value})}/></label><label>Evening time<input required type="time" value={form.evening_time} onChange={e=>setForm({...form,evening_time:e.target.value})}/></label></>}
     <label>Booking source<select value={form.booking_source} onChange={e=>setForm({...form,booking_source:e.target.value})}><option value="whatsapp">WhatsApp</option><option value="phone">Phone call</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></label>
-    <label className="full-field">Notes<textarea rows={2} maxLength={1000} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
+    <label className="full-field">Notes / medical details<textarea rows={3} maxLength={1000} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Special instructions, health or behaviour notes…"/></label>
    </div>
    <div className="booking-price">Rate: <strong>₹{({20:45,30:65,45:95,60:125} as Record<number,number>)[Number(form.walk_duration_minutes)]} per dog, per completed {form.walk_duration_minutes}-minute walk</strong><br/>Only completed walks are charged. Missed or cancelled walks: ₹0.</div>
    <div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save booking + owner + dog"}</button></div>
