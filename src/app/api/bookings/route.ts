@@ -4,7 +4,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getAdminCookieName, verifyAdminSession } from "@/lib/auth";
 
 type Result = { results?: unknown[] };
-type DBLike = { prepare(sql: string): { bind(...values: unknown[]): { all(): Promise<Result>; run(): Promise<unknown> } } };
+type DBLike = { prepare(sql: string): { all(): Promise<Result>; bind(...values: unknown[]): { all(): Promise<Result>; run(): Promise<unknown> } } };
 type Env = { DB: DBLike; SESSION_SECRET?: string };
 const WALK_RATES: Record<number, number> = {20:45,30:65,45:95,60:125};
 
