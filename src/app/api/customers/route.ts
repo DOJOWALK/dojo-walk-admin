@@ -60,3 +60,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Customer could not be saved. Check database setup." }, { status: 503 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  const env = await getAdminEnv();
+  if (!env) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let body: Record<string, unknown>;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
+  const id = typeof body.id === "string" ? body.id : "";
+  const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
+  const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+  const whatsapp = typeof body.whatsapp_phone === "string" ? body.whatsapp_phone.trim() : "";
+  const city = typeof body.city === "string" ? body.city.trim() : "";
+  const state = typeof body.state === "string" ? body.state.trim() : "";
+  const pincode = typeof body.pincode === "string" ? body.pincode.trim() : "";
+  const flatTower = typeof body.flat_tower === "string" ? body.flat_tower.trim() : "";
+  const society = typeof body.society === "string" ? body.society.trim() : "";
+  const locality = typeof body.locality === "string" ? body.locality.trim() : "";
+  if (!id || fullName.length < 2 || fullName.length > 100 || !/^[+0-9()\\-\\s]{7,20}$/.test(phone)) {
+    return NextResponse.json({ error: "Name and a valid mobile number are required." }, { status: 400 });
+  }
+  if (!city || !state || !/^\\d{6}$/.test(pincode)) {
+    return NextResponse.json({ error: "City, state and a valid six-digit PIN code are required." }, { status: 400 });
+  }
+  const address = [flatTower, society].filter(Boolean).join(", ");
+  const area = [locality, city, state, pincode].filter(Boolean).join(", ");
+  try {
+    const exists = await env.DB.prepare("SELECT id FROM customers WHERE id=?").bind(id).all();
+    if (!exists.results?.length) return NextResponse.json({ error: "Customer not found." }, { status: 404 });
+    await env.DB.prepare("UPDATE customers SET full_name=?,phone=?,whatsapp_phone=?,address=?,area=?,flat_tower=?,society=?,locality=?,city=?,state=?,pincode=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
+      .bind(fullName, phone, whatsapp || null, address || null, area || null, flatTower || null, society || null, locality || null, city, state, pincode, id).run();
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Customer details could not be updated. Please try again." }, { status: 503 });
+  }
+}
