@@ -76,7 +76,7 @@ export default function DashboardPage() {
           <div className="dashboard-section-head"><div><div className="panel-title">Today's Walks</div><div className="panel-note">Daily attendance and walk progress</div></div><a className="dashboard-text-link" href="/schedule">Open schedule <ArrowUpRight size={14}/></a></div>
           <div className="walk-progress-layout">
             <div className="walk-progress-number"><strong>{loading || !data ? "—" : completed}<span> / {data ? totalWalks : "—"}</span></strong><small>Completed walks</small></div>
-            <div className="walk-progress-ring" style={{ "--progress": progress } as CSSProperties}><div><strong>{loading || !data ? "—" : progress + "%"}</strong><small>Done</small></div></div>
+            <div className="walk-progress-ring" style={{ "--progress": progress + "%" } as CSSProperties}><div><strong>{loading || !data ? "—" : progress + "%"}</strong><small>Done</small></div></div>
           </div>
           <div className="walk-progress-track"><span style={{ width: progress + "%" }}/></div>
           <div className="walk-slot-grid">
