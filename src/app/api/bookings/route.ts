@@ -43,10 +43,6 @@ export async function PATCH(request: NextRequest) {
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   const id = typeof body.id === "string" ? body.id : "";
-  const ownerName = typeof body.owner_name === "string" ? body.owner_name.trim() : "";
-  const phone = typeof body.phone === "string" ? body.phone.trim() : "";
-  const whatsapp = typeof body.whatsapp_phone === "string" ? body.whatsapp_phone.trim() : "";
-  const dogName = typeof body.dog_name === "string" ? body.dog_name.trim() : "";
   const startDate = typeof body.start_date === "string" ? body.start_date : "";
   const endDate = typeof body.end_date === "string" && body.end_date ? body.end_date : null;
   const duration = Number(body.walk_duration_minutes);
@@ -58,33 +54,15 @@ export async function PATCH(request: NextRequest) {
   const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
   const morning = typeof body.morning_time === "string" && timePattern.test(body.morning_time) ? body.morning_time : null;
   const evening = typeof body.evening_time === "string" && timePattern.test(body.evening_time) ? body.evening_time : null;
-  if (!id || ownerName.length < 2 || ownerName.length > 100 || !/^[+0-9()\-\s]{7,20}$/.test(phone) || !dogName || dogName.length > 80 || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-    return NextResponse.json({ error: "Owner, valid mobile, dog name and start date are required." }, { status: 400 });
+  if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+    return NextResponse.json({ error: "A valid booking and start date are required." }, { status: 400 });
   }
   if (!rate || ![1,2].includes(walksPerDay) || !["morning","evening"].includes(startSlot) || !["active","paused","completed","cancelled"].includes(status) || !["whatsapp","phone","walk_in","other"].includes(source) || (endDate && (!/^\d{4}-\d{2}-\d{2}$/.test(endDate) || endDate < startDate))) {
     return NextResponse.json({ error: "Please check the booking dates, status, walk schedule and duration." }, { status: 400 });
   }
   try {
-    const found = await env.DB.prepare("SELECT customer_id,dog_id FROM bookings WHERE id=?").bind(id).all();
-    const record = found.results?.[0];
-    if (!record) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
-    const customerId = String(record.customer_id);
-    const dogId = String(record.dog_id);
-    const flatTower = typeof body.flat_tower === "string" ? body.flat_tower.trim() : "";
-    const society = typeof body.society === "string" ? body.society.trim() : "";
-    const locality = typeof body.locality === "string" ? body.locality.trim() : "";
-    const city = typeof body.city === "string" ? body.city.trim() : "";
-    const state = typeof body.state === "string" ? body.state.trim() : "";
-    const pincode = typeof body.pincode === "string" ? body.pincode.trim() : "";
-    const address = [flatTower,society].filter(Boolean).join(", ");
-    const area = [locality,city,state,pincode].filter(Boolean).join(", ");
-    const gender = ["Male","Female"].includes(String(body.dog_gender)) ? String(body.dog_gender) : null;
-    const temperament = ["Friendly","Shy","Energetic","Calm","Anxious","Reactive","Other"].includes(String(body.dog_temperament)) ? String(body.dog_temperament) : null;
-    if (!city || !state || !/^\\d{6}$/.test(pincode)) return NextResponse.json({ error: "City, state and valid six-digit PIN Code are required." }, { status: 400 });
-    await env.DB.prepare("UPDATE customers SET full_name=?,phone=?,whatsapp_phone=?,address=?,area=?,flat_tower=?,society=?,locality=?,city=?,state=?,pincode=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
-      .bind(ownerName,phone,whatsapp || null,address || null,area || null,flatTower || null,society || null,locality || null,city,state,pincode,customerId).run();
-    await env.DB.prepare("UPDATE dogs SET name=?,breed=?,age_text=?,size=?,gender=?,temperament=? WHERE id=?")
-      .bind(dogName,typeof body.dog_breed==="string"?body.dog_breed.trim()||null:null,typeof body.dog_age==="string"?body.dog_age.trim()||null:null,["Small","Medium","Large","Extra Large"].includes(String(body.dog_size))?String(body.dog_size):null,gender,temperament,dogId).run();
+    const found = await env.DB.prepare("SELECT id FROM bookings WHERE id=?").bind(id).all();
+    if (!found.results?.length) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
     await env.DB.prepare("UPDATE bookings SET start_date=?,end_date=?,start_slot=?,morning_time=?,evening_time=?,walks_per_day=?,walk_duration_minutes=?,price_per_walk_inr=?,status=?,booking_source=?,notes=? WHERE id=?")
       .bind(startDate,endDate,startSlot,morning,evening,walksPerDay,duration,rate,status,source,typeof body.notes==="string"?body.notes.slice(0,1000):null,id).run();
     return NextResponse.json({ ok: true });
