@@ -46,13 +46,13 @@ export default function DogsPage() {
     {showForm&&<form className="panel customer-form" onSubmit={submit}><div className="panel-head"><div><div className="panel-title">Register a dog</div><div className="panel-note">Choose the dog's owner first.</div></div><button type="button" className="plain-button" onClick={()=>setShowForm(false)}>Close</button></div>
       {customers.length===0?<div className="empty">Add a customer before registering a dog.</div>:<><div className="form-grid">
         <label>Customer *<select required value={form.customer_id} onChange={e=>setForm({...form,customer_id:e.target.value})}><option value="">Select customer</option>{customers.map(c=><option key={c.id} value={c.id}>{c.full_name}</option>)}</select></label>
-        <label>Dog's name *<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Dog name"/></label>
-        <label>Breed<input value={form.breed} onChange={e=>setForm({...form,breed:e.target.value})} placeholder="Breed"/></label>
-        <label>Age<input value={form.age_text} onChange={e=>setForm({...form,age_text:e.target.value})} placeholder="e.g. 2 years"/></label>
+        <label>Dog's name *<input required maxLength={80} value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Dog name"/></label>
+        <label>Breed<input maxLength={80} value={form.breed} onChange={e=>setForm({...form,breed:e.target.value})} placeholder="Breed"/></label>
+        <label>Age<input maxLength={40} value={form.age_text} onChange={e=>setForm({...form,age_text:e.target.value})} placeholder="e.g. 2 years"/></label>
         <label>Size<select value={form.size} onChange={e=>setForm({...form,size:e.target.value})}><option value="">Select size</option><option>Small</option><option>Medium</option><option>Large</option></select></label>
-        <label>Temperament<input value={form.temperament} onChange={e=>setForm({...form,temperament:e.target.value})} placeholder="Friendly, shy, energetic…"/></label>
-        <label className="full-field">Medical notes<textarea rows={2} value={form.medical_notes} onChange={e=>setForm({...form,medical_notes:e.target.value})}/></label>
-        <label className="full-field">Emergency notes<textarea rows={2} value={form.emergency_notes} onChange={e=>setForm({...form,emergency_notes:e.target.value})}/></label>
+        <label>Temperament<input maxLength={200} value={form.temperament} onChange={e=>setForm({...form,temperament:e.target.value})} placeholder="Friendly, shy, energetic…"/></label>
+        <label className="full-field">Medical notes<textarea rows={2} maxLength={1000} value={form.medical_notes} onChange={e=>setForm({...form,medical_notes:e.target.value})}/></label>
+        <label className="full-field">Emergency notes<textarea rows={2} maxLength={1000} value={form.emergency_notes} onChange={e=>setForm({...form,emergency_notes:e.target.value})}/></label>
       </div><div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save dog profile"}</button></div></>}
     </form>}
     <section className="panel"><div className="customer-toolbar"><div className="panel-title">{dogs.length} dog{dogs.length===1?"":"s"}</div><div className="search-box"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search dog or owner"/></div></div>
