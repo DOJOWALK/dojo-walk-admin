@@ -45,6 +45,9 @@ export async function POST(request: NextRequest) {
   const phone = typeof body.phone === "string" ? body.phone.trim() : "";
   const whatsapp = typeof body.whatsapp_phone === "string" ? body.whatsapp_phone.trim() : "";
   const dogName = typeof body.dog_name === "string" ? body.dog_name.trim() : "";
+  const dogBreed = typeof body.dog_breed === "string" ? body.dog_breed.trim() : "";
+  const dogAge = typeof body.dog_age === "string" ? body.dog_age.trim() : "";
+  const dogSize = ["Small","Medium","Large"].includes(String(body.dog_size)) ? String(body.dog_size) : "";
   const address = typeof body.address === "string" ? body.address.trim() : "";
   const area = [typeof body.city === "string" ? body.city.trim() : "", typeof body.state === "string" ? body.state.trim() : ""].filter(Boolean).join(", ");
   const startDate = typeof body.start_date === "string" ? body.start_date : "";
@@ -88,8 +91,12 @@ export async function POST(request: NextRequest) {
     if (!dogId) {
       dogId = crypto.randomUUID();
       await env.DB.prepare(
-        "INSERT INTO dogs (id,customer_id,name) VALUES (?,?,?)"
-      ).bind(dogId,customerId,dogName).run();
+        "INSERT INTO dogs (id,customer_id,name,breed,age_text,size) VALUES (?,?,?,?,?,?)"
+      ).bind(dogId,customerId,dogName,dogBreed||null,dogAge||null,dogSize||null).run();
+    }
+
+    if (dogs.results?.length && (dogBreed || dogAge || dogSize)) {
+      await env.DB.prepare("UPDATE dogs SET breed=COALESCE(?,breed), age_text=COALESCE(?,age_text), size=COALESCE(?,size) WHERE id=?").bind(dogBreed||null,dogAge||null,dogSize||null,dogId).run();
     }
 
     const existing = await env.DB.prepare("SELECT id FROM bookings WHERE dog_id=? AND status='active'").bind(dogId).all();
