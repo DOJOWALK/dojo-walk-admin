@@ -27,7 +27,14 @@ export async function POST(request:NextRequest){
   let created=0;
   for(const b of bookings){
    const slots=b.walks_per_day>=2?["morning","evening"]:["morning"];
+   const pauses=await env.DB.prepare("SELECT pause_from_date,pause_from_slot,expected_resume_date,expected_resume_slot FROM booking_pauses WHERE booking_id=? AND status='active'").bind(b.id).all();
+   const activePauses=(pauses.results??[]) as Array<{pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string}>;
    for(const slot of slots){
+    const order=(d:string,s:string)=>d+":"+(s==="morning"?"0":"1");
+    const slotKey=order(date,slot);
+    const isPaused=activePauses.some(p=>slotKey>=order(p.pause_from_date,p.pause_from_slot)&&slotKey<order(p.expected_resume_date,p.expected_resume_slot));
+    if(isPaused)continue;
+    await env.DB.prepare("UPDATE walks SET status='scheduled',notes=NULL WHERE booking_id=? AND walk_date=? AND slot=? AND status='cancelled' AND notes='Customer away pause'").bind(b.id,date,slot).run();
     const time=slot==="morning"?b.morning_time:b.evening_time;
     const saved=await env.DB.prepare("INSERT OR IGNORE INTO walks (id,booking_id,dog_id,walk_date,slot,scheduled_time,duration_minutes) VALUES (?,?,?,?,?,?,?)").bind(crypto.randomUUID(),b.id,b.dog_id,date,slot,time||null,b.walk_duration_minutes||30).run();
     if((saved as {meta?:{changes?:number}}).meta?.changes)created++;
