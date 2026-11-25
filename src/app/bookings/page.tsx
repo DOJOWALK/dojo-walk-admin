@@ -18,6 +18,7 @@ export default function BookingsPage(){
  const [bookings,setBookings]=useState<Booking[]>([]);
  const [form,setForm]=useState(initialForm);
  const [show,setShow]=useState(false),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState("");
+ const [query,setQuery]=useState("");
  async function load(){
   setLoading(true);setError("");
   try{
