@@ -18,7 +18,7 @@
     {
       "binding": "DB",
       "database_name": "dojo-walk-db",
-      "database_id": "REPLACE_AFTER_CREATING_D1",
+      "database_id": "041e1b93-c472-48cf-9752-0a00118a270d",
       "migrations_dir": "migrations"
     }
   ],
