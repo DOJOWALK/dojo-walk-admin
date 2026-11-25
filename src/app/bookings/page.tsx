@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, CalendarPlus, Plus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ManagementTabs from "@/components/management-tabs";
 
 type Booking={id:string;customer_id:string;dog_id:string;customer_name:string;customer_phone?:string;dog_name:string;start_date:string;walks_per_day:number;walk_duration_minutes:number;price_per_walk_inr:number;completed_walks:number;accrued_inr:number;paid_inr:number;due_inr:number;status:string};
@@ -11,6 +12,7 @@ function localDate(){const d=new Date();const offset=d.getTimezoneOffset();retur
 const initialForm=()=>({owner_name:"",phone:"",whatsapp_phone:"",dog_name:"",dog_breed:"",dog_age:"",dog_size:"",address:"",city:"",state:"Uttar Pradesh",start_date:localDate(),start_slot:"morning",walks_per_day:"1",walk_duration_minutes:"30",morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",notes:""});
 
 export default function BookingsPage(){
+ const router=useRouter();
  const [bookings,setBookings]=useState<Booking[]>([]);
  const [form,setForm]=useState(initialForm);
  const [show,setShow]=useState(false),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState("");
@@ -63,7 +65,7 @@ export default function BookingsPage(){
    <div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save booking + owner + dog"}</button></div>
   </form>}
   <section className="panel"><div className="panel-head"><div><div className="panel-title">{bookings.length} booking{bookings.length===1?"":"s"}</div><div className="panel-note">Billing is calculated from completed walks only.</div></div></div>
-   {loading?<div className="empty">Loading bookings…</div>:bookings.length===0?<div className="empty"><CalendarPlus size={24}/><strong>No bookings recorded yet</strong>Use Add booking to create the owner, dog and booking together.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Customer</th><th>Mobile</th><th>Dog</th><th>Start date</th><th>Walks/day</th><th>Duration</th><th>Completed</th><th>Charges</th><th>Received</th><th>Due</th><th>Status</th></tr></thead><tbody>{bookings.map(b=><tr key={b.id}><td><strong>{b.customer_name}</strong></td><td>{b.customer_phone||"—"}</td><td><Link href={`/dogs/${b.dog_id}`} className="table-link">{b.dog_name}</Link></td><td><Link href={`/bookings/${b.id}`} className="table-link booking-detail-link">{b.start_date}<span>View details →</span></Link></td><td>{b.walks_per_day}</td><td>{b.walk_duration_minutes} min</td><td>{b.completed_walks}</td><td>₹{Number(b.accrued_inr||0).toLocaleString("en-IN")}</td><td>₹{Number(b.paid_inr||0).toLocaleString("en-IN")}</td><td><strong>₹{Number(b.due_inr||0).toLocaleString("en-IN")}</strong></td><td><span className="status-dot">{b.status}</span></td></tr>)}</tbody></table></div>}
+   {loading?<div className="empty">Loading bookings…</div>:bookings.length===0?<div className="empty"><CalendarPlus size={24}/><strong>No bookings recorded yet</strong>Use Add booking to create the owner, dog and booking together.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Customer</th><th>Mobile</th><th>Dog</th><th>Start date</th><th>Walks/day</th><th>Duration</th><th>Completed</th><th>Charges</th><th>Received</th><th>Due</th><th>Status</th></tr></thead><tbody>{bookings.map(b=><tr key={b.id} className="clickable-row" role="link" tabIndex={0} aria-label={`Open booking for ${b.customer_name} and ${b.dog_name}`} onClick={()=>router.push(`/bookings/${b.id}`)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();router.push(`/bookings/${b.id}`);}}}><td><strong>{b.customer_name}</strong></td><td>{b.customer_phone||"—"}</td><td>{b.dog_name}</td><td>{b.start_date}</td><td>{b.walks_per_day}</td><td>{b.walk_duration_minutes} min</td><td>{b.completed_walks}</td><td>₹{Number(b.accrued_inr||0).toLocaleString("en-IN")}</td><td>₹{Number(b.paid_inr||0).toLocaleString("en-IN")}</td><td><strong>₹{Number(b.due_inr||0).toLocaleString("en-IN")}</strong></td><td><span className="status-dot">{b.status}</span></td></tr>)}</tbody></table></div>}
   </section>
  </main>;
 }
