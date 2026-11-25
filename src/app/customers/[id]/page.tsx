@@ -32,6 +32,10 @@ export default function CustomerDetail() {
   const [error,setError]=useState("");
   const [success,setSuccess]=useState("");
   const [showDeleteConfirm,setShowDeleteConfirm]=useState(false);
+  const [showBlockConfirm,setShowBlockConfirm]=useState(false);
+  const [blockReason,setBlockReason]=useState("Payment pending");
+  const [blockDuration,setBlockDuration]=useState("1 month");
+  const [deleteReason,setDeleteReason]=useState("Customer requested deletion");
   const [adminPassword,setAdminPassword]=useState("");
   const [showAdminPassword,setShowAdminPassword]=useState(false);
   const [actionBusy,setActionBusy]=useState(false);
@@ -57,13 +61,12 @@ export default function CustomerDetail() {
   useEffect(() => { void loadProfile(); }, [id]);
 
   async function changeBookingAccess(nextStatus:"active"|"inactive") {
-    if (!adminPassword) { setError("Please enter the admin password."); return; }
     setActionBusy(true); setError(""); setSuccess("");
     try {
-      const r=await fetch("/api/customers",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:nextStatus,password:adminPassword})});
+      const r=await fetch("/api/customers",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:nextStatus,reason:blockReason,duration:blockDuration})});
       const j=await r.json(); if(!r.ok) throw new Error(j.error||"Customer status could not be changed.");
-      setCustomer((current:R|null)=>current?{...current,status:nextStatus}:current);
-      setAdminPassword(""); setSuccess(nextStatus==="inactive"?"New bookings are now blocked for this customer.":"New bookings are enabled for this customer.");
+      setCustomer((current:R|null)=>current?{...current,status:nextStatus,blocked_until:j.blocked_until}:current);
+      setShowBlockConfirm(false); setSuccess(nextStatus==="inactive"?"New bookings are now blocked for this customer.":"New bookings are enabled for this customer.");
     } catch(e) { setError(e instanceof Error?e.message:"Could not update booking access."); }
     finally { setActionBusy(false); }
   }
@@ -72,7 +75,7 @@ export default function CustomerDetail() {
     if (!adminPassword) { setError("Please enter the admin password."); return; }
     setActionBusy(true); setError("");
     try {
-      const r=await fetch("/api/customers",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,password:adminPassword})});
+      const r=await fetch("/api/customers",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,password:adminPassword,reason:deleteReason})});
       const j=await r.json(); if(!r.ok) throw new Error(j.error||"Customer could not be deleted.");
       router.replace("/customers");
     } catch(e) { setError(e instanceof Error?e.message:"Customer could not be deleted."); }
@@ -117,25 +120,28 @@ export default function CustomerDetail() {
 
   return <main className="main">
     <Link href="/customers" className="back-link"><ArrowLeft size={15}/> Back to customers</Link>
-    <div className="topbar"><div><div className="eyebrow">Customer profile</div><h1 className="page-title">{customer.full_name}</h1><p className="subtle">Customer contact, address and records.</p></div><Link className="action" href="/bookings">＋ New booking</Link></div>
+    <div className="topbar"><div><div className="eyebrow">Customer profile</div><h1 className="page-title">{customer.full_name}</h1><p className="subtle">Customer contact, address and records.</p></div></div>
     {error&&<div className="error-box">{error}</div>}{success&&<div className="success-box">{success}</div>}
     <section className="panel">
       <div className="panel-head"><div><div className="booking-section-heading">Customer booking access</div><p className="subtle">{customer.status==="inactive"?"New bookings are blocked for this customer.":"This customer can receive new bookings."}</p></div><span className={`record-status status-${customer.status||"active"}`}>{customer.status==="inactive"?"Booking blocked":"Active"}</span></div>
-      <div className="form-grid">
-        <label className="full-field">Admin password<input type={showAdminPassword?"text":"password"} autoComplete="current-password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="Enter admin password to confirm"/></label>
-      </div>
       <div className="form-actions">
-        <button type="button" className="action" disabled={actionBusy||!adminPassword} onClick={()=>void changeBookingAccess(customer.status==="inactive"?"active":"inactive")}>{actionBusy?"Please wait…":customer.status==="inactive"?"Unblock new bookings":"Block new bookings"}</button>
-        <button type="button" className="plain-button" onClick={()=>setShowAdminPassword(!showAdminPassword)}>{showAdminPassword?"Hide password":"Show password"}</button>
+        <button type="button" className="action" disabled={actionBusy} onClick={()=>customer.status==="inactive"?void changeBookingAccess("active"):setShowBlockConfirm(true)}>{actionBusy?"Please wait…":customer.status==="inactive"?"Unblock":"Block"}</button>
         <button type="button" className="plain-button" onClick={()=>{setShowDeleteConfirm(true);setAdminPassword("");}}>Delete customer</button>
       </div>
+      {showBlockConfirm&&<div className="booking-notes">
+        <strong>Block {customer.full_name}?</strong>
+        <label>Reason<select value={blockReason} onChange={e=>setBlockReason(e.target.value)}><option>Payment pending</option><option>Customer request</option><option>Misbehaviour</option><option>Repeated cancellations</option><option>Other</option></select></label>
+        <label>Duration<select value={blockDuration} onChange={e=>setBlockDuration(e.target.value)}><option>7 days</option><option>15 days</option><option>1 month</option><option>3 months</option><option>6 months</option><option>Permanent</option></select></label>
+        <div className="form-actions"><button type="button" className="action" disabled={actionBusy} onClick={()=>void changeBookingAccess("inactive")}>Confirm block</button><button type="button" className="plain-button" onClick={()=>setShowBlockConfirm(false)}>Cancel</button></div>
+      </div>}
       {showDeleteConfirm&&<div className="booking-notes">
         <strong>Confirm permanent deletion</strong>
         <p>This removes the customer, dogs, bookings, walks and payment records. This cannot be undone.</p>
         <strong>Customer: {customer.full_name}</strong>
         <div>Dogs: {dogs.length?dogs.map(d=>d.name).join(", "):"No dogs registered"}</div>
+        <label>Delete reason<select value={deleteReason} onChange={e=>setDeleteReason(e.target.value)}><option>Customer requested deletion</option><option>Duplicate customer</option><option>No longer using service</option><option>Other</option></select></label>
         <label>Admin password<input type={showAdminPassword?"text":"password"} autoComplete="current-password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="Enter admin password"/></label>
-        <div className="form-actions"><button type="button" className="action" disabled={actionBusy||!adminPassword} onClick={()=>void deleteCustomer()}>{actionBusy?"Deleting…":"Confirm permanent delete"}</button><button type="button" className="plain-button" onClick={()=>{setShowDeleteConfirm(false);setAdminPassword("");}}>Cancel</button></div>
+        <div className="form-actions"><button type="button" className="plain-button" onClick={()=>setShowAdminPassword(!showAdminPassword)}>{showAdminPassword?"Hide password":"Show password"}</button><button type="button" className="action" disabled={actionBusy||!adminPassword} onClick={()=>void deleteCustomer()}>{actionBusy?"Deleting…":"Confirm permanent delete"}</button><button type="button" className="plain-button" onClick={()=>{setShowDeleteConfirm(false);setAdminPassword("");}}>Cancel</button></div>
       </div>}
     </section>
     <section className="booking-overview panel">
