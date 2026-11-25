@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
   if (!customerId || !dogId || !selected || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
     return NextResponse.json({ error: "Customer, dog, plan and start date are required." }, { status: 400 });
   }
-  const paymentChoice = String(body.payment_choice || "");
-  if (paymentChoice !== "full" && paymentChoice !== "later") return NextResponse.json({ error: "Choose full payment or pay later." }, { status: 400 });
-  const advance = paymentChoice === "full" ? totalPrice : 0;
+  const paymentChoice = String(body.payment_choice || "later");
+  if (!["advance","full","later"].includes(paymentChoice)) return NextResponse.json({ error: "Choose advance, full payment or pay later." }, { status: 400 });
+  const advance = paymentChoice === "full" ? totalPrice : paymentChoice === "advance" ? Number(body.advance_received_inr || 0) : 0;
   const paymentMethod = ["cash","upi","bank","other"].includes(String(body.payment_method)) ? String(body.payment_method) : "upi";
   if (!Number.isInteger(advance) || advance < 0 || advance > totalPrice || advance > 10000000) return NextResponse.json({ error: "Invalid booking payment amount." }, { status: 400 });
   try {
