@@ -1,0 +1,29 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { CalendarDays, CheckCircle2, Clock3, Dog, RefreshCw } from "lucide-react";
+
+type Walk={id:string;booking_id:string;dog_id:string;walk_date:string;slot:"morning"|"evening";scheduled_time:string|null;duration_minutes:number;status:"scheduled"|"completed"|"missed"|"cancelled";customer_name:string;customer_phone:string;whatsapp_phone:string|null;dog_name:string;breed:string|null;plan_type:string};
+function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}
+export default function WalkManager({attendance=false}:{attendance?:boolean}){
+ const [date,setDate]=useState(localDate()),[walks,setWalks]=useState<Walk[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[busy,setBusy]=useState("");
+ const load=useCallback(async(nextDate=date)=>{setLoading(true);setError("");try{const generated=await fetch("/api/walks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date:nextDate})});if(generated.status===401){window.location.assign("/login");return;}const gj=await generated.json();if(!generated.ok)throw new Error(gj.error||"Schedule could not be prepared.");const r=await fetch("/api/walks?date="+encodeURIComponent(nextDate));if(r.status===401){window.location.assign("/login");return;}const j=await r.json();if(!r.ok)throw new Error(j.error||"Walks could not be loaded.");setWalks(j.walks||[]);}catch(e){setError(e instanceof Error?e.message:"Could not load walks.");}finally{setLoading(false);}},[date]);
+ useEffect(()=>{void load(date);},[date,load]);
+ async function update(id:string,status:Walk["status"]){setBusy(id);setError("");try{const r=await fetch("/api/walks",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status})});const j=await r.json();if(!r.ok)throw new Error(j.error||"Status could not be updated.");await load(date);}catch(e){setError(e instanceof Error?e.message:"Update failed.");}finally{setBusy("");}}
+ const completed=walks.filter(w=>w.status==="completed").length,remaining=walks.filter(w=>w.status==="scheduled").length;
+ const shown=attendance?walks.filter(w=>w.status!=="cancelled"):walks;
+ return <main className="main">
+  <div className="topbar"><div><div className="eyebrow">{attendance?"Daily attendance":"Daily operations"}</div><h1 className="page-title">{attendance?"Walk Attendance":"Walk Schedule"}</h1><p className="subtle">Date-wise walk list generated from active bookings. Sunday walks appear only with Sunday Extra.</p></div><div style={{display:"flex",gap:9,alignItems:"center",flexWrap:"wrap"}}><input aria-label="Select date" type="date" value={date} onChange={e=>setDate(e.target.value)} style={{border:"1px solid #e0e9e2",borderRadius:10,padding:"10px 12px",background:"#fff",fontSize:12}}/><button className="action" onClick={()=>void load(date)} disabled={loading}><RefreshCw size={14}/> Refresh</button></div></div>
+  {error&&<div className="error-box">{error}</div>}
+  <section className="stats">
+   <div className="stat"><div className="stat-label">Total walks</div><div className="stat-value">{walks.length}</div><div className="stat-note">Scheduled for selected date</div></div>
+   <div className="stat"><div className="stat-label">Completed</div><div className="stat-value">{completed}</div><div className="stat-note">Walks marked complete</div></div>
+   <div className="stat"><div className="stat-label">Pending</div><div className="stat-value">{remaining}</div><div className="stat-note">Yet to be completed</div></div>
+   <div className="stat"><div className="stat-label">Completion</div><div className="stat-value">{walks.length?Math.round(completed/walks.length*100):0}%</div><div className="stat-note">Daily progress</div></div>
+  </section>
+  <section className="panel"><div className="panel-head"><div><div className="panel-title">{shown.length} walk{shown.length===1?"":"s"} · {date}</div><div className="panel-note">{attendance?"Update each walk's attendance status.":"Your daily route and customer walk timings."}</div></div><CalendarDays size={19} color="#18734d"/></div>
+   {loading?<div className="empty">Loading today's walks…</div>:shown.length===0?<div className="empty"><Dog size={25}/><strong>No walks scheduled</strong>No active booking matches this date, or Sunday Extra is not enabled for Sunday.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Time</th><th>Dog</th><th>Customer</th><th>Phone</th><th>Duration</th><th>Status</th><th>Update</th></tr></thead><tbody>{shown.map(w=><tr key={w.id}><td><strong>{w.scheduled_time|| (w.slot==="morning"?"Morning":"Evening")}</strong><div className="subtle">{w.slot}</div></td><td><strong>{w.dog_name}</strong><div className="subtle">{w.breed||"Dog"}</div></td><td>{w.customer_name}</td><td>{w.whatsapp_phone||w.customer_phone}</td><td>{w.duration_minutes} min</td><td><span className={w.status==="completed"?"status-dot payment-paid":w.status==="missed"?"status-dot payment-unpaid":"status-dot"}>{w.status}</span></td><td><select aria-label={"Update "+w.dog_name+" walk"} disabled={busy===w.id} value={w.status} onChange={e=>void update(w.id,e.target.value as Walk["status"])} style={{border:"1px solid #e0e9e2",borderRadius:8,padding:"7px",fontSize:10,background:"#fff"}}><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="missed">Missed</option><option value="cancelled">Cancelled</option></select></td></tr>)}</tbody></table></div>}
+  </section>
+  <div className="notice"><Clock3 size={14} style={{verticalAlign:"middle",marginRight:6}}/>Walk list is generated once per date. Refreshing will not create duplicate walks. Mark a walk Completed, Missed or Cancelled to keep attendance accurate.</div>
+ </main>;
+}
