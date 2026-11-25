@@ -11,13 +11,14 @@ export async function GET(request:NextRequest){const env=await adminEnv();if(!en
  const now=new Date();const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(now);const defaultFrom=today.slice(0,7)+"-01";const from=request.nextUrl.searchParams.get("from")||defaultFrom;const to=request.nextUrl.searchParams.get("to")||today;
  if(!validDate(from)||!validDate(to)||from>to)return NextResponse.json({error:"Choose a valid date range."},{status:400});
  try{
-  const [payments,expenses,walks,bookings,dues]=await Promise.all([
+  const [payments,expenses,walks,bookings,dues,earned]=await Promise.all([
    env.DB.prepare("SELECT COALESCE(SUM(amount_inr),0) AS total,COUNT(*) AS count FROM payments WHERE payment_date BETWEEN ? AND ?").bind(from,to).all(),
    env.DB.prepare("SELECT COALESCE(SUM(amount_inr),0) AS total,COUNT(*) AS count FROM expenses WHERE expense_date BETWEEN ? AND ?").bind(from,to).all(),
    env.DB.prepare("SELECT COUNT(*) AS total,SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) AS completed,SUM(CASE WHEN status='missed' THEN 1 ELSE 0 END) AS missed FROM walks WHERE walk_date BETWEEN ? AND ?").bind(from,to).all(),
    env.DB.prepare("SELECT COUNT(*) AS total FROM bookings WHERE start_date BETWEEN ? AND ?").bind(from,to).all(),
-   env.DB.prepare("SELECT COALESCE(SUM(MAX(price_inr-advance_received_inr,0)),0) AS total FROM bookings WHERE status!='cancelled'").all()
+   env.DB.prepare("SELECT COALESCE(SUM(MAX(x.accrued-x.paid,0)),0) AS total FROM (SELECT b.id,COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed'),0)*b.price_per_walk_inr AS accrued,COALESCE((SELECT SUM(p.amount_inr) FROM payments p WHERE p.booking_id=b.id),0) AS paid FROM bookings b WHERE b.status!='cancelled') x").all(),
+   env.DB.prepare("SELECT COALESCE(SUM(b.price_per_walk_inr),0) AS total FROM walks w JOIN bookings b ON b.id=w.booking_id WHERE w.walk_date BETWEEN ? AND ? AND w.status='completed'").bind(from,to).all()
   ]);
-  const p=(payments.results?.[0]||{}) as {total?:number;count?:number};const e=(expenses.results?.[0]||{}) as {total?:number;count?:number};const w=(walks.results?.[0]||{}) as {total?:number;completed?:number;missed?:number};const b=(bookings.results?.[0]||{}) as {total?:number};const d=(dues.results?.[0]||{}) as {total?:number};
-  return NextResponse.json({from,to,received:Number(p.total||0),payment_count:Number(p.count||0),expenses:Number(e.total||0),expense_count:Number(e.count||0),net_cash_flow:Number(p.total||0)-Number(e.total||0),walks_total:Number(w.total||0),walks_completed:Number(w.completed||0),walks_missed:Number(w.missed||0),new_bookings:Number(b.total||0),pending_dues:Number(d.total||0)});
- }catch{return NextResponse.json({error:"Reports could not be prepared. Check D1 setup."},{status:503});}}
+  const p=(payments.results?.[0]||{}) as {total?:number;count?:number};const e=(expenses.results?.[0]||{}) as {total?:number;count?:number};const w=(walks.results?.[0]||{}) as {total?:number;completed?:number;missed?:number};const b=(bookings.results?.[0]||{}) as {total?:number};const d=(dues.results?.[0]||{}) as {total?:number};const earn=(earned.results?.[0]||{}) as {total?:number};
+  return NextResponse.json({from,to,received:Number(p.total||0),payment_count:Number(p.count||0),expenses:Number(e.total||0),expense_count:Number(e.count||0),net_cash_flow:Number(p.total||0)-Number(e.total||0),walks_total:Number(w.total||0),walks_completed:Number(w.completed||0),walks_missed:Number(w.missed||0),new_bookings:Number(b.total||0),pending_dues:Number(d.total||0),earned:Number(earn.total||0)});
+ }catch{return NextResponse.json({error:"Reports could not be prepared. Apply migration 0004 and check D1 setup."},{status:503});}}
