@@ -79,27 +79,7 @@ export default function BookingDetail() {
     {error && <div className="error-box">{error}</div>}{success && <div className="success-box">{success}</div>}
     {editing && form && <form className="panel customer-form" onSubmit={save}>
       <div className="panel-head"><div><div className="panel-title">Edit booking profile</div><div className="panel-note">Update owner, dog and service details below.</div></div></div>
-      <h3 className="panel-title">Owner details</h3>
-      <div className="form-grid">
-        <label>Owner name *<input required minLength={2} maxLength={100} value={form.owner_name} onChange={e=>change("owner_name",e.target.value)}/></label>
-        <label>Mobile number *<input required type="tel" maxLength={20} value={form.phone} onChange={e=>change("phone",e.target.value)}/></label>
-        <label>WhatsApp number<input type="tel" maxLength={20} value={form.whatsapp_phone} onChange={e=>change("whatsapp_phone",e.target.value)}/></label>
-        <label>Flat / Tower<input maxLength={80} value={form.flat_tower} onChange={e=>change("flat_tower",e.target.value)}/></label>
-        <label>Society / Address<input maxLength={150} value={form.society} onChange={e=>change("society",e.target.value)}/></label>
-        <label>Area / Locality<input maxLength={100} value={form.locality} onChange={e=>change("locality",e.target.value)}/></label>
-        <label>City<input required maxLength={100} value={form.city} onChange={e=>change("city",e.target.value)}/></label>
-        <label>State<select required value={form.state} onChange={e=>change("state",e.target.value)}>{STATES.map(s=><option key={s}>{s}</option>)}</select></label>
-        <label>PIN Code<input required inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} value={form.pincode} onChange={e=>change("pincode",e.target.value.replace(/\\D/g,"").slice(0,6))}/></label>
-      </div>
-      <h3 className="panel-title">Dog details</h3>
-      <div className="form-grid">
-        <label>Dog name *<input required maxLength={80} value={form.dog_name} onChange={e=>change("dog_name",e.target.value)}/></label>
-        <label>Breed<input maxLength={80} value={form.dog_breed} onChange={e=>change("dog_breed",e.target.value)}/></label>
-        <label>Age<input maxLength={40} value={form.dog_age} onChange={e=>change("dog_age",e.target.value)}/></label>
-        <label>Dog size<select value={form.dog_size} onChange={e=>change("dog_size",e.target.value)}><option value="">Not set</option><option>Small</option><option>Medium</option><option>Large</option><option>Extra Large</option></select></label>
-        <label>Gender<select value={form.dog_gender} onChange={e=>change("dog_gender",e.target.value)}><option value="">Not set</option><option>Male</option><option>Female</option></select></label>
-        <label>Temperament<select value={form.dog_temperament} onChange={e=>change("dog_temperament",e.target.value)}><option value="">Not set</option><option>Friendly</option><option>Shy</option><option>Energetic</option><option>Calm</option><option>Anxious</option><option>Reactive</option><option>Other</option></select></label>
-      </div>
+      <div className="booking-notes">Owner contact and dog information are managed separately in their profiles. <Link href={"/customers/"+booking.customer_id}>Open customer profile</Link> · <Link href={"/dogs/"+booking.dog_id}>Open dog profile</Link>.</div>
       <h3 className="panel-title">Service and schedule</h3>
       <div className="form-grid">
         <label>Start date *<input required type="date" value={form.start_date} onChange={e=>change("start_date",e.target.value)}/></label>
@@ -129,14 +109,6 @@ export default function BookingDetail() {
           <div className="booking-avatar dog-avatar"><PawPrint size={20}/></div>
           <div className="booking-person-copy"><span className="booking-label">DOG</span><strong>{booking.dog_name}</strong><Link className="booking-profile-link" href={"/dogs/"+booking.dog_id}>View dog profile <span>→</span></Link></div>
         </div>
-      </div>
-      <div className="booking-section-heading"><PawPrint size={17}/> Dog details</div>
-      <div className="booking-facts-grid">
-        <div className="booking-fact"><span>Breed</span><strong>{booking.dog_breed || "Not added"}</strong></div>
-        <div className="booking-fact"><span>Age</span><strong>{booking.dog_age || "Not added"}</strong></div>
-        <div className="booking-fact"><span>Size</span><strong>{booking.dog_size || "Not added"}</strong></div>
-        <div className="booking-fact"><span>Gender</span><strong>{booking.dog_gender || "Not added"}</strong></div>
-        <div className="booking-fact"><span>Temperament</span><strong>{booking.dog_temperament || "Not added"}</strong></div>
       </div>
       <div className="booking-section-heading"><CalendarDays size={17}/> Walk schedule</div>
       <div className="booking-facts-grid">
