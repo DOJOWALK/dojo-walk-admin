@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { getAdminCookieName, verifyAdminSession } from "@/lib/auth";
+import { checkAdminPassword, getAdminCookieName, verifyAdminSession } from "@/lib/auth";
 
 type D1Result = { results?: unknown[] };
-type D1DatabaseLike = { prepare(sql: string): { all(): Promise<D1Result>; bind(...values: unknown[]): { all(): Promise<D1Result>; run(): Promise<unknown> } } };
-type Env = { DB: D1DatabaseLike; SESSION_SECRET?: string };
+type D1DatabaseLike = { prepare(sql: string): { all(): Promise<D1Result>; bind(...values: unknown[]): { all(): Promise<D1Result>; run(): Promise<unknown> } }; batch<T=unknown>(statements: unknown[]): Promise<T[]> };
+type Env = { DB: D1DatabaseLike; SESSION_SECRET?: string; ADMIN_PASSWORD?: string };
 
 async function getAdminEnv() {
   const { env } = getCloudflareContext();
@@ -93,5 +93,51 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Customer details could not be updated. Please try again." }, { status: 503 });
+  }
+}
+
+
+export async function DELETE(request: NextRequest) {
+  const env = await getAdminEnv();
+  if (!env) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let body: Record<string, unknown>;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
+  const id = typeof body.id === "string" ? body.id : "";
+  const password = typeof body.password === "string" ? body.password : "";
+  if (!id || !checkAdminPassword(password, env.ADMIN_PASSWORD)) {
+    return NextResponse.json({ error: "Admin password is incorrect." }, { status: 401 });
+  }
+  try {
+    const found = await env.DB.prepare("SELECT id FROM customers WHERE id=?").bind(id).all();
+    if (!found.results?.length) return NextResponse.json({ error: "Customer not found." }, { status: 404 });
+    const statements = [
+      env.DB.prepare("DELETE FROM walks WHERE booking_id IN (SELECT id FROM bookings WHERE customer_id=?)").bind(id),
+      env.DB.prepare("DELETE FROM payments WHERE customer_id=?").bind(id),
+      env.DB.prepare("DELETE FROM bookings WHERE customer_id=?").bind(id),
+      env.DB.prepare("DELETE FROM dogs WHERE customer_id=?").bind(id),
+      env.DB.prepare("DELETE FROM customers WHERE id=?").bind(id)
+    ];
+    await env.DB.batch(statements);
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Customer could not be deleted. Related records may be in use; no partial deletion was intended." }, { status: 503 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  const env = await getAdminEnv();
+  if (!env) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let body: Record<string, unknown>;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
+  const id = typeof body.id === "string" ? body.id : "";
+  const status = body.status === "inactive" ? "inactive" : body.status === "active" ? "active" : "";
+  const password = typeof body.password === "string" ? body.password : "";
+  if (!id || !status) return NextResponse.json({ error: "Choose a valid customer status." }, { status: 400 });
+  if (!checkAdminPassword(password, env.ADMIN_PASSWORD)) return NextResponse.json({ error: "Admin password is incorrect." }, { status: 401 });
+  try {
+    const result = await env.DB.prepare("UPDATE customers SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(status,id).run();
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Customer booking status could not be changed." }, { status: 503 });
   }
 }
