@@ -25,7 +25,6 @@ export default function CustomerDetail() {
   const [editingCustomer,setEditingCustomer]=useState(false);
   const [savingCustomer,setSavingCustomer]=useState(false);
   const [customerForm,setCustomerForm]=useState<CustomerForm>({full_name:"",phone:"",whatsapp_phone:"",same_whatsapp:true,flat_tower:"",society:"",locality:"",city:"Greater Noida West",state:"Uttar Pradesh",pincode:"",notes:""});
-  const [editingDog,setEditingDog]=useState<string|null>(null);
   const [dogForm,setDogForm]=useState<DogForm>(emptyDog);
   const [addingDog,setAddingDog]=useState(false);
   const [savingDog,setSavingDog]=useState(false);
@@ -62,13 +61,12 @@ export default function CustomerDetail() {
     finally{setSavingCustomer(false);}
   }
 
-  function startDogEdit(d:R){setEditingDog(d.id);setAddingDog(false);setDogForm({name:d.name||"",breed:d.breed||"",age_text:d.age_text||"",size:d.size||"",gender:d.gender||"",temperament:d.temperament||"",medical_notes:d.medical_notes||"",emergency_notes:d.emergency_notes||""});}
   async function saveDog(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setSavingDog(true);setError("");setSuccess("");
     try{
-      const r=await fetch("/api/dogs",{method:addingDog?"POST":"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(addingDog?{customer_id:id,...dogForm}:{id:editingDog,customer_id:id,...dogForm})});
+      const r=await fetch("/api/dogs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customer_id:id,...dogForm})});
       const j=await r.json();if(!r.ok)throw new Error(j.error||"Dog details could not be saved.");
-      setEditingDog(null);setAddingDog(false);setDogForm(emptyDog);setSuccess(addingDog?"Dog added to this customer.":"Dog profile updated.");await loadProfile();
+      setAddingDog(false);setDogForm(emptyDog);setSuccess(addingDog?"Dog added to this customer.":"Dog profile updated.");await loadProfile();
     }catch(e){setError(e instanceof Error?e.message:"Could not save dog.");}
     finally{setSavingDog(false);}
   }
@@ -111,8 +109,8 @@ export default function CustomerDetail() {
     <section className="panel">
       <div className="panel-head"><div><div className="booking-section-heading"><PawPrint size={17}/> Dogs</div><p className="panel-note">Dogs ko isi customer profile se add aur edit karein.</p></div><button type="button" className="action" onClick={()=>{setAddingDog(true);setEditingDog(null);setDogForm(emptyDog);}}><Plus size={15}/> Add dog</button></div>
       {addingDog&&<form className="customer-form" onSubmit={saveDog}><div className="panel-title">Add a dog</div>{dogFields}<div className="form-actions"><button className="action" disabled={savingDog}>{savingDog?"Saving…":"Save dog"}</button><button type="button" className="plain-button" onClick={()=>setAddingDog(false)}>Cancel</button></div></form>}
-      {dogs.length ? <div className="booking-people-grid">{dogs.map(d => <div className="booking-person" key={d.id}><div className="booking-avatar dog-avatar"><PawPrint size={20}/></div><div className="booking-person-copy"><strong>{d.name}</strong><span className="booking-meta">{[d.breed,d.age_text,d.size,d.gender].filter(Boolean).join(" · ") || "Dog details"}</span><Link className="booking-profile-link" href={"/dogs/"+d.id}>View dog profile →</Link><button className="plain-button" type="button" onClick={()=>startDogEdit(d)}><Pencil size={13}/> Quick edit</button></div></div>)}</div> : <div className="booking-empty-payments"><PawPrint size={22}/><strong>No dogs added yet</strong><span>Add the customer's dog details here.</span></div>}
-      {editingDog&&<form className="customer-form" onSubmit={saveDog}><div className="panel-title">Edit dog profile</div>{dogFields}<div className="form-actions"><button className="action" disabled={savingDog}>{savingDog?"Saving…":"Save dog changes"}</button><button type="button" className="plain-button" onClick={()=>setEditingDog(null)}>Cancel</button></div></form>}
+      {dogs.length ? <div className="booking-people-grid">{dogs.map(d => <div className="booking-person" key={d.id}><div className="booking-avatar dog-avatar"><PawPrint size={20}/></div><div className="booking-person-copy"><strong>{d.name}</strong><span className="booking-meta">{[d.breed,d.age_text,d.size,d.gender].filter(Boolean).join(" · ") || "Dog details"}</span><Link className="booking-profile-link" href={"/dogs/"+d.id}>View dog profile →</Link></div></div>)}</div> : <div className="booking-empty-payments"><PawPrint size={22}/><strong>No dogs added yet</strong><span>Add the customer's dog details here.</span></div>}
+
     </section>
     <section className="panel"><div className="panel-head"><div><div className="booking-section-heading"><CalendarDays size={17}/> Booking history</div><p className="panel-note">Customer ke saare walking plans aur balances.</p></div></div>
       {bookings.length ? <div className="payment-history-list">{bookings.map(b => <Link className="payment-history-row" key={b.id} href={"/bookings/" + b.id}><div><strong>{b.dog_name} · {date(b.start_date)}</strong><span>{b.status} · {b.walk_duration_minutes} min · {b.walks_per_day} walk(s)/day</span></div><strong className="payment-amount">Due {money(b.due_inr)}</strong></Link>)}</div> : <div className="booking-empty-payments"><CalendarDays size={22}/><strong>No bookings yet</strong><span>New walking plans for this customer will appear here.</span></div>}
