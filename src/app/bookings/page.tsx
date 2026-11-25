@@ -6,15 +6,17 @@ import Link from "next/link";
 
 type Customer={id:string;full_name:string};
 type Dog={id:string;name:string;customer_id:string};
-type Booking={id:string;customer_name:string;dog_name:string;plan_type:string;start_date:string;price_inr:number;status:string;advance_received_inr:number};
+type Booking={id:string;customer_name:string;dog_name:string;plan_type:string;start_date:string;price_inr:number;status:string;advance_received_inr:number;sunday_extra_enabled:number;payment_status:string};
 
-function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}\n\nconst planLabels:Record<string,string>={monthly_am_pm:"Morning + Evening · Monthly",monthly_once:"One walk daily · Monthly",temporary_am_pm:"Temporary Morning + Evening",single_walk:"Single walk"};
+function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}
+
+const planLabels:Record<string,string>={monthly_am_pm:"Morning + Evening · Monthly",monthly_once:"One walk daily · Monthly",temporary_am_pm:"Temporary Morning + Evening",single_walk:"Single walk"};
 
 export default function BookingsPage(){
  const [customers,setCustomers]=useState<Customer[]>([]);
  const [dogs,setDogs]=useState<Dog[]>([]);
  const [bookings,setBookings]=useState<Booking[]>([]);
- const [form,setForm]=useState({customer_id:"",dog_id:"",plan_type:"monthly_am_pm",start_date:localDate(),morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",advance_received_inr:"",notes:""});
+ const [form,setForm]=useState({customer_id:"",dog_id:"",plan_type:"monthly_am_pm",sunday_extra_enabled:false,start_date:localDate(),morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",advance_received_inr:"",notes:""});
  const [show,setShow]=useState(false),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState("");
  async function load(){
   setLoading(true);setError("");
@@ -28,7 +30,7 @@ export default function BookingsPage(){
   finally{setLoading(false);}
  }
  useEffect(()=>{void load();},[]);
- const customerDogs=dogs.filter(d=>d.customer_id===form.customer_id);
+ const customerDogs=dogs.filter(d=>d.customer_id===form.customer_id);\n const monthlyPlan=form.plan_type.startsWith("monthly_");\n const basePrice=({monthly_am_pm:2999,monthly_once:1999,temporary_am_pm:150,single_walk:100} as Record<string,number>)[form.plan_type];\n const totalPrice=basePrice+(monthlyPlan&&form.sunday_extra_enabled?500:0);
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");
   try{
@@ -46,16 +48,16 @@ export default function BookingsPage(){
     <label>Customer *<select required value={form.customer_id} onChange={e=>setForm({...form,customer_id:e.target.value,dog_id:""})}><option value="">Select customer</option>{customers.map(c=><option key={c.id} value={c.id}>{c.full_name}</option>)}</select></label>
     <label>Dog *<select required value={form.dog_id} onChange={e=>setForm({...form,dog_id:e.target.value})}><option value="">Select dog</option>{customerDogs.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
     <label>Package *<select value={form.plan_type} onChange={e=>setForm({...form,plan_type:e.target.value})}><option value="monthly_am_pm">Morning + Evening · ₹2,999/month</option><option value="monthly_once">One walk daily · ₹1,999/month</option><option value="temporary_am_pm">Temporary Morning + Evening · ₹150/day</option><option value="single_walk">Single walk · ₹100</option></select></label>
-    <label>Start date *<input type="date" required value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/></label>
+    <label className="full-field sunday-toggle"><span><input type="checkbox" checked={form.sunday_extra_enabled} disabled={!monthlyPlan} onChange={e=>setForm({...form,sunday_extra_enabled:e.target.checked})}/> Sunday Extra Walk <strong>+₹500/month</strong></span><small>{monthlyPlan?"Sunday walks included in this monthly plan.":"Sunday Extra is available with monthly plans only."}</small></label>\n    <label>Start date *<input type="date" required value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/></label>
     <label>Morning time<input type="time" value={form.morning_time} onChange={e=>setForm({...form,morning_time:e.target.value})}/></label>
     <label>Evening time<input type="time" value={form.evening_time} onChange={e=>setForm({...form,evening_time:e.target.value})}/></label>
     <label>Booking source<select value={form.booking_source} onChange={e=>setForm({...form,booking_source:e.target.value})}><option value="whatsapp">WhatsApp</option><option value="phone">Phone call</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></label>
-    <label>Advance received (₹)<input type="number" inputMode="numeric" min="0" max="10000000" step="1" value={form.advance_received_inr} onChange={e=>setForm({...form,advance_received_inr:e.target.value})} placeholder="0"/></label>
+    <label>Amount received so far (₹)<input type="number" inputMode="numeric" min="0" max="10000000" step="1" value={form.advance_received_inr} onChange={e=>setForm({...form,advance_received_inr:e.target.value})} placeholder="0"/></label>
     <label className="full-field">Notes<textarea rows={2} maxLength={1000} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
-   </div><div className="booking-price">Package amount: <strong>₹{({monthly_am_pm:2999,monthly_once:1999,temporary_am_pm:150,single_walk:100} as Record<string,number>)[form.plan_type].toLocaleString("en-IN")}</strong> <span>· 30 minutes per walk</span></div><div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save booking"}</button></div></>}
+   </div><div className="booking-price">Total plan amount: <strong>₹{totalPrice.toLocaleString("en-IN")}</strong> {monthlyPlan&&form.sunday_extra_enabled?<span>· Includes ₹500 Sunday Extra</span>:null} <span>· 30 minutes per walk</span></div><div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save booking"}</button></div></>}
   </form>}
   <section className="panel"><div className="panel-head"><div><div className="panel-title">{bookings.length} booking{bookings.length===1?"":"s"}</div><div className="panel-note">Latest bookings first</div></div></div>
-   {loading?<div className="empty">Loading bookings…</div>:bookings.length===0?<div className="empty"><CalendarPlus size={24}/><strong>No bookings recorded yet</strong>Add a customer, register their dog and create the first booking.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Customer</th><th>Dog</th><th>Package</th><th>Start date</th><th>Amount</th><th>Advance</th><th>Status</th></tr></thead><tbody>{bookings.map(b=><tr key={b.id}><td><strong>{b.customer_name}</strong></td><td>{b.dog_name}</td><td>{planLabels[b.plan_type]||b.plan_type}</td><td>{b.start_date}</td><td>₹{b.price_inr.toLocaleString("en-IN")}</td><td>₹{b.advance_received_inr.toLocaleString("en-IN")}</td><td><span className="status-dot">{b.status}</span></td></tr>)}</tbody></table></div>}
+   {loading?<div className="empty">Loading bookings…</div>:bookings.length===0?<div className="empty"><CalendarPlus size={24}/><strong>No bookings recorded yet</strong>Add a customer, register their dog and create the first booking.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Customer</th><th>Dog</th><th>Package</th><th>Start date</th><th>Amount</th><th>Received</th><th>Payment</th><th>Booking</th></tr></thead><tbody>{bookings.map(b=><tr key={b.id}><td><strong>{b.customer_name}</strong></td><td>{b.dog_name}</td><td>{planLabels[b.plan_type]||b.plan_type}</td><td>{b.start_date}</td><td>₹{b.price_inr.toLocaleString("en-IN")}</td><td>₹{b.advance_received_inr.toLocaleString("en-IN")}</td><td><span className={`status-dot payment-${b.payment_status}`}>{b.payment_status}</span></td><td><span className="status-dot">{b.status}</span></td></tr>)}</tbody></table></div>}
   </section>
  </main>;
 }
