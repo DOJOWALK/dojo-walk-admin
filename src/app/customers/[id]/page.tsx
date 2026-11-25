@@ -6,8 +6,11 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, UserRound, Phone, MapPin, PawPrint, CalendarDays, ReceiptText, Wallet, Pencil, Plus } from "lucide-react";
 
 type R = Record<string, any>;
-type CustomerForm = {full_name:string;phone:string;whatsapp_phone:string;flat_tower:string;society:string;locality:string;city:string;state:string;pincode:string;notes:string};
+type CustomerForm = {full_name:string;phone:string;whatsapp_phone:string;same_whatsapp:boolean;flat_tower:string;society:string;locality:string;city:string;state:string;pincode:string;notes:string};
 type DogForm = {name:string;breed:string;age_text:string;size:string;gender:string;temperament:string;medical_notes:string;emergency_notes:string};
+const STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Chandigarh","Jammu and Kashmir","Ladakh","Puducherry"];
+const LOCALITIES = ["Gaur City 1","Gaur City 2","Crossings Republik","Techzone 4","Noida Extension","Bisrakh","Char Murti","Sector 1 Greater Noida West","Sector 2 Greater Noida West","Sector 3 Greater Noida West","Sector 4 Greater Noida West","Sector 10 Greater Noida West","Other"];
+const CITIES = ["Greater Noida West","Greater Noida","Noida","Ghaziabad","Dadri","Delhi","Other"];
 const emptyDog:DogForm={name:"",breed:"",age_text:"",size:"",gender:"",temperament:"",medical_notes:"",emergency_notes:""};
 
 export default function CustomerDetail() {
@@ -19,7 +22,7 @@ export default function CustomerDetail() {
   const [loading, setLoading] = useState(true);
   const [editingCustomer,setEditingCustomer]=useState(false);
   const [savingCustomer,setSavingCustomer]=useState(false);
-  const [customerForm,setCustomerForm]=useState<CustomerForm>({full_name:"",phone:"",whatsapp_phone:"",flat_tower:"",society:"",locality:"",city:"Greater Noida West",state:"Uttar Pradesh",pincode:"",notes:""});
+  const [customerForm,setCustomerForm]=useState<CustomerForm>({full_name:"",phone:"",whatsapp_phone:"",same_whatsapp:true,flat_tower:"",society:"",locality:"",city:"Greater Noida West",state:"Uttar Pradesh",pincode:"",notes:""});
   const [editingDog,setEditingDog]=useState<string|null>(null);
   const [dogForm,setDogForm]=useState<DogForm>(emptyDog);
   const [addingDog,setAddingDog]=useState(false);
@@ -40,7 +43,7 @@ export default function CustomerDetail() {
       setDogs((data[1].dogs || []).filter((x: R) => x.customer_id === id));
       setBookings((data[2].bookings || []).filter((x: R) => x.customer_id === id));
       setPayments((data[3].payments || []).filter((x: R) => x.customer_id === id));
-      if(owner) setCustomerForm({full_name:owner.full_name||"",phone:owner.phone||"",whatsapp_phone:owner.whatsapp_phone||"",flat_tower:owner.flat_tower||"",society:owner.society||"",locality:owner.locality||"",city:owner.city||"Greater Noida West",state:owner.state||"Uttar Pradesh",pincode:owner.pincode||"",notes:owner.notes||""});
+      if(owner) setCustomerForm({full_name:owner.full_name||"",phone:owner.phone||"",whatsapp_phone:owner.whatsapp_phone||"",same_whatsapp:!owner.whatsapp_phone||owner.whatsapp_phone===owner.phone,flat_tower:owner.flat_tower||"",society:owner.society||"",locality:owner.locality||"",city:owner.city||"Greater Noida West",state:owner.state||"Uttar Pradesh",pincode:owner.pincode||"",notes:owner.notes||""});
     } catch { setError("Customer profile could not be loaded."); }
     finally { setLoading(false); }
   }
@@ -50,7 +53,7 @@ export default function CustomerDetail() {
   async function saveCustomer(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setSavingCustomer(true);setError("");setSuccess("");
     try{
-      const r=await fetch("/api/customers",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,...customerForm})});
+      const r=await fetch("/api/customers",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,...customerForm,whatsapp_phone:customerForm.same_whatsapp?customerForm.phone:customerForm.whatsapp_phone})});
       const j=await r.json();if(!r.ok)throw new Error(j.error||"Customer details could not be saved.");
       setEditingCustomer(false);setSuccess("Customer mobile number and address updated.");await loadProfile();
     }catch(e){setError(e instanceof Error?e.message:"Could not save customer.");}
@@ -73,7 +76,8 @@ export default function CustomerDetail() {
   if (loading) return <main className="main"><Link href="/customers" className="back-link"><ArrowLeft size={15}/> Customers</Link><section className="panel">Loading customer profile…</section></main>;
   if (!customer) return <main className="main"><Link href="/customers" className="back-link"><ArrowLeft size={15}/> Customers</Link><section className="panel"><h1 className="panel-title">Customer not found</h1><p className="panel-note">This customer may have been removed or the link may be incorrect.</p></section></main>;
   const address = [customer.flat_tower, customer.society, customer.locality, customer.city, customer.state, customer.pincode].filter(Boolean).join(", ") || [customer.address, customer.area].filter(Boolean).join(", ") || "Address not added";
-  const field=(label:string,key:keyof CustomerForm,placeholder:string="")=><label>{label}<input value={customerForm[key]} onChange={e=>setCustomerForm({...customerForm,[key]:e.target.value})} placeholder={placeholder}/></label>;
+  const field=(label:string,key:"full_name"|"phone"|"flat_tower"|"society"|"pincode",placeholder:string="")=><label>{label}<input value={customerForm[key]} onChange={e=>setCustomerForm({...customerForm,[key]:e.target.value,...(key==="phone"&&customerForm.same_whatsapp?{whatsapp_phone:e.target.value}:{})})} placeholder={placeholder}/></label>;
+  const selectField=(label:string,key:"locality"|"city"|"state",options:string[])=>{const current=customerForm[key];const list=current&&!options.includes(current)?[current,...options]:options;return <label>{label}<select value={current} onChange={e=>setCustomerForm({...customerForm,[key]:e.target.value})}><option value="">Select {label.toLowerCase()}</option>{list.map(x=><option key={x} value={x}>{x}</option>)}</select></label>;};
   const dogFields=<div className="form-grid">
     <label>Dog name *<input required maxLength={80} value={dogForm.name} onChange={e=>setDogForm({...dogForm,name:e.target.value})}/></label>
     <label>Breed<input value={dogForm.breed} onChange={e=>setDogForm({...dogForm,breed:e.target.value})}/></label>
@@ -96,8 +100,8 @@ export default function CustomerDetail() {
         <div className="booking-person"><div className="booking-avatar"><MapPin size={20}/></div><div className="booking-person-copy"><span className="booking-label">ADDRESS</span><strong>{address}</strong><span className="booking-meta">Saved as separate address fields</span></div></div>
       </div>
       {editingCustomer&&<form className="customer-form" onSubmit={saveCustomer}><div className="panel-title">Edit customer details</div><div className="form-grid">
-        {field("Customer name *","full_name")}{field("Mobile number *","phone","Mobile number")}{field("WhatsApp number","whatsapp_phone","If same, enter the same number")}
-        {field("Flat / Tower","flat_tower")}{field("Society / Address","society")}{field("Area / Locality","locality")}{field("City *","city")}{field("State *","state")}{field("PIN code *","pincode","6-digit PIN")}
+        {field("Customer name *","full_name")}{field("Mobile number *","phone","Mobile number")}<div className="full-field"><label>WhatsApp number<input value={customerForm.same_whatsapp?customerForm.phone:customerForm.whatsapp_phone} disabled={customerForm.same_whatsapp} onChange={e=>setCustomerForm({...customerForm,whatsapp_phone:e.target.value})} placeholder="WhatsApp number"/></label><label className="checkbox-label" style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}><input type="checkbox" checked={customerForm.same_whatsapp} onChange={e=>setCustomerForm({...customerForm,same_whatsapp:e.target.checked,whatsapp_phone:e.target.checked?customerForm.phone:customerForm.whatsapp_phone})}/> WhatsApp number is same as mobile number</label></div>
+        {field("Flat / Tower","flat_tower")}{field("Society / Address","society")}{selectField("Area / Locality","locality",LOCALITIES)}{selectField("City *","city",CITIES)}{selectField("State *","state",STATES)}{field("PIN code *","pincode","6-digit PIN")}
       </div><div className="form-actions"><button className="action" disabled={savingCustomer}>{savingCustomer?"Saving…":"Save customer details"}</button><button type="button" className="plain-button" onClick={()=>{setEditingCustomer(false);void loadProfile();}}>Cancel</button></div></form>}
       {customer.notes && <div className="booking-notes"><strong>Notes:</strong> {customer.notes}</div>}
     </section>
