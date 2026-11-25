@@ -13,7 +13,6 @@ const EMPTY = {name:"",breed:"",age_text:"",size:"",gender:"",temperament:"",med
 export default function DogDetail() {
   const { id } = useParams<{id:string}>();
   const [dog,setDog] = useState<R|null>(null);
-  const [bookings,setBookings] = useState<R[]>([]);
   const [walks,setWalks] = useState<R[]>([]);
   const [form,setForm] = useState(EMPTY);
   const [editing,setEditing] = useState(false);
@@ -27,7 +26,7 @@ export default function DogDetail() {
     if(r.status===401){location.assign("/login");return;}
     const j=await r.json();
     if(!r.ok){setError(j.error||"Dog profile could not be loaded.");return;}
-    setDog(j.dog);setBookings(j.bookings||[]);setWalks(j.walks||[]);
+    setDog(j.dog);setWalks(j.walks||[]);
     setForm({name:j.dog.name||"",breed:j.dog.breed||"",age_text:j.dog.age_text||"",size:j.dog.size||"",gender:j.dog.gender||"",temperament:j.dog.temperament||"",medical_notes:j.dog.medical_notes||"",emergency_notes:j.dog.emergency_notes||""});
   }
   useEffect(()=>{void load();},[id]);
