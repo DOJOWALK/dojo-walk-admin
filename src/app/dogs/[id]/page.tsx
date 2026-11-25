@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, PawPrint, UserRound, Phone, MapPin, CalendarDays, Clock3, Pencil, ShieldAlert, HeartPulse } from "lucide-react";
+import { ArrowLeft, PawPrint, UserRound, Phone, MapPin, CalendarDays, Clock3, Pencil, HeartPulse } from "lucide-react";
 
 type R = Record<string, any>;
 const BREEDS = ["Indie / Indian Pariah","Labrador Retriever","Golden Retriever","German Shepherd","Beagle","Pug","Shih Tzu","Rottweiler","Siberian Husky","Boxer","Dachshund","Pomeranian","German Spitz","Cocker Spaniel","French Bulldog","Doberman","Great Dane","Chihuahua","Lhasa Apso","Other"];
