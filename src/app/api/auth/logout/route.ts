@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAdminCookieName } from "@/lib/auth";
 
-export async function POST() {
-  const response = NextResponse.redirect(new URL("/login", process.env.APP_URL || "https://dojo-walk-admin.invalid"), 303);
+export async function POST(request: NextRequest) {
+  const response = NextResponse.redirect(new URL("/login", request.url), 303);
   response.cookies.set(getAdminCookieName(), "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
