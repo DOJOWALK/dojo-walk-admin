@@ -77,7 +77,7 @@ export async function PATCH(request: NextRequest) {
     await env.DB.prepare("UPDATE customers SET full_name=?,phone=?,whatsapp_phone=?,address=?,area=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
       .bind(ownerName,phone,whatsapp || null,address || null,area || null,customerId).run();
     await env.DB.prepare("UPDATE dogs SET name=?,breed=?,age_text=?,size=? WHERE id=?")
-      .bind(dogName,typeof body.dog_breed==="string"?body.dog_breed.trim()||null:null,typeof body.dog_age==="string"?body.dog_age.trim()||null:null,["Small","Medium","Large"].includes(String(body.dog_size))?String(body.dog_size):null,dogId).run();
+      .bind(dogName,typeof body.dog_breed==="string"?body.dog_breed.trim()||null:null,typeof body.dog_age==="string"?body.dog_age.trim()||null:null,["Small","Medium","Large","Extra Large"].includes(String(body.dog_size))?String(body.dog_size):null,dogId).run();
     await env.DB.prepare("UPDATE bookings SET start_date=?,end_date=?,start_slot=?,morning_time=?,evening_time=?,walks_per_day=?,walk_duration_minutes=?,price_per_walk_inr=?,status=?,booking_source=?,notes=? WHERE id=?")
       .bind(startDate,endDate,startSlot,morning,evening,walksPerDay,duration,rate,status,source,typeof body.notes==="string"?body.notes.slice(0,1000):null,id).run();
     return NextResponse.json({ ok: true });
