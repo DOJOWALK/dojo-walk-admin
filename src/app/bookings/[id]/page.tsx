@@ -18,7 +18,7 @@ export default function BookingDetail() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const money = (v: any) => "₹" + Number(v || 0).toLocaleString("en-IN");
-  const displayDate = (v: string) => v ? new Date(`${v}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+  const displayDate = (v: string) => v ? new Date(`${v}T12:00:00Z`).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
   const statusLabel = (v: string) => ({ active: "Active", paused: "Paused", completed: "Completed", cancelled: "Cancelled" }[v] || v);
 
   async function load() {
@@ -55,10 +55,10 @@ export default function BookingDetail() {
   async function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!form) return;
-    const confirmed = window.confirm("Kya aap ye booking, owner aur dog details save karna chahte hain?");
+    const confirmed = window.confirm("Save these booking changes?");
     if (!confirmed) return;
     if (Number(form.walk_duration_minutes) !== Number(booking?.walk_duration_minutes)) {
-      const rateConfirmed = window.confirm("Dhyan dein: walk duration badalne se is booking ki purani completed walks ki billing bhi recalculate ho sakti hai. Kya aap phir bhi continue karna chahte hain?");
+      const rateConfirmed = window.confirm("Changing the walk duration also recalculates charges for this booking’s previously completed walks. Continue?");
       if (!rateConfirmed) return;
     }
     setSaving(true); setError(""); setSuccess("");
@@ -75,10 +75,10 @@ export default function BookingDetail() {
 
   return <main className="main">
     <Link href="/bookings" className="back-link">← Bookings</Link>
-    <div className="topbar"><div><div className="eyebrow">Booking profile</div><h1 className="page-title">{booking.dog_name} · Booking</h1><p className="subtle">View and update this booking, owner and dog information.</p></div><button className="action" type="button" onClick={() => { if (editing) { if (window.confirm("Kya aap editing band karke unsaved changes discard karna chahte hain?")) { setEditing(false); void load(); } } else { setEditing(true); setError(""); setSuccess(""); } }}>{editing ? "Close edit" : "Edit booking"}</button></div>
+    <div className="topbar"><div><div className="eyebrow">Booking profile</div><h1 className="page-title">{booking.dog_name} · Booking</h1><p className="subtle">View this booking, owner and dog profiles, walking schedule and billing.</p></div><button className="action" type="button" onClick={() => { if (editing) { if (window.confirm("Close editing and discard unsaved changes?")) { setEditing(false); void load(); } } else { setEditing(true); setError(""); setSuccess(""); } }}>{editing ? "Close edit" : "Edit booking"}</button></div>
     {error && <div className="error-box">{error}</div>}{success && <div className="success-box">{success}</div>}
     {editing && form && <form className="panel customer-form" onSubmit={save}>
-      <div className="panel-head"><div><div className="panel-title">Edit booking profile</div><div className="panel-note">Update owner, dog and service details below.</div></div></div>
+      <div className="panel-head"><div><div className="panel-title">Edit walking service</div><div className="panel-note">Update the walking service and schedule below.</div></div></div>
       <div className="booking-notes">Owner contact and dog information are managed separately in their profiles. <Link href={"/customers/"+booking.customer_id}>Open customer profile</Link> · <Link href={"/dogs/"+booking.dog_id}>Open dog profile</Link>.</div>
       <h3 className="panel-title">Service and schedule</h3>
       <div className="form-grid">
@@ -93,7 +93,7 @@ export default function BookingDetail() {
         <label className="full-field">Notes<textarea rows={3} maxLength={1000} value={form.notes} onChange={e=>change("notes",e.target.value)}/></label>
       </div>
       <div className="booking-price">Rate is based on duration: <strong>{money(({20:45,30:65,45:95,60:125} as Record<number,number>)[Number(form.walk_duration_minutes)])} per dog, per completed walk.</strong> Changing duration/rate also changes the rate used in the booking's billing calculation, including its existing billable completed walks.</div>
-      <div className="form-actions"><button className="action" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button><button type="button" className="plain-button" onClick={()=>{ if (window.confirm("Kya aap bina save kiye changes cancel karna chahte hain?")) { setEditing(false); void load(); } }}>Cancel</button></div>
+      <div className="form-actions"><button className="action" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button><button type="button" className="plain-button" onClick={()=>{ if (window.confirm("Cancel and discard unsaved changes?")) { setEditing(false); void load(); } }}>Cancel</button></div>
     </form>}
     <section className="booking-overview panel">
       <div className="booking-overview-head">
