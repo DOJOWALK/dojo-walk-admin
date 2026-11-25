@@ -5,18 +5,18 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { Activity, CalendarDays, Camera, ChartNoAxesCombined, CircleDollarSign, ClipboardList, Dog, House, MessageCircle, PawPrint, Settings, Users, Wallet } from "lucide-react";
 
 const navigation = [
-  { label: "Overview", icon: House, active: true },
-  { label: "Customers", icon: Users },
-  { label: "Dogs", icon: Dog },
-  { label: "Bookings", icon: ClipboardList },
-  { label: "Walk Schedule", icon: CalendarDays },
-  { label: "Attendance", icon: Activity },
-  { label: "Walk Photos", icon: Camera },
-  { label: "Payments", icon: CircleDollarSign },
-  { label: "Expenses", icon: Wallet },
-  { label: "Reports", icon: ChartNoAxesCombined },
-  { label: "WhatsApp", icon: MessageCircle },
-  { label: "Settings", icon: Settings }
+  { label: "Overview", href: "/", icon: House, active: true },
+  { label: "Customers", href: "/customers", icon: Users },
+  { label: "Dogs", href: "/dogs", icon: Dog },
+  { label: "Bookings", href: "/bookings", icon: ClipboardList },
+  { label: "Walk Schedule", href: "/schedule", icon: CalendarDays },
+  { label: "Attendance", href: "/attendance", icon: Activity },
+  { label: "Walk Photos", href: "/photos", icon: Camera },
+  { label: "Payments", href: "/payments", icon: CircleDollarSign },
+  { label: "Expenses", href: "/expenses", icon: Wallet },
+  { label: "Reports", href: "/reports", icon: ChartNoAxesCombined },
+  { label: "WhatsApp", href: "/whatsapp", icon: MessageCircle },
+  { label: "Settings", href: "/settings", icon: Settings }
 ];
 
 const stats = [
@@ -35,7 +35,7 @@ export default async function DashboardPage() {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand"><div className="brand-mark">DW</div><div><div className="brand-name">Dojo Walk</div><div className="brand-sub">ADMIN WORKSPACE</div></div></div>
-        <div><p className="nav-label">WORKSPACE</p><nav className="nav-list">{navigation.map(({label, icon: Icon, active}) => <a key={label} href="#" className={`nav-link ${active ? "active" : ""}`}><Icon size={16}/>{label}</a>)}</nav></div>
+        <div><p className="nav-label">WORKSPACE</p><nav className="nav-list">{navigation.map(({label, href, icon: Icon, active}) => <a key={label} href={href} className={`nav-link ${active ? "active" : ""}`}><Icon size={16}/>{label}</a>)}</nav></div>
         <div className="sidebar-foot">Gaur City · Crossings Republik<br/>Ghaziabad, Uttar Pradesh<br/><strong>Single-admin system</strong></div>
       </aside>
       <main className="main">
