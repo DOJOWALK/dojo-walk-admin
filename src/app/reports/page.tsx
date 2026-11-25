@@ -3,7 +3,7 @@ import {useEffect,useState} from "react";
 import {ArrowLeft,ChartNoAxesCombined,Download,IndianRupee,Wallet,Dog,CalendarCheck} from "lucide-react";
 import Link from "next/link";
 type Report={from:string;to:string;received:number;earned:number;walker_payout_estimate:number;operating_cost_estimate:number;owner_margin_estimate:number;payment_count:number;expenses:number;expense_count:number;net_cash_flow:number;walks_total:number;walks_completed:number;walks_missed:number;new_bookings:number;pending_dues:number};
-function today(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function today(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date());}
 function firstDay(){return today().slice(0,7)+"-01";}
 function money(n:number){return "₹"+Number(n||0).toLocaleString("en-IN");}
 export default function ReportsPage(){const [from,setFrom]=useState(firstDay()),[to,setTo]=useState(today()),[data,setData]=useState<Report|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState("");
