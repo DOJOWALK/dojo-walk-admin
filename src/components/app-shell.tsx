@@ -11,7 +11,7 @@ const navigation = [
   { label: "Bookings", href: "/bookings", key: "bookings", icon: ClipboardList },
   { label: "Walk Schedule", href: "/schedule", key: "schedule", icon: CalendarDays, comingSoon: true },
   { label: "Attendance", href: "/attendance", key: "attendance", icon: Activity, comingSoon: true },
-  { label: "Payments", href: "/payments", key: "payments", icon: CircleDollarSign, comingSoon: true },
+  { label: "Payments", href: "/payments", key: "payments", icon: CircleDollarSign },
   { label: "Expenses", href: "/expenses", key: "expenses", icon: Wallet, comingSoon: true },
   { label: "Reports", href: "/reports", key: "reports", icon: ChartNoAxesCombined, comingSoon: true },
   { label: "WhatsApp", href: "/whatsapp", key: "whatsapp", icon: MessageCircle, comingSoon: true },
