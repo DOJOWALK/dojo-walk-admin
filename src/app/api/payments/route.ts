@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   const bookingId = typeof body.booking_id === "string" ? body.booking_id : "";
   const amount = Number(body.amount_inr);
   const method = ["cash","upi","bank","other"].includes(String(body.payment_method)) ? String(body.payment_method) : "upi";
-  const date = typeof body.payment_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.payment_date) ? body.payment_date : new Date().toISOString().slice(0,10);
+  const date = typeof body.payment_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.payment_date) ? body.payment_date : new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date());
   const note = typeof body.reference_note === "string" ? body.reference_note.trim().slice(0,250) : "";
   if (!bookingId || !Number.isSafeInteger(amount) || amount <= 0 || amount > 10000000) return NextResponse.json({error:"Select a booking and enter a valid payment amount."},{status:400});
   try {
