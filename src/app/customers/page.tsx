@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { ArrowLeft, Plus, Search, Users } from "lucide-react";
+import { ArrowLeft, Plus, Search, Users, History } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -57,7 +57,7 @@ export default function CustomersPage() {
   return <main className="main">
     <div className="topbar">
       <div><Link href="/" className="back-link"><ArrowLeft size={15}/> Dashboard</Link><div className="eyebrow">Customer management</div><h1 className="page-title">Customers</h1><p className="subtle">Customer contact details, dogs, bookings and payment history.</p></div>
-      <button className="action" onClick={() => setShowForm(!showForm)}><Plus size={15}/> Add customer</button>
+      <div className="form-actions"><Link className="plain-button" href="/customers/deleted"><History size={15}/> Delete history</Link><button className="action" onClick={() => setShowForm(!showForm)}><Plus size={15}/> Add customer</button></div>
     </div>
     {error && <div className="error-box">{error}</div>}
     {showForm && <form className="panel customer-form" onSubmit={submit}>
