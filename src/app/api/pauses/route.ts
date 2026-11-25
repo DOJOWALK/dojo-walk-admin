@@ -64,7 +64,7 @@ export async function PATCH(request:NextRequest){
     const day=d.toISOString().slice(0,10);
     const morningBlocked=key(day,"morning")>=key(pause.pause_from_date,pause.pause_from_slot)&&key(day,"morning")<key(resumeDate,resumeSlot);
     const eveningBlocked=key(day,"evening")>=key(pause.pause_from_date,pause.pause_from_slot)&&key(day,"evening")<key(resumeDate,resumeSlot);
-    if(d.getUTCDay()!==0&&day<=pause.end_date&&(pause.walks_per_day===1?morningBlocked:morningBlocked&&eveningBlocked))fullDays++;
+    if(d.getUTCDay()!==0&&pause.pause_from_date<=pause.end_date&&(pause.walks_per_day===1?morningBlocked:morningBlocked&&eveningBlocked))fullDays++;
     d.setUTCDate(d.getUTCDate()+1);
    }
    if(fullDays>0)await env.DB.prepare("UPDATE bookings SET end_date=? WHERE id=?").bind(addWorkingDays(pause.end_date,fullDays),pause.booking_id).run();
