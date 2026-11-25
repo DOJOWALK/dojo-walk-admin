@@ -2,12 +2,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyAdminSession, getAdminCookieName } from "@/lib/auth";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { Activity, CalendarDays, ChartNoAxesCombined, CircleDollarSign, ClipboardList, Dog, House, MessageCircle, Settings, Users, Wallet, Plane } from "lucide-react";
+import { Activity, CalendarDays, ChartNoAxesCombined, CircleDollarSign, ClipboardList, House, MessageCircle, Settings, Users, Wallet, Plane } from "lucide-react";
 
 const navigation = [
   { label: "Overview", href: "/", key: "overview", icon: House },
   { label: "Customers", href: "/customers", key: "customers", icon: Users },
-  { label: "Dogs", href: "/dogs", key: "dogs", icon: Dog },
   { label: "Bookings", href: "/bookings", key: "bookings", icon: ClipboardList },
   { label: "Walk Schedule", href: "/schedule", key: "schedule", icon: CalendarDays },
   { label: "Attendance", href: "/attendance", key: "attendance", icon: Activity },
