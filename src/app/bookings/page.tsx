@@ -29,7 +29,7 @@ export default function BookingsPage(){
   }catch(e){setError(e instanceof Error?e.message:"Could not load bookings.");}
   finally{setLoading(false);}
  }
- useEffect(()=>{void load();},[]);
+ useEffect(()=>{if(new URLSearchParams(window.location.search).get("new")==="1"){setShow(true);window.history.replaceState({}, "", "/bookings");}void load();},[]);
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");setSuccess("");
   try{
