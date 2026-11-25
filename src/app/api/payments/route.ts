@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   if (!bookingId || !Number.isSafeInteger(amount) || amount <= 0 || amount > 10000000) return NextResponse.json({error:"Select a booking and enter a valid payment amount."},{status:400});
   try {
     const result = await env.DB.prepare(
-      "SELECT b.id,b.customer_id,b.price_per_walk_inr,COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed'),0) AS completed_walks,COALESCE((SELECT SUM(p.amount_inr) FROM payments p WHERE p.booking_id=b.id),0) AS paid_inr FROM bookings b WHERE b.id=? AND b.status!='cancelled'"
+      "SELECT b.id,b.customer_id,b.price_per_walk_inr,COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed' AND w.walk_date>=COALESCE(b.billing_start_date,b.start_date)),0) AS completed_walks,COALESCE((SELECT SUM(p.amount_inr) FROM payments p WHERE p.booking_id=b.id),0) AS paid_inr FROM bookings b WHERE b.id=? AND b.status!='cancelled'"
     ).bind(bookingId).all();
     const booking = result.results?.[0] as {id:string;customer_id:string;price_per_walk_inr:number;completed_walks:number;paid_inr:number} | undefined;
     if (!booking) return NextResponse.json({error:"Booking not found or cancelled."},{status:404});
