@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 type Customer = {
   id: string; full_name: string; phone: string; whatsapp_phone?: string;
-  area?: string; booking_source: string; dog_count: number; status: string;
+  area?: string; booking_source: string; dog_count: number; status: string; customer_state?: string;
 };
 
 export default function CustomersPage() {
@@ -17,6 +17,8 @@ export default function CustomersPage() {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<"active"|"leave"|"blocked"|"deleted">("active");
+  const [deleted, setDeleted] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ full_name: "", phone: "", whatsapp_phone: "", area: "", address: "", booking_source: "whatsapp", notes: "" });
 
@@ -35,6 +37,7 @@ export default function CustomersPage() {
   }
 
   useEffect(() => { void loadCustomers(); }, []);
+  useEffect(() => { if(tab==="deleted") { fetch("/api/customers?view=deleted").then(r=>r.json()).then(d=>setDeleted(d.records||[])).catch(()=>setDeleted([])); } }, [tab]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,12 +55,12 @@ export default function CustomersPage() {
     finally { setSaving(false); }
   }
 
-  const filtered = customers.filter((c) => `${c.full_name} ${c.phone} ${c.area || ""}`.toLowerCase().includes(query.toLowerCase()));
+  const filtered = customers.filter((c) => (c.customer_state || (c.status==="inactive"?"blocked":"active"))===tab && (c.full_name+" "+c.phone+" "+(c.area||"")).toLowerCase().includes(query.toLowerCase()));
 
   return <main className="main">
     <div className="topbar">
       <div><Link href="/" className="back-link"><ArrowLeft size={15}/> Dashboard</Link><div className="eyebrow">Customer management</div><h1 className="page-title">Customers</h1><p className="subtle">Customer contact details, dogs, bookings and payment history.</p></div>
-      <div className="form-actions"><Link className="plain-button" href="/customers/deleted"><History size={15}/> Delete history</Link><button className="action" onClick={() => setShowForm(!showForm)}><Plus size={15}/> Add customer</button></div>
+      <button className="action" onClick={() => setShowForm(!showForm)}><Plus size={15}/> Add customer</button>
     </div>
     {error && <div className="error-box">{error}</div>}
     {showForm && <form className="panel customer-form" onSubmit={submit}>
@@ -74,7 +77,7 @@ export default function CustomersPage() {
       <div className="form-actions"><button className="action" disabled={saving}>{saving ? "Saving…" : "Save customer"}</button></div>
     </form>}
     <section className="panel">
-      <div className="list-toolbar"><div className="panel-title">{customers.length} customer{customers.length === 1 ? "" : "s"}</div><div className="search-box"><Search size={15}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name, phone or area"/></div></div>
+      <div className="list-toolbar"><div className="panel-title">{filtered.length} {tab==="active"?"active":tab==="leave"?"on leave":"blocked"} customer{filtered.length===1?"":"s"}</div><div className="search-box"><Search size={15}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name, phone or area"/></div></div>
       {loading ? <div className="empty">Loading customers…</div> : error && customers.length === 0 ? <div className="empty">Customer records could not be loaded. Please refresh and try again.</div> : filtered.length === 0 ? <div className="empty"><Users size={24}/><strong>{customers.length ? "No matching customers" : "No customers added yet"}</strong>{customers.length ? "Try another name or phone number." : "Add your first customer to start recording dogs and bookings."}</div> :
         <div className="record-list customer-record-list">{filtered.map(c=><button type="button" className="record-card customer-record-card" key={c.id} onClick={()=>router.push(`/customers/${c.id}`)}><div className="record-main"><div className="record-heading"><strong>{c.full_name}</strong><span className={`record-status status-${c.status}`}>{c.status}</span></div><div className="customer-record-meta"><span>☎ {c.phone}</span>{c.whatsapp_phone&&c.whatsapp_phone!==c.phone&&<span>WhatsApp: {c.whatsapp_phone}</span>}</div><span className="record-subtitle customer-area">{c.area||"Address not added"}</span></div><div className="customer-record-footer"><span className="customer-dog-count">🐕 {c.dog_count} {c.dog_count===1?"Dog":"Dogs"}</span><span className="customer-source">{c.booking_source.replace("_"," ")}</span><span className="record-open">View profile →</span></div></button>)}</div>}
     </section>
