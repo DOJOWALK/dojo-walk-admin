@@ -3,12 +3,14 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, Dog as DogIcon, Plus, Search } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ManagementTabs from "@/components/management-tabs";
 
 type Customer = { id: string; full_name: string };
 type DogRecord = { id: string; name: string; breed?: string; age_text?: string; size?: string; customer_name: string; customer_phone: string };
 
 export default function DogsPage() {
+  const router = useRouter();
   const [dogs,setDogs]=useState<DogRecord[]>([]);
   const [customers,setCustomers]=useState<Customer[]>([]);
   const [loading,setLoading]=useState(true);
@@ -58,7 +60,7 @@ export default function DogsPage() {
       </div><div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save dog profile"}</button></div></>}
     </form>}
     <section className="panel"><div className="customer-toolbar"><div className="panel-title">{dogs.length} dog{dogs.length===1?"":"s"}</div><div className="search-box"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search dog or owner"/></div></div>
-      {loading?<div className="empty">Loading dogs…</div>:filtered.length===0?<div className="empty"><DogIcon size={24}/><strong>{dogs.length?"No matching dogs":"No dogs registered yet"}</strong>{dogs.length?"Try another search.":"Register a customer’s dog to get started."}</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Dog</th><th>Breed</th><th>Age</th><th>Size</th><th>Customer</th><th>Phone</th></tr></thead><tbody>{filtered.map(d=><tr key={d.id}><td><Link href={`/dogs/${d.id}`} className="table-link"><strong>{d.name}</strong></Link></td><td>{d.breed||"—"}</td><td>{d.age_text||"—"}</td><td>{d.size||"—"}</td><td><Link href={`/customers/${(d as DogRecord & {customer_id:string}).customer_id}`} className="table-link">{d.customer_name}</Link></td><td>{d.customer_phone}</td></tr>)}</tbody></table></div>}
+      {loading?<div className="empty">Loading dogs…</div>:filtered.length===0?<div className="empty"><DogIcon size={24}/><strong>{dogs.length?"No matching dogs":"No dogs registered yet"}</strong>{dogs.length?"Try another search.":"Register a customer’s dog to get started."}</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Dog</th><th>Breed</th><th>Age</th><th>Size</th><th>Customer</th><th>Phone</th></tr></thead><tbody>{filtered.map(d=><tr key={d.id} className="clickable-row" role="link" tabIndex={0} aria-label={`Open dog profile for ${d.name}`} onClick={()=>router.push(`/dogs/${d.id}`)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();router.push(`/dogs/${d.id}`);}}}><td><strong>{d.name}</strong></td><td>{d.breed||"—"}</td><td>{d.age_text||"—"}</td><td>{d.size||"—"}</td><td>{d.customer_name}</td><td>{d.customer_phone}</td></tr>)}</tbody></table></div>}
     </section>
   </main>;
 }
