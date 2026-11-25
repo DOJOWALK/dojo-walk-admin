@@ -3,7 +3,7 @@ import {FormEvent,useEffect,useState} from "react";
 import {ArrowLeft,Plus,Wallet,Trash2} from "lucide-react";
 import Link from "next/link";
 type Expense={id:string;expense_date:string;category:string;amount_inr:number;description:string|null};
-function today(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function today(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date());}
 const categories=["Travel","Dog supplies","Equipment","Marketing","Phone & internet","Other"];
 export default function ExpensesPage(){const [items,setItems]=useState<Expense[]>([]);const [form,setForm]=useState({expense_date:today(),category:"Travel",amount_inr:"",description:""});const [show,setShow]=useState(false),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState("");
  async function load(){setLoading(true);try{const r=await fetch("/api/expenses");if(r.status===401){window.location.assign("/login");return;}const j=await r.json();if(!r.ok)throw new Error(j.error||"Expenses could not load.");setItems(j.expenses||[]);}catch(e){setError(e instanceof Error?e.message:"Could not load expenses.");}finally{setLoading(false);}}
