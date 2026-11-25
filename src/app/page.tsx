@@ -1,27 +1,116 @@
-import AppShell from "@/components/app-shell";
-import { CalendarDays, MessageCircle, Users, Plus } from "lucide-react";
+"use client";
 
-const stats = [
-  { label: "Active bookings", value: "—", note: "Currently running dog-walk services" },
-  { label: "Today's walks", value: "—", note: "Daily schedule at a glance" },
-  { label: "Pending payments", value: "—", note: "Charges from completed walks" }
-];
+import { useEffect, useState } from "react";
+import AppShell from "@/components/app-shell";
+import { Activity, CalendarDays, CheckCircle2, Clock3, CreditCard, Dog, Footprints, Plus, Sunrise, Sunset, Users, Wallet, ArrowUpRight } from "lucide-react";
+
+type Row = Record<string, string | number | null>;
+type DashboardData = {
+  date: string;
+  counts: Row;
+  walks: Row;
+  slots: Row[];
+  dues: Row;
+  payments: Row;
+  expenses: Row;
+  recent_bookings: Row[];
+  recent_payments: Row[];
+};
+
+const money = (value: unknown) => "₹" + Number(value || 0).toLocaleString("en-IN");
+const number = (value: unknown) => Number(value || 0);
 
 export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/dashboard")
+      .then(async response => {
+        if (response.status === 401) { window.location.assign("/login"); throw new Error("Please sign in again."); }
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Dashboard could not be loaded.");
+        return result as DashboardData;
+      })
+      .then(result => { if (alive) setData(result); })
+      .catch(e => { if (alive) setError(e instanceof Error ? e.message : "Dashboard could not be loaded."); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  const count = data?.counts ?? {};
+  const walks = data?.walks ?? {};
+  const totalWalks = number(walks.total);
+  const completed = number(walks.completed);
+  const progress = totalWalks ? Math.round(completed / totalWalks * 100) : 0;
+  const morning = data?.slots.find(row => row.slot === "morning") ?? {};
+  const evening = data?.slots.find(row => row.slot === "evening") ?? {};
+  const dateLabel = data?.date ? new Date(data.date + "T12:00:00+05:30").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "Your daily operations";
+
   return <AppShell active="overview">
-    <main className="main">
-      <header className="topbar"><div><div className="eyebrow">DOJO WALK · ADMIN</div><h1 className="page-title">Good day, Admin</h1><div className="subtle">Your daily operations, all in one place.</div></div><form action="/api/auth/logout" method="post"><button className="admin-pill" type="submit">● Admin · Sign out</button></form></header>
-      <section className="booking-priority"><div><div className="booking-priority-kicker">START HERE</div><div className="booking-priority-title">New customer? Add a booking first.</div><div className="booking-priority-note">Owner, dog and booking details ek hi step mein save karein.</div></div><a className="action booking-priority-button" href="/bookings"><Plus size={17}/> Add Booking</a></section>
-      <section className="stats">{stats.map((item) => <div className="stat" key={item.label}><div className="stat-label">{item.label}</div><div className="stat-value">{item.value}</div><div className="stat-note">{item.note}</div></div>)}</section>
-      <section className="grid-two">
-        <div className="panel"><div className="panel-head"><div><div className="panel-title">Today's walk schedule</div><div className="panel-note">Morning and evening rounds · duration selected per booking</div></div><span className="admin-pill">No walks added</span></div><div className="empty"><strong>Your walk schedule will appear here</strong>Once customers and bookings are added, your daily walks and attendance will be shown here.</div></div>
-        <div className="panel"><div className="panel-head"><div><div className="panel-title">Quick actions</div><div className="panel-note">Get common tasks done faster</div></div></div><div className="quick-list">
-          <a className="quick-item quick-item-primary" href="/bookings"><div className="quick-icon"><CalendarDays size={17}/></div><div><div className="quick-title">Add a booking</div><div className="quick-desc">Start with owner, dog and walk schedule</div></div></a>
-          <a className="quick-item" href="/customers"><div className="quick-icon"><Users size={17}/></div><div><div className="quick-title">Add a customer</div><div className="quick-desc">Save contact and booking source</div></div></a>
-          <div className="quick-item"><div className="quick-icon"><MessageCircle size={17}/></div><div><div className="quick-title">WhatsApp updates</div><div className="quick-desc">Prepare customer messages to review</div></div></div>
-        </div></div>
+    <main className="main dashboard-main">
+      <header className="dashboard-welcome">
+        <div><div className="eyebrow">DOJO WALK · ADMIN WORKSPACE</div><h1 className="page-title">Dashboard</h1><div className="subtle">{dateLabel} · Your business at a glance</div></div>
+        <a className="action dashboard-add-button" href="/bookings?new=1"><Plus size={17}/> Add Booking</a>
+      </header>
+
+      {error && <div className="error-box">{error}</div>}
+      {loading && <div className="dashboard-loading">Loading your live business summary…</div>}
+
+      <section className="dashboard-kpis">
+        <a className="dashboard-kpi" href="/bookings"><span className="dashboard-kpi-icon orange"><CalendarDays size={19}/></span><span className="dashboard-kpi-label">Active Bookings</span><strong>{loading ? "—" : number(count.active)}</strong><small>{number(count.paused)} paused · {number(count.ending_soon)} ending soon</small></a>
+        <a className="dashboard-kpi" href="/schedule"><span className="dashboard-kpi-icon green"><Footprints size={19}/></span><span className="dashboard-kpi-label">Today's Walks</span><strong>{loading ? "—" : totalWalks}</strong><small>{completed} completed · {number(walks.scheduled)} scheduled</small></a>
+        <a className="dashboard-kpi" href="/payments"><span className="dashboard-kpi-icon blue"><Wallet size={19}/></span><span className="dashboard-kpi-label">Pending Payments</span><strong>{loading ? "—" : money(data?.dues.total)}</strong><small>{number(data?.dues.bookings_due)} bookings with balance</small></a>
+        <a className="dashboard-kpi" href="/customers"><span className="dashboard-kpi-icon violet"><Users size={19}/></span><span className="dashboard-kpi-label">Customers</span><strong>{loading ? "—" : number(count.customers)}</strong><small>{number(count.dogs)} dogs in profiles</small></a>
       </section>
-      <div className="notice"><strong>Business rules:</strong> 20 min ₹45 · 30 min ₹65 · 45 min ₹95 · 60 min ₹125 per dog · missed/cancelled walks are not charged · Sundays off · WhatsApp messages are manually reviewed before sending.</div>
+
+      <section className="dashboard-main-grid">
+        <div className="panel dashboard-walk-panel">
+          <div className="dashboard-section-head"><div><div className="panel-title">Today's Walks</div><div className="panel-note">Daily attendance and walk progress</div></div><a className="dashboard-text-link" href="/schedule">Open schedule <ArrowUpRight size={14}/></a></div>
+          <div className="walk-progress-layout">
+            <div className="walk-progress-number"><strong>{loading ? "—" : completed}<span> / {totalWalks}</span></strong><small>Completed walks</small></div>
+            <div className="walk-progress-ring" style={{ "--progress": progress } as React.CSSProperties}><div><strong>{loading ? "—" : progress + "%"}</strong><small>Done</small></div></div>
+          </div>
+          <div className="walk-progress-track"><span style={{ width: progress + "%" }}/></div>
+          <div className="walk-slot-grid">
+            <div className="walk-slot-card morning"><div className="walk-slot-heading"><span><Sunrise size={17}/> Morning</span><small>{number(morning.completed)}/{number(morning.total)} done</small></div><strong>{number(morning.scheduled)}</strong><small>Scheduled remaining</small></div>
+            <div className="walk-slot-card evening"><div className="walk-slot-heading"><span><Sunset size={17}/> Evening</span><small>{number(evening.completed)}/{number(evening.total)} done</small></div><strong>{number(evening.scheduled)}</strong><small>Scheduled remaining</small></div>
+          </div>
+          {!loading && totalWalks === 0 && <div className="dashboard-empty-note">No walks are scheduled for today yet. Generate today's schedule from Walk Schedule.</div>}
+        </div>
+
+        <div className="panel dashboard-bookings-panel">
+          <div className="dashboard-section-head"><div><div className="panel-title">Active Bookings</div><div className="panel-note">Your current walking subscriptions</div></div><a className="dashboard-text-link" href="/bookings">View all <ArrowUpRight size={14}/></a></div>
+          <div className="active-booking-total"><div><strong>{loading ? "—" : number(count.active)}</strong><small>Active bookings</small></div><span className="active-booking-icon"><Dog size={25}/></span></div>
+          <div className="booking-status-list">
+            <div><span><i className="status-mark active"/>Active</span><strong>{number(count.active)}</strong></div>
+            <div><span><i className="status-mark paused"/>Paused</span><strong>{number(count.paused)}</strong></div>
+            <div><span><i className="status-mark ending"/>Ending in 7 days</span><strong>{number(count.ending_soon)}</strong></div>
+          </div>
+          <a className="dashboard-outline-link" href="/bookings">Manage bookings <ArrowUpRight size={14}/></a>
+        </div>
+      </section>
+
+      <section className="dashboard-finance-grid">
+        <a className="dashboard-finance-card due" href="/payments"><span className="dashboard-finance-icon"><CreditCard size={19}/></span><span className="dashboard-finance-label">Total outstanding</span><strong>{loading ? "—" : money(data?.dues.total)}</strong><small>{number(data?.dues.bookings_due)} bookings need payment follow-up</small></a>
+        <a className="dashboard-finance-card received" href="/payments"><span className="dashboard-finance-icon"><CheckCircle2 size={19}/></span><span className="dashboard-finance-label">Received today</span><strong>{loading ? "—" : money(data?.payments.total)}</strong><small>{number(data?.payments.count)} payments recorded today</small></a>
+        <a className="dashboard-finance-card expense" href="/expenses"><span className="dashboard-finance-icon"><Wallet size={19}/></span><span className="dashboard-finance-label">Expenses today</span><strong>{loading ? "—" : money(data?.expenses.total)}</strong><small>{number(data?.expenses.count)} expense entries</small></a>
+      </section>
+
+      <section className="panel dashboard-activity-panel">
+        <div className="dashboard-section-head"><div><div className="panel-title">Recent Activity</div><div className="panel-note">Latest bookings and payments</div></div><Activity size={18} color="#F47721"/></div>
+        <div className="dashboard-activity-grid">
+          <div><div className="activity-group-title"><CalendarDays size={15}/> Recent bookings</div>
+            {data?.recent_bookings.length ? data.recent_bookings.slice(0,4).map(row => <a className="activity-row" href={"/bookings/" + row.id} key={"b-" + row.id}><span className="activity-dot booking"><Users size={14}/></span><span><strong>{row.dog_name}</strong><small>{row.customer_name} · {String(row.status || "").replace("_"," ")}</small></span><ArrowUpRight size={14}/></a>) : <div className="dashboard-activity-empty">No bookings recorded yet.</div>}
+          </div>
+          <div><div className="activity-group-title"><Wallet size={15}/> Recent payments</div>
+            {data?.recent_payments.length ? data.recent_payments.slice(0,4).map(row => <a className="activity-row" href="/payments" key={"p-" + row.id}><span className="activity-dot payment"><CheckCircle2 size={14}/></span><span><strong>{money(row.amount_inr)}</strong><small>{row.customer_name} · {row.payment_date}</small></span><ArrowUpRight size={14}/></a>) : <div className="dashboard-activity-empty">No payments recorded yet.</div>}
+          </div>
+        </div>
+      </section>
+      <div className="notice dashboard-business-note"><strong>Walk rates:</strong> 20 min ₹45 · 30 min ₹65 · 45 min ₹95 · 60 min ₹125 per dog. Only completed walks are charged; missed or cancelled walks are not billed.</div>
     </main>
   </AppShell>;
 }
