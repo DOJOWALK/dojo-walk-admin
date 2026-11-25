@@ -33,9 +33,12 @@ export default function BookingDetail() {
       setForm({
         owner_name: item.customer_name || "", phone: item.customer_phone || "",
         whatsapp_phone: item.whatsapp_phone || "", address: item.address || "",
-        city: parts[0]?.trim() || "", state: parts.slice(1).join(",").trim() || "Uttar Pradesh",
+        flat_tower: item.flat_tower || "", society: item.society || "",
+        locality: item.locality || parts[0]?.trim() || "", city: item.city || parts[1]?.trim() || "Greater Noida West",
+        state: item.state || parts.slice(2).join(",").trim() || "Uttar Pradesh", pincode: item.pincode || "",
         dog_name: item.dog_name || "", dog_breed: item.dog_breed || "",
         dog_age: item.dog_age || "", dog_size: item.dog_size || "",
+        dog_gender: item.dog_gender || "", dog_temperament: item.dog_temperament || "",
         start_date: item.start_date || "", end_date: item.end_date || "",
         start_slot: item.start_slot || "morning", morning_time: item.morning_time || "07:00",
         evening_time: item.evening_time || "18:00", walks_per_day: String(item.walks_per_day || 1),
@@ -81,16 +84,21 @@ export default function BookingDetail() {
         <label>Owner name *<input required minLength={2} maxLength={100} value={form.owner_name} onChange={e=>change("owner_name",e.target.value)}/></label>
         <label>Mobile number *<input required type="tel" maxLength={20} value={form.phone} onChange={e=>change("phone",e.target.value)}/></label>
         <label>WhatsApp number<input type="tel" maxLength={20} value={form.whatsapp_phone} onChange={e=>change("whatsapp_phone",e.target.value)}/></label>
-        <label className="full-field">Address / Flat / Tower<input maxLength={200} value={form.address} onChange={e=>change("address",e.target.value)}/></label>
-        <label>City<input maxLength={100} value={form.city} onChange={e=>change("city",e.target.value)}/></label>
-        <label>State<select value={form.state} onChange={e=>change("state",e.target.value)}>{STATES.map(s=><option key={s}>{s}</option>)}</select></label>
+        <label>Flat / Tower<input maxLength={80} value={form.flat_tower} onChange={e=>change("flat_tower",e.target.value)}/></label>
+        <label>Society / Address<input maxLength={150} value={form.society} onChange={e=>change("society",e.target.value)}/></label>
+        <label>Area / Locality<input maxLength={100} value={form.locality} onChange={e=>change("locality",e.target.value)}/></label>
+        <label>City<input required maxLength={100} value={form.city} onChange={e=>change("city",e.target.value)}/></label>
+        <label>State<select required value={form.state} onChange={e=>change("state",e.target.value)}>{STATES.map(s=><option key={s}>{s}</option>)}</select></label>
+        <label>PIN Code<input required inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} value={form.pincode} onChange={e=>change("pincode",e.target.value.replace(/\\D/g,"").slice(0,6))}/></label>
       </div>
       <h3 className="panel-title">Dog details</h3>
       <div className="form-grid">
         <label>Dog name *<input required maxLength={80} value={form.dog_name} onChange={e=>change("dog_name",e.target.value)}/></label>
         <label>Breed<input maxLength={80} value={form.dog_breed} onChange={e=>change("dog_breed",e.target.value)}/></label>
         <label>Age<input maxLength={40} value={form.dog_age} onChange={e=>change("dog_age",e.target.value)}/></label>
-        <label>Dog size<select value={form.dog_size} onChange={e=>change("dog_size",e.target.value)}><option value="">Not set</option><option>Small</option><option>Medium</option><option>Large</option></select></label>
+        <label>Dog size<select value={form.dog_size} onChange={e=>change("dog_size",e.target.value)}><option value="">Not set</option><option>Small</option><option>Medium</option><option>Large</option><option>Extra Large</option></select></label>
+        <label>Gender<select value={form.dog_gender} onChange={e=>change("dog_gender",e.target.value)}><option value="">Not set</option><option>Male</option><option>Female</option></select></label>
+        <label>Temperament<select value={form.dog_temperament} onChange={e=>change("dog_temperament",e.target.value)}><option value="">Not set</option><option>Friendly</option><option>Shy</option><option>Energetic</option><option>Calm</option><option>Anxious</option><option>Reactive</option><option>Other</option></select></label>
       </div>
       <h3 className="panel-title">Service and schedule</h3>
       <div className="form-grid">
@@ -119,7 +127,7 @@ export default function BookingDetail() {
         </div>
         <div className="booking-person">
           <div className="booking-avatar dog-avatar"><PawPrint size={20}/></div>
-          <div className="booking-person-copy"><span className="booking-label">DOG</span><strong>{booking.dog_name}</strong><span className="booking-meta">{[booking.dog_breed, booking.dog_age, booking.dog_size].filter(Boolean).join(" · ") || "Dog profile"}</span><Link className="booking-profile-link" href={"/dogs/"+booking.dog_id}>View dog profile <span>→</span></Link></div>
+          <div className="booking-person-copy"><span className="booking-label">DOG</span><strong>{booking.dog_name}</strong><span className="booking-meta">{[booking.dog_breed, booking.dog_age, booking.dog_size, booking.dog_gender, booking.dog_temperament].filter(Boolean).join(" · ") || "Dog profile"}</span><Link className="booking-profile-link" href={"/dogs/"+booking.dog_id}>View dog profile <span>→</span></Link></div>
         </div>
       </div>
       <div className="booking-section-heading"><CalendarDays size={17}/> Walk schedule</div>
@@ -131,7 +139,7 @@ export default function BookingDetail() {
         <div className="booking-fact"><span>Completed walks</span><strong>{booking.completed_walks ?? 0}</strong></div>
         <div className="booking-fact"><span>Usual time</span><strong>{Number(booking.walks_per_day) === 1 ? (booking.start_slot === "evening" ? booking.evening_time : booking.morning_time) || "—" : `AM ${booking.morning_time || "—"} · PM ${booking.evening_time || "—"}`}</strong></div>
       </div>
-      {booking.address && <div className="booking-address"><MapPin size={14}/>{booking.address}{booking.area ? `, ${booking.area}` : ""}</div>}
+      {(booking.flat_tower || booking.society || booking.locality || booking.city || booking.state || booking.pincode || booking.address || booking.area) && <div className="booking-address"><MapPin size={14}/><span>{[booking.flat_tower,booking.society,booking.locality,booking.city,booking.state,booking.pincode].filter(Boolean).join(", ") || [booking.address,booking.area].filter(Boolean).join(", ")}</span></div>}
       {booking.notes && <div className="booking-notes"><strong>Notes:</strong> {booking.notes}</div>}
     </section>
     <section className="booking-billing panel">
