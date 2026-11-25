@@ -9,7 +9,6 @@ type Env={DB:DBLike;SESSION_SECRET?:string};
 async function adminEnv(){const {env}=getCloudflareContext();const runtime=env as unknown as Env;const jar=await cookies();return await verifyAdminSession(jar.get(getAdminCookieName())?.value,runtime.SESSION_SECRET)?runtime:null;}
 function validDate(value:string){if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;const d=new Date(value+"T00:00:00Z");return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value;}
 function key(date:string,slot:string){return date+":"+(slot==="morning"?"0":"1");}
-function addWorkingDays(date:string,count:number){const d=new Date(date+"T00:00:00Z");let n=0;while(n<count){d.setUTCDate(d.getUTCDate()+1);if(d.getUTCDay()!==0)n++;}return d.toISOString().slice(0,10);}
 
 export async function GET(){
  const env=await adminEnv();if(!env)return NextResponse.json({error:"Unauthorized"},{status:401});
@@ -51,8 +50,8 @@ export async function PATCH(request:NextRequest){
  const resumeSlot=String(body.resume_slot||"");
  if(!id||!validDate(resumeDate)||!["morning","evening"].includes(resumeSlot))return NextResponse.json({error:"Choose when walks should resume."},{status:400});
  try{
-  const found=await env.DB.prepare("SELECT p.*,b.start_date,b.end_date,b.walks_per_day FROM booking_pauses p JOIN bookings b ON b.id=p.booking_id WHERE p.id=? AND p.status='active'").bind(id).all();
-  const pause=found.results?.[0] as {id:string;booking_id:string;pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;start_date:string;end_date:string|null;walks_per_day:number}|undefined;
+  const found=await env.DB.prepare("SELECT p.* FROM booking_pauses p JOIN bookings b ON b.id=p.booking_id WHERE p.id=? AND p.status='active'").bind(id).all();
+  const pause=found.results?.[0] as {id:string;booking_id:string;pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;}|undefined;
   if(!pause)return NextResponse.json({error:"Active away record not found."},{status:404});
   if(key(resumeDate,resumeSlot)<=key(pause.pause_from_date,pause.pause_from_slot))return NextResponse.json({error:"Return time must be after the pause start."},{status:400});
   await env.DB.prepare("UPDATE walks SET status='cancelled',notes='Customer away pause' WHERE booking_id=? AND status='scheduled' AND (walk_date>? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END >= CASE ? WHEN 'morning' THEN 0 ELSE 1 END)) AND (walk_date<? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END < CASE ? WHEN 'morning' THEN 0 ELSE 1 END))").bind(pause.booking_id,pause.expected_resume_date,pause.expected_resume_date,pause.expected_resume_slot,resumeDate,resumeDate,resumeSlot).run();
