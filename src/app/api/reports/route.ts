@@ -16,7 +16,7 @@ export async function GET(request:NextRequest){const env=await adminEnv();if(!en
    env.DB.prepare("SELECT COALESCE(SUM(amount_inr),0) AS total,COUNT(*) AS count FROM expenses WHERE expense_date BETWEEN ? AND ?").bind(from,to).all(),
    env.DB.prepare("SELECT COUNT(*) AS total,SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) AS completed,SUM(CASE WHEN status='missed' THEN 1 ELSE 0 END) AS missed FROM walks WHERE walk_date BETWEEN ? AND ?").bind(from,to).all(),
    env.DB.prepare("SELECT COUNT(*) AS total FROM bookings WHERE start_date BETWEEN ? AND ?").bind(from,to).all(),
-   env.DB.prepare("SELECT COALESCE(SUM(MAX(price_inr-advance_received_inr,0)),0) AS total FROM bookings WHERE status IN ('active','paused')").all()
+   env.DB.prepare("SELECT COALESCE(SUM(MAX(price_inr-advance_received_inr,0)),0) AS total FROM bookings WHERE status!='cancelled'").all()
   ]);
   const p=(payments.results?.[0]||{}) as {total?:number;count?:number};const e=(expenses.results?.[0]||{}) as {total?:number;count?:number};const w=(walks.results?.[0]||{}) as {total?:number;completed?:number;missed?:number};const b=(bookings.results?.[0]||{}) as {total?:number};const d=(dues.results?.[0]||{}) as {total?:number};
   return NextResponse.json({from,to,received:Number(p.total||0),payment_count:Number(p.count||0),expenses:Number(e.total||0),expense_count:Number(e.count||0),net_cash_flow:Number(p.total||0)-Number(e.total||0),walks_total:Number(w.total||0),walks_completed:Number(w.completed||0),walks_missed:Number(w.missed||0),new_bookings:Number(b.total||0),pending_dues:Number(d.total||0)});
