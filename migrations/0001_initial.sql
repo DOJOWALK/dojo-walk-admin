@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   evening_time TEXT,
   walks_per_day INTEGER NOT NULL,
   walk_duration_minutes INTEGER NOT NULL DEFAULT 30,
-  price_inr INTEGER NOT NULL,
+  price_inr INTEGER NOT NULL,\n  sunday_extra_enabled INTEGER NOT NULL DEFAULT 0 CHECK (sunday_extra_enabled IN (0,1)),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','completed','cancelled','paused')),
   booking_source TEXT NOT NULL DEFAULT 'whatsapp' CHECK (booking_source IN ('whatsapp','phone','walk_in','other')),
   advance_received_inr INTEGER NOT NULL DEFAULT 0,
