@@ -6,7 +6,8 @@ import Link from "next/link";
 
 type Booking={booking_id:string;customer_name:string;dog_name:string;plan_type:string;start_date:string;end_date:string|null};
 type Pause={id:string;booking_id:string;customer_name:string;dog_name:string;pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;actual_resume_date:string|null;actual_resume_slot:string|null;status:string;reason:string|null};
-function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}\nfunction nextDate(){const d=new Date();d.setDate(d.getDate()+1);const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}
+function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}
+function nextDate(){const d=new Date();d.setDate(d.getDate()+1);const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}
 export default function AwayPage(){
  const [bookings,setBookings]=useState<Booking[]>([]),[pauses,setPauses]=useState<Pause[]>([]);
  const [form,setForm]=useState({booking_id:"",pause_from_date:localDate(),pause_from_slot:"morning",expected_resume_date:nextDate(),expected_resume_slot:"morning",reason:""});
