@@ -22,8 +22,8 @@ export async function GET() {
   try {
     const result = await env.DB.prepare(
       `SELECT b.*, c.full_name AS customer_name, c.phone AS customer_phone,
-       d.name AS dog_name, d.breed AS dog_breed, d.age_text AS dog_age, d.size AS dog_size,
-       c.whatsapp_phone, c.address, c.area,
+       d.name AS dog_name, d.breed AS dog_breed, d.age_text AS dog_age, d.size AS dog_size, d.gender AS dog_gender, d.temperament AS dog_temperament,
+       c.whatsapp_phone, c.address, c.area, c.flat_tower, c.society, c.locality, c.city, c.state, c.pincode,
        COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed' AND w.walk_date>=COALESCE(b.billing_start_date,b.start_date)),0) AS completed_walks,
        COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed' AND w.walk_date>=COALESCE(b.billing_start_date,b.start_date)),0)*b.price_per_walk_inr AS accrued_inr,
        COALESCE((SELECT SUM(p.amount_inr) FROM payments p WHERE p.booking_id=b.id AND p.payment_date>=COALESCE(b.billing_start_date,b.start_date)),0) AS paid_inr,
@@ -98,7 +98,20 @@ export async function POST(request: NextRequest) {
   const dogName = typeof body.dog_name === "string" ? body.dog_name.trim() : "";
   const dogBreed = typeof body.dog_breed === "string" ? body.dog_breed.trim() : "";
   const dogAge = typeof body.dog_age === "string" ? body.dog_age.trim() : "";
-  const dogSize = ["Small","Medium","Large"].includes(String(body.dog_size)) ? String(body.dog_size) : "";
+  const dogSize = ["Small","Medium","Large","Extra Large"].includes(String(body.dog_size)) ? String(body.dog_size) : "";
+  const dogGender = ["Male","Female"].includes(String(body.dog_gender)) ? String(body.dog_gender) : "";
+  const dogTemperament = ["Friendly","Shy","Energetic","Calm","Anxious","Reactive","Other"].includes(String(body.dog_temperament)) ? String(body.dog_temperament) : "";
+  const ageRange = typeof body.dog_age_range === "string" ? body.dog_age_range.trim() : "";
+  const exactAge = typeof body.dog_exact_age === "string" ? body.dog_exact_age.trim() : "";
+  const dogAge = exactAge || ageRange || (typeof body.dog_age === "string" ? body.dog_age.trim() : "");
+  const flatTower = typeof body.flat_tower === "string" ? body.flat_tower.trim() : "";
+  const society = typeof body.society === "string" ? body.society.trim() : "";
+  const locality = typeof body.locality === "string" ? body.locality.trim() : "";
+  const city = typeof body.city === "string" ? body.city.trim() : "";
+  const state = typeof body.state === "string" ? body.state.trim() : "";
+  const pincode = typeof body.pincode === "string" ? body.pincode.trim() : "";
+  const address = [flatTower,society].filter(Boolean).join(", ");
+  const area = [locality,city,state,pincode].filter(Boolean).join(", ");
   const address = typeof body.address === "string" ? body.address.trim() : "";
   const area = [typeof body.city === "string" ? body.city.trim() : "", typeof body.state === "string" ? body.state.trim() : ""].filter(Boolean).join(", ");
   const startDate = typeof body.start_date === "string" ? body.start_date : "";
@@ -128,13 +141,13 @@ export async function POST(request: NextRequest) {
     if (!customerId) {
       customerId = crypto.randomUUID();
       await env.DB.prepare(
-        "INSERT INTO customers (id,full_name,phone,whatsapp_phone,address,area,booking_source) VALUES (?,?,?,?,?,?,?)"
-      ).bind(customerId,ownerName,phone,whatsapp || null,address || null,area || null,source).run();
+        "INSERT INTO customers (id,full_name,phone,whatsapp_phone,address,area,flat_tower,society,locality,city,state,pincode,booking_source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
+      ).bind(customerId,ownerName,phone,whatsapp || null,address || null,area || null,flatTower || null,society || null,locality || null,city || null,state || null,pincode || null,source).run();
     } else {
       // Fill in missing profile details without overwriting an existing customer's saved information.
       await env.DB.prepare(
-        "UPDATE customers SET whatsapp_phone=COALESCE(whatsapp_phone,?), address=COALESCE(address,?), area=COALESCE(area,?) WHERE id=?"
-      ).bind(whatsapp || null,address || null,area || null,customerId).run();
+        "UPDATE customers SET whatsapp_phone=COALESCE(whatsapp_phone,?), address=COALESCE(address,?), area=COALESCE(area,?), flat_tower=COALESCE(flat_tower,?), society=COALESCE(society,?), locality=COALESCE(locality,?), city=COALESCE(city,?), state=COALESCE(state,?), pincode=COALESCE(pincode,?) WHERE id=?"
+      ).bind(whatsapp || null,address || null,area || null,flatTower || null,society || null,locality || null,city || null,state || null,pincode || null,customerId).run();
     }
 
     const dogs = await env.DB.prepare("SELECT id FROM dogs WHERE customer_id=? AND lower(name)=lower(?)").bind(customerId,dogName).all();
@@ -142,12 +155,12 @@ export async function POST(request: NextRequest) {
     if (!dogId) {
       dogId = crypto.randomUUID();
       await env.DB.prepare(
-        "INSERT INTO dogs (id,customer_id,name,breed,age_text,size) VALUES (?,?,?,?,?,?)"
-      ).bind(dogId,customerId,dogName,dogBreed||null,dogAge||null,dogSize||null).run();
+        "INSERT INTO dogs (id,customer_id,name,breed,age_text,size,gender,temperament) VALUES (?,?,?,?,?,?,?,?)"
+      ).bind(dogId,customerId,dogName,dogBreed||null,dogAge||null,dogSize||null,dogGender||null,dogTemperament||null).run();
     }
 
     if (dogs.results?.length && (dogBreed || dogAge || dogSize)) {
-      await env.DB.prepare("UPDATE dogs SET breed=COALESCE(?,breed), age_text=COALESCE(?,age_text), size=COALESCE(?,size) WHERE id=?").bind(dogBreed||null,dogAge||null,dogSize||null,dogId).run();
+      await env.DB.prepare("UPDATE dogs SET breed=COALESCE(?,breed), age_text=COALESCE(?,age_text), size=COALESCE(?,size), gender=COALESCE(?,gender), temperament=COALESCE(?,temperament) WHERE id=?").bind(dogBreed||null,dogAge||null,dogSize||null,dogGender||null,dogTemperament||null,dogId).run();
     }
 
     const existing = await env.DB.prepare("SELECT id FROM bookings WHERE dog_id=? AND status='active'").bind(dogId).all();
