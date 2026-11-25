@@ -101,7 +101,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="dashboard-finance-grid">
-        <a className="dashboard-finance-card due" href="/payments"><span className="dashboard-finance-icon"><CreditCard size={19}/></span><span className="dashboard-finance-label">Total outstanding</span><strong>{loading ? "—" : money(data?.dues.total)}</strong><small>{number(data?.dues.bookings_due)} bookings need payment follow-up</small></a>
+        <a className="dashboard-finance-card due" href="/payments"><span className="dashboard-finance-icon"><CreditCard size={19}/></span><span className="dashboard-finance-label">Total outstanding</span><strong>{loading || !data ? "—" : money(data.dues.total)}</strong><small>{data ? `${number(data.dues.bookings_due)} bookings need payment follow-up` : "Payment summary unavailable"}</small></a>
         <a className="dashboard-finance-card received" href="/payments"><span className="dashboard-finance-icon"><CheckCircle2 size={19}/></span><span className="dashboard-finance-label">Received today</span><strong>{loading || !data ? "—" : money(data?.payments.total)}</strong><small>{data ? `${number(data.payments.count)} payments recorded today` : "Payment summary unavailable"}</small></a>
         <a className="dashboard-finance-card expense" href="/expenses"><span className="dashboard-finance-icon"><Wallet size={19}/></span><span className="dashboard-finance-label">Expenses today</span><strong>{loading || !data ? "—" : money(data?.expenses.total)}</strong><small>{data ? `${number(data.expenses.count)} expense entries` : "Expense summary unavailable"}</small></a>
       </section>
