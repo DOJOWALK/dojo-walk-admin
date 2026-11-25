@@ -36,16 +36,18 @@ export async function POST(request: NextRequest) {
   const bookingId = typeof body.booking_id === "string" ? body.booking_id : "";
   const amount = Number(body.amount_inr);
   const method = ["cash","upi","bank","other"].includes(String(body.payment_method)) ? String(body.payment_method) : "upi";
-  const date = typeof body.payment_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.payment_date) ? body.payment_date : new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date());
+  const date = typeof body.payment_date === "string" ? body.payment_date : new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date());
+  const dateValue = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(date + "T00:00:00Z") : null;
+  const validDate = !!dateValue && !Number.isNaN(dateValue.getTime()) && dateValue.toISOString().slice(0,10) === date;
   const note = typeof body.reference_note === "string" ? body.reference_note.trim().slice(0,250) : "";
-  if (!bookingId || !Number.isSafeInteger(amount) || amount <= 0 || amount > 10000000) return NextResponse.json({error:"Select a booking and enter a valid payment amount."},{status:400});
+  if (!bookingId || !validDate || !Number.isSafeInteger(amount) || amount <= 0 || amount > 10000000) return NextResponse.json({error:"Select a booking and enter a valid payment amount."},{status:400});
   try {
     const result = await env.DB.prepare(
-      "SELECT b.id,b.customer_id,b.price_per_walk_inr,b.billing_start_date,COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed' AND w.walk_date>=COALESCE(b.billing_start_date,b.start_date)),0) AS completed_walks,COALESCE((SELECT SUM(p.amount_inr) FROM payments p WHERE p.booking_id=b.id AND p.payment_date>=COALESCE(b.billing_start_date,b.start_date)),0) AS paid_inr FROM bookings b WHERE b.id=? AND b.status!='cancelled'"
+      "SELECT b.id,b.customer_id,b.price_per_walk_inr,b.billing_start_date,b.start_date,COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed' AND w.walk_date>=COALESCE(b.billing_start_date,b.start_date)),0) AS completed_walks,COALESCE((SELECT SUM(p.amount_inr) FROM payments p WHERE p.booking_id=b.id AND p.payment_date>=COALESCE(b.billing_start_date,b.start_date)),0) AS paid_inr FROM bookings b WHERE b.id=? AND b.status!='cancelled'"
     ).bind(bookingId).all();
-    const booking = result.results?.[0] as {id:string;customer_id:string;price_per_walk_inr:number;billing_start_date:string|null;completed_walks:number;paid_inr:number} | undefined;
+    const booking = result.results?.[0] as {id:string;customer_id:string;price_per_walk_inr:number;billing_start_date:string|null;start_date:string;completed_walks:number;paid_inr:number} | undefined;
     if (!booking) return NextResponse.json({error:"Booking not found or cancelled."},{status:404});
-    if (booking.billing_start_date && date < booking.billing_start_date) return NextResponse.json({error:"Payment date cannot be before the per-walk billing start date."},{status:400});
+    if (date < (booking.billing_start_date || booking.start_date)) return NextResponse.json({error:"Payment date cannot be before the per-walk billing start date."},{status:400});
     const due = Math.max(0, booking.completed_walks * booking.price_per_walk_inr - booking.paid_inr);
     if (amount > due) return NextResponse.json({error:`Amount exceeds the completed-walk balance of ₹${due}.`},{status:400});
     const paymentId = crypto.randomUUID();
