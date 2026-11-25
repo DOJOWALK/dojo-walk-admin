@@ -54,7 +54,13 @@ export async function PATCH(request:NextRequest){
   const pause=found.results?.[0] as {id:string;booking_id:string;pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;}|undefined;
   if(!pause)return NextResponse.json({error:"Active away record not found."},{status:404});
   if(key(resumeDate,resumeSlot)<=key(pause.pause_from_date,pause.pause_from_slot))return NextResponse.json({error:"Return time must be after the pause start."},{status:400});
-  await env.DB.prepare("UPDATE walks SET status='cancelled',notes='Customer away pause' WHERE booking_id=? AND status='scheduled' AND (walk_date>? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END >= CASE ? WHEN 'morning' THEN 0 ELSE 1 END)) AND (walk_date<? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END < CASE ? WHEN 'morning' THEN 0 ELSE 1 END))").bind(pause.booking_id,pause.expected_resume_date,pause.expected_resume_date,pause.expected_resume_slot,resumeDate,resumeDate,resumeSlot).run();
+  const actualKey=key(resumeDate,resumeSlot);
+  const expectedKey=key(pause.expected_resume_date,pause.expected_resume_slot);
+  if(actualKey<expectedKey){
+   await env.DB.prepare("UPDATE walks SET status='scheduled',notes=NULL WHERE booking_id=? AND status='cancelled' AND notes='Customer away pause' AND (walk_date>? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END >= CASE ? WHEN 'morning' THEN 0 ELSE 1 END)) AND (walk_date<? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END < CASE ? WHEN 'morning' THEN 0 ELSE 1 END))").bind(pause.booking_id,resumeDate,resumeDate,resumeSlot,pause.expected_resume_date,pause.expected_resume_date,pause.expected_resume_slot).run();
+  }else if(actualKey>expectedKey){
+   await env.DB.prepare("UPDATE walks SET status='cancelled',notes='Customer away pause' WHERE booking_id=? AND status='scheduled' AND (walk_date>? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END >= CASE ? WHEN 'morning' THEN 0 ELSE 1 END)) AND (walk_date<? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END < CASE ? WHEN 'morning' THEN 0 ELSE 1 END))").bind(pause.booking_id,pause.expected_resume_date,pause.expected_resume_date,pause.expected_resume_slot,resumeDate,resumeDate,resumeSlot).run();
+  }
   await env.DB.prepare("UPDATE booking_pauses SET actual_resume_date=?,actual_resume_slot=?,status='resumed',resumed_at=CURRENT_TIMESTAMP WHERE id=?").bind(resumeDate,resumeSlot,id).run();
   return NextResponse.json({ok:true,extended_working_days:0});
  }catch{return NextResponse.json({error:"Return could not be saved."},{status:503});}
