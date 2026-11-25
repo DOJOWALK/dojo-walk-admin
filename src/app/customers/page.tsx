@@ -62,12 +62,12 @@ export default function CustomersPage() {
       <div className="panel-head"><div><div className="panel-title">New customer</div><div className="panel-note">Booking can come from WhatsApp or phone call.</div></div><button type="button" className="plain-button" onClick={() => setShowForm(false)}>Close</button></div>
       <div className="form-grid">
         <label>Customer name *<input required minLength={2} maxLength={100} value={form.full_name} onChange={e => setForm({...form,full_name:e.target.value})} placeholder="Full name"/></label>
-        <label>Phone number *<input required value={form.phone} onChange={e => setForm({...form,phone:e.target.value})} placeholder="+91 98XXXXXXXX"/></label>
-        <label>WhatsApp number<input value={form.whatsapp_phone} onChange={e => setForm({...form,whatsapp_phone:e.target.value})} placeholder="If different from phone"/></label>
-        <label>Area / Society<input value={form.area} onChange={e => setForm({...form,area:e.target.value})} placeholder="e.g. Gaur City 2"/></label>
-        <label>Address<input value={form.address} onChange={e => setForm({...form,address:e.target.value})} placeholder="Flat / tower / street"/></label>
+        <label>Phone number *<input type="tel" autoComplete="tel" inputMode="tel" maxLength={20} required value={form.phone} onChange={e => setForm({...form,phone:e.target.value})} placeholder="+91 98XXXXXXXX"/></label>
+        <label>WhatsApp number<input type="tel" inputMode="tel" maxLength={20} value={form.whatsapp_phone} onChange={e => setForm({...form,whatsapp_phone:e.target.value})} placeholder="If different from phone"/></label>
+        <label>Area / Society<input maxLength={100} value={form.area} onChange={e => setForm({...form,area:e.target.value})} placeholder="e.g. Gaur City 2"/></label>
+        <label>Address<input maxLength={200} value={form.address} onChange={e => setForm({...form,address:e.target.value})} placeholder="Flat / tower / street"/></label>
         <label>Booking source<select value={form.booking_source} onChange={e => setForm({...form,booking_source:e.target.value})}><option value="whatsapp">WhatsApp</option><option value="phone">Phone call</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></label>
-        <label className="full-field">Notes<textarea rows={2} value={form.notes} onChange={e => setForm({...form,notes:e.target.value})} placeholder="Any useful notes"/></label>
+        <label className="full-field">Notes<textarea rows={2} maxLength={1000} value={form.notes} onChange={e => setForm({...form,notes:e.target.value})} placeholder="Any useful notes"/></label>
       </div>
       <div className="form-actions"><button className="action" disabled={saving}>{saving ? "Saving…" : "Save customer"}</button></div>
     </form>}
