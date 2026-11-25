@@ -3,7 +3,9 @@ import { cookies } from "next/headers";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getAdminCookieName, verifyAdminSession } from "@/lib/auth";
 
-type Env = { DB: D1Database; SESSION_SECRET?: string };
+type D1Result = { results?: unknown[] };
+type D1DatabaseLike = { prepare(sql: string): { bind(...values: unknown[]): { all(): Promise<D1Result>; run(): Promise<unknown> } } };
+type Env = { DB: D1DatabaseLike; SESSION_SECRET?: string };
 
 async function getAdminEnv() {
   const { env } = getCloudflareContext();
