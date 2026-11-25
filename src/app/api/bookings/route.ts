@@ -97,13 +97,12 @@ export async function POST(request: NextRequest) {
   const whatsapp = typeof body.whatsapp_phone === "string" ? body.whatsapp_phone.trim() : "";
   const dogName = typeof body.dog_name === "string" ? body.dog_name.trim() : "";
   const dogBreed = typeof body.dog_breed === "string" ? body.dog_breed.trim() : "";
-  const dogAge = typeof body.dog_age === "string" ? body.dog_age.trim() : "";
   const dogSize = ["Small","Medium","Large","Extra Large"].includes(String(body.dog_size)) ? String(body.dog_size) : "";
   const dogGender = ["Male","Female"].includes(String(body.dog_gender)) ? String(body.dog_gender) : "";
   const dogTemperament = ["Friendly","Shy","Energetic","Calm","Anxious","Reactive","Other"].includes(String(body.dog_temperament)) ? String(body.dog_temperament) : "";
   const ageRange = typeof body.dog_age_range === "string" ? body.dog_age_range.trim() : "";
   const exactAge = typeof body.dog_exact_age === "string" ? body.dog_exact_age.trim() : "";
-  const dogAge = exactAge || ageRange || (typeof body.dog_age === "string" ? body.dog_age.trim() : "");
+  const dogAge = [ageRange,exactAge].filter(Boolean).join(" · ") || (typeof body.dog_age === "string" ? body.dog_age.trim() : "");
   const flatTower = typeof body.flat_tower === "string" ? body.flat_tower.trim() : "";
   const society = typeof body.society === "string" ? body.society.trim() : "";
   const locality = typeof body.locality === "string" ? body.locality.trim() : "";
@@ -112,8 +111,6 @@ export async function POST(request: NextRequest) {
   const pincode = typeof body.pincode === "string" ? body.pincode.trim() : "";
   const address = [flatTower,society].filter(Boolean).join(", ");
   const area = [locality,city,state,pincode].filter(Boolean).join(", ");
-  const address = typeof body.address === "string" ? body.address.trim() : "";
-  const area = [typeof body.city === "string" ? body.city.trim() : "", typeof body.state === "string" ? body.state.trim() : ""].filter(Boolean).join(", ");
   const startDate = typeof body.start_date === "string" ? body.start_date : "";
   const startSlot = String(body.start_slot || "morning");
   const walksPerDay = Number(body.walks_per_day || 1);
