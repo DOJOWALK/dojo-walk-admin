@@ -39,9 +39,9 @@ export default function LoginPage() {
       <p className="login-copy">Sign in to manage customers, dogs, bookings and daily walks.</p>
       <form onSubmit={submit} className="login-form">
         <label htmlFor="admin-password">Admin password</label>
-        <div style={{ position: "relative" }}>
-          <input id="admin-password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required minLength={12} placeholder="Enter your admin password" style={{ paddingRight: "48px" }}/>
-          <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", width: "36px", height: "36px", padding: 0, display: "grid", placeItems: "center", background: "transparent", color: "inherit", border: 0, cursor: "pointer" }}>
+        <div className="password-field">
+          <input id="admin-password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required minLength={12} placeholder="Enter your admin password"/>
+          <button className="password-toggle" type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>
             {showPassword ? <EyeOff size={19}/> : <Eye size={19}/>}
           </button>
         </div>
