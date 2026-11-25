@@ -33,7 +33,9 @@ export default function BookingsPage(){
  const customerDogs=dogs.filter(d=>d.customer_id===form.customer_id);
  const monthlyPlan=form.plan_type.startsWith("monthly_");
  const basePrice=({monthly_am_pm:2999,monthly_once:1999,temporary_am_pm:150,single_walk:100} as Record<string,number>)[form.plan_type];
- const totalPrice=basePrice+(monthlyPlan&&form.sunday_extra_enabled?500:0);\n const receivedAmount=form.payment_choice==="full"?totalPrice:form.payment_choice==="later"?0:Number(form.advance_received_inr||0);\n const dueAmount=Math.max(0,totalPrice-receivedAmount);
+ const totalPrice=basePrice+(monthlyPlan&&form.sunday_extra_enabled?500:0);
+ const receivedAmount=form.payment_choice==="full"?totalPrice:form.payment_choice==="later"?0:Number(form.advance_received_inr||0);
+ const dueAmount=Math.max(0,totalPrice-receivedAmount);
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");
   try{
@@ -56,7 +58,9 @@ export default function BookingsPage(){
     <label>Morning time<input type="time" value={form.morning_time} onChange={e=>setForm({...form,morning_time:e.target.value})}/></label>
     <label>Evening time<input type="time" value={form.evening_time} onChange={e=>setForm({...form,evening_time:e.target.value})}/></label>
     <label>Booking source<select value={form.booking_source} onChange={e=>setForm({...form,booking_source:e.target.value})}><option value="whatsapp">WhatsApp</option><option value="phone">Phone call</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></label>
-    <label>Payment option *<select value={form.payment_choice} onChange={e=>setForm({...form,payment_choice:e.target.value,advance_received_inr:e.target.value==="full"?String(totalPrice):e.target.value==="later"?"0":""})}><option value="advance">Advance payment</option><option value="full">Full payment now</option><option value="later">Pay later</option></select></label>\n    {form.payment_choice==="advance"?<label>Advance amount received (₹)<input type="number" inputMode="numeric" min="1" max={totalPrice} step="1" required value={form.advance_received_inr} onChange={e=>setForm({...form,advance_received_inr:e.target.value})} placeholder="Enter amount"/></label>:null}\n    {form.payment_choice!=="later"?<label>Payment method<select value={form.payment_method} onChange={e=>setForm({...form,payment_method:e.target.value})}><option value="upi">UPI</option><option value="cash">Cash</option><option value="bank">Bank transfer</option><option value="other">Other</option></select></label>:null}
+    <label>Payment option *<select value={form.payment_choice} onChange={e=>setForm({...form,payment_choice:e.target.value,advance_received_inr:e.target.value==="full"?String(totalPrice):e.target.value==="later"?"0":""})}><option value="advance">Advance payment</option><option value="full">Full payment now</option><option value="later">Pay later</option></select></label>
+    {form.payment_choice==="advance"?<label>Advance amount received (₹)<input type="number" inputMode="numeric" min="1" max={totalPrice} step="1" required value={form.advance_received_inr} onChange={e=>setForm({...form,advance_received_inr:e.target.value})} placeholder="Enter amount"/></label>:null}
+    {form.payment_choice!=="later"?<label>Payment method<select value={form.payment_method} onChange={e=>setForm({...form,payment_method:e.target.value})}><option value="upi">UPI</option><option value="cash">Cash</option><option value="bank">Bank transfer</option><option value="other">Other</option></select></label>:null}
     <label className="full-field">Notes<textarea rows={2} maxLength={1000} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
    </div><div className="booking-price">Total plan amount: <strong>₹{totalPrice.toLocaleString("en-IN")}</strong><br/>Received now: <strong>₹{receivedAmount.toLocaleString("en-IN")}</strong> · Balance due: <strong>₹{dueAmount.toLocaleString("en-IN")}</strong><br/>{monthlyPlan&&form.sunday_extra_enabled?<span>Includes ₹500 Sunday Extra · </span>:null}<span>30 minutes per walk</span></div><div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save booking"}</button></div></>}
   </form>}
