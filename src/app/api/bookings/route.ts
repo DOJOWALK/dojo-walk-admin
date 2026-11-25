@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     temporary_am_pm: {price:150,walks:2,duration:30},
     single_walk: {price:100,walks:1,duration:30}
   };
-  const selected = plans[plan];
+  const selected = plans[plan];\n  const sundayExtra = body.sunday_extra_enabled === true && (plan === "monthly_am_pm" || plan === "monthly_once");\n  const totalPrice = selected ? selected.price + (sundayExtra ? 500 : 0) : 0;
   if (!customerId || !dogId || !selected || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
     return NextResponse.json({ error: "Customer, dog, plan and start date are required." }, { status: 400 });
   }
@@ -55,9 +55,9 @@ export async function POST(request: NextRequest) {
     if (!dog.results?.length) return NextResponse.json({ error: "This dog does not belong to the selected customer." }, { status: 400 });
     const id = crypto.randomUUID();
     await env.DB.prepare(
-      "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,booking_source,advance_received_inr,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
-    ).bind(id,customerId,dogId,plan,startDate,body.morning_time || null,body.evening_time || null,selected.walks,selected.duration,selected.price,source,advance,typeof body.notes==="string"?body.notes:null).run();
-    return NextResponse.json({ok:true,id,price_inr:selected.price},{status:201});
+      "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    ).bind(id,customerId,dogId,plan,startDate,body.morning_time || null,body.evening_time || null,selected.walks,selected.duration,totalPrice,sundayExtra?1:0,source,advance,typeof body.notes==="string"?body.notes:null).run();
+    return NextResponse.json({ok:true,id,price_inr:totalPrice,sunday_extra_enabled:sundayExtra},{status:201});
   } catch {
     return NextResponse.json({error:"Booking could not be saved. Check database setup."},{status:503});
   }
