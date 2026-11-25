@@ -20,9 +20,9 @@ export async function GET(request:NextRequest){
 export async function POST(request:NextRequest){
  const env=await adminEnv();if(!env)return NextResponse.json({error:"Unauthorized"},{status:401});
  let body:Record<string,unknown>;try{body=await request.json();}catch{return NextResponse.json({error:"Invalid request."},{status:400});}
- const date=typeof body.date==="string"?body.date:"";if(!validDate(date))return NextResponse.json({error:"Choose a valid date."},{status:400});
+ const date=typeof body.date==="string"?body.date:"";const includeSunday=body.include_sunday===true;if(!validDate(date))return NextResponse.json({error:"Choose a valid date."},{status:400});
  try{
-  const result=await env.DB.prepare("SELECT b.id,b.dog_id,b.walks_per_day,b.walk_duration_minutes,b.morning_time,b.evening_time,b.start_date,b.start_slot FROM bookings b WHERE b.status='active' AND b.start_date<=? AND (b.end_date IS NULL OR b.end_date>=?) AND strftime('%w',?)!='0'").bind(date,date,date).all();
+  const result=await env.DB.prepare("SELECT b.id,b.dog_id,b.walks_per_day,b.walk_duration_minutes,b.morning_time,b.evening_time,b.start_date,b.start_slot FROM bookings b WHERE b.status='active' AND b.start_date<=? AND (b.end_date IS NULL OR b.end_date>=?) AND (?=1 OR strftime('%w',?)!='0')").bind(date,date,includeSunday?1:0,date).all();
   const bookings=(result.results??[]) as Array<{id:string;dog_id:string;walks_per_day:number;walk_duration_minutes:number;morning_time:string|null;evening_time:string|null;start_date:string;start_slot:string}>;
   let created=0;
   for(const b of bookings){
