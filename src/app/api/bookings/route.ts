@@ -115,10 +115,11 @@ export async function POST(request: NextRequest) {
 
   try {
     // Match owners by the last 10 digits so +91 and local number formats do not create duplicates.
-    const allCustomers = await env.DB.prepare("SELECT id, phone FROM customers").all();
+    const allCustomers = await env.DB.prepare("SELECT id, phone, status FROM customers").all();
     const normalizedPhone = phone.replace(/\D/g, "").slice(-10);
     const matched = (allCustomers.results ?? []).find(c => String(c.phone ?? "").replace(/\D/g, "").slice(-10) === normalizedPhone);
     let customerId = matched ? String(matched.id) : "";
+    if (matched && String(matched.status || "active") === "inactive") return NextResponse.json({ error: "New bookings are blocked for this customer. Unblock the customer profile first." }, { status: 403 });
 
     if (!customerId) {
       customerId = crypto.randomUUID();
