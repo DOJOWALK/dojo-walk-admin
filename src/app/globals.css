@@ -12,3 +12,5 @@
 .content-area{min-width:0;}
 
 .nav-link.disabled{opacity:.48;cursor:not-allowed;pointer-events:none}.nav-link.disabled small{margin-left:auto;font-size:8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#9aa69d}
+
+.sunday-toggle span{display:flex;align-items:center;gap:9px;color:#42564a;font-size:11px}.sunday-toggle input[type=checkbox]{width:16px;height:16px;accent-color:var(--green);margin:0}.sunday-toggle strong{color:var(--green);font-weight:800}.sunday-toggle small{color:var(--muted);font-size:10px;font-weight:500}.payment-paid{background:#e7f6eb;color:#1b7546}.payment-partial{background:#fff5df;color:#946414}.payment-unpaid{background:#fff0ed;color:#a83c2b}
