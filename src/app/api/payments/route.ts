@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
     ).bind(bookingId).all();
     const booking = result.results?.[0] as {id:string;customer_id:string;price_per_walk_inr:number;billing_start_date:string|null;completed_walks:number;paid_inr:number} | undefined;
     if (!booking) return NextResponse.json({error:"Booking not found or cancelled."},{status:404});
+    if (booking.billing_start_date && date < booking.billing_start_date) return NextResponse.json({error:"Payment date cannot be before the per-walk billing start date."},{status:400});
     const due = Math.max(0, booking.completed_walks * booking.price_per_walk_inr - booking.paid_inr);
     if (amount > due) return NextResponse.json({error:`Amount exceeds the completed-walk balance of ₹${due}.`},{status:400});
     const paymentId = crypto.randomUUID();
