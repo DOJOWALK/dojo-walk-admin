@@ -78,3 +78,7 @@ a { color: inherit; text-decoration: none; }
 .status-dot { display: inline-block; background: #e8f3ec; color: #236b4b; border-radius: 99px; padding: 4px 8px; font-size: 10px; text-transform: capitalize; }
 .error-box { background: #fff2f0; border: 1px solid #ffd5ce; color: #a83224; padding: 11px 13px; border-radius: 10px; margin-bottom: 14px; font-size: 12px; }
 @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } .full-field { grid-column: auto; } .customer-toolbar { align-items: stretch; flex-direction: column; } .search-box { width: 100%; } }
+
+.booking-price { margin-top: 16px; border-radius: 10px; background: #f5f8f5; padding: 12px 14px; color: #65736a; font-size: 12px; }
+.booking-price strong { color: #1e5139; font-size: 16px; }
+.booking-price span { color: #849087; }
