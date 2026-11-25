@@ -6,7 +6,7 @@ import Link from "next/link";
 
 type Booking={id:string;customer_name:string;dog_name:string;due_inr:number;status:string;start_date:string;completed_walks:number;walk_duration_minutes:number;price_per_walk_inr:number};
 type Payment={id:string;customer_name:string;dog_name:string|null;amount_inr:number;payment_date:string;payment_method:string;reference_note:string|null};
-function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}
+function localDate(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date());}
 
 export default function PaymentsPage(){
  const [bookings,setBookings]=useState<Booking[]>([]);
