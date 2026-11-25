@@ -10,3 +10,5 @@
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 
 .content-area{min-width:0;}
+
+.nav-link.disabled{opacity:.48;cursor:not-allowed;pointer-events:none}.nav-link.disabled small{margin-left:auto;font-size:8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#9aa69d}
