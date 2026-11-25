@@ -1,3 +1,6 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifyAdminSession, getAdminCookieName } from "@/lib/auth";
 import { Activity, CalendarDays, Camera, ChartNoAxesCombined, CircleDollarSign, ClipboardList, Dog, House, MessageCircle, PawPrint, Settings, Users, Wallet } from "lucide-react";
 
 const navigation = [
@@ -22,7 +25,10 @@ const stats = [
   { label: "Pending payments", value: "—", note: "Track monthly balances" }
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const cookieStore = await cookies();
+  const isAdmin = await verifyAdminSession(cookieStore.get(getAdminCookieName())?.value, process.env.SESSION_SECRET);
+  if (!isAdmin) redirect("/login");
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -31,7 +37,7 @@ export default function DashboardPage() {
         <div className="sidebar-foot">Gaur City · Crossings Republik<br/>Ghaziabad, Uttar Pradesh<br/><strong>Single-admin system</strong></div>
       </aside>
       <main className="main">
-        <header className="topbar"><div><div className="eyebrow">Dojo Walk</div><h1 className="page-title">Good day, Admin</h1><div className="subtle">Here’s your business overview. Your workspace is ready to be set up.</div></div><div className="admin-pill">● Admin workspace</div></header>
+        <header className="topbar"><div><div className="eyebrow">Dojo Walk</div><h1 className="page-title">Good day, Admin</h1><div className="subtle">Here’s your business overview. Your workspace is ready to be set up.</div></div><form action="/api/auth/logout" method="post"><button className="admin-pill" type="submit">● Admin · Sign out</button></form></header>
         <section className="stats">{stats.map((item) => <div className="stat" key={item.label}><div className="stat-label">{item.label}</div><div className="stat-value">{item.value}</div><div className="stat-note">{item.note}</div></div>)}</section>
         <section className="grid-two">
           <div className="panel"><div className="panel-head"><div><div className="panel-title">Today’s walk schedule</div><div className="panel-note">Morning and evening rounds · 30 minutes each</div></div><span className="admin-pill">No walks added</span></div><div className="empty"><strong>Your walk schedule will appear here</strong>Once customers and bookings are added, you can mark attendance and upload 2–3 walk photos for each visit.</div></div>
