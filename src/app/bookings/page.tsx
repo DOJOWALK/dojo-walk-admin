@@ -16,7 +16,7 @@ export default function BookingsPage(){
  const [customers,setCustomers]=useState<Customer[]>([]);
  const [dogs,setDogs]=useState<Dog[]>([]);
  const [bookings,setBookings]=useState<Booking[]>([]);
- const [form,setForm]=useState({customer_id:"",dog_id:"",plan_type:"monthly_am_pm",sunday_extra_enabled:false,start_date:localDate(),morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",payment_choice:"later",payment_method:"upi",notes:""});
+ const [form,setForm]=useState({customer_id:"",dog_id:"",plan_type:"monthly_am_pm",sunday_extra_enabled:false,start_date:localDate(),morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",payment_choice:"later",advance_received_inr:"",payment_method:"upi",notes:""});
  const [show,setShow]=useState(false),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState("");
  async function load(){
   setLoading(true);setError("");
@@ -34,7 +34,7 @@ export default function BookingsPage(){
  const monthlyPlan=form.plan_type.startsWith("monthly_");
  const basePrice=({monthly_am_pm:2999,monthly_once:1999,temporary_am_pm:150,single_walk:100} as Record<string,number>)[form.plan_type];
  const totalPrice=basePrice+(monthlyPlan&&form.sunday_extra_enabled?500:0);
- const receivedAmount=form.payment_choice==="full"?totalPrice:0;
+ const receivedAmount=form.payment_choice==="full"?totalPrice:form.payment_choice==="advance"?Number(form.advance_received_inr||0):0;
  const dueAmount=Math.max(0,totalPrice-receivedAmount);
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");
@@ -58,10 +58,11 @@ export default function BookingsPage(){
     <label>Morning time<input type="time" value={form.morning_time} onChange={e=>setForm({...form,morning_time:e.target.value})}/></label>
     <label>Evening time<input type="time" value={form.evening_time} onChange={e=>setForm({...form,evening_time:e.target.value})}/></label>
     <label>Booking source<select value={form.booking_source} onChange={e=>setForm({...form,booking_source:e.target.value})}><option value="whatsapp">WhatsApp</option><option value="phone">Phone call</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></label>
-    <label>Payment option *<select value={form.payment_choice} onChange={e=>setForm({...form,payment_choice:e.target.value})}><option value="full">Full payment now</option><option value="later">Pay later</option></select></label>
-    {form.payment_choice==="full"?<label>Payment method<select value={form.payment_method} onChange={e=>setForm({...form,payment_method:e.target.value})}><option value="upi">UPI</option><option value="cash">Cash</option><option value="bank">Bank transfer</option><option value="other">Other</option></select></label>:null}
+    <label>Payment option *<select value={form.payment_choice} onChange={e=>setForm({...form,payment_choice:e.target.value})}><option value="advance">Advance payment</option><option value="full">Full payment now</option><option value="later">Pay later</option></select></label>
+    {form.payment_choice==="advance"?<label>Advance received (₹)<input type="number" inputMode="numeric" min="1" max={totalPrice} step="1" required value={form.advance_received_inr} onChange={e=>setForm({...form,advance_received_inr:e.target.value})} placeholder="Enter advance amount"/></label>:null}
+    {form.payment_choice!=="later"?<label>Payment method<select value={form.payment_method} onChange={e=>setForm({...form,payment_method:e.target.value})}><option value="upi">UPI</option><option value="cash">Cash</option><option value="bank">Bank transfer</option><option value="other">Other</option></select></label>:null}
     <label className="full-field">Notes<textarea rows={2} maxLength={1000} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
-   </div><div className="booking-price">Total plan amount: <strong>₹{totalPrice.toLocaleString("en-IN")}</strong><br/>Payment now: <strong>{form.payment_choice==="full"?"Full payment":"Pay later"}</strong> · Due: <strong>₹{dueAmount.toLocaleString("en-IN")}</strong><br/>{monthlyPlan&&form.sunday_extra_enabled?<span>Includes ₹500 Sunday Extra · </span>:null}<span>30 minutes per walk</span></div><div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save booking"}</button></div></>}
+   </div><div className="booking-price">Total plan amount: <strong>₹{totalPrice.toLocaleString("en-IN")}</strong><br/>Payment now: <strong>{form.payment_choice==="full"?"Full payment":form.payment_choice==="advance"?"Advance payment":"Pay later"}</strong> · Due: <strong>₹{dueAmount.toLocaleString("en-IN")}</strong><br/>{monthlyPlan&&form.sunday_extra_enabled?<span>Includes ₹500 Sunday Extra · </span>:null}<span>30 minutes per walk</span></div><div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save booking"}</button></div></>}
   </form>}
   <section className="panel"><div className="panel-head"><div><div className="panel-title">{bookings.length} booking{bookings.length===1?"":"s"}</div><div className="panel-note">Latest bookings first</div></div></div>
    {loading?<div className="empty">Loading bookings…</div>:bookings.length===0?<div className="empty"><CalendarPlus size={24}/><strong>No bookings recorded yet</strong>Add a customer, register their dog and create the first booking.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Customer</th><th>Dog</th><th>Package</th><th>Start date</th><th>Amount</th><th>Payment received</th><th>Payment</th><th>Booking</th></tr></thead><tbody>{bookings.map(b=><tr key={b.id}><td><strong>{b.customer_name}</strong></td><td>{b.dog_name}</td><td>{planLabels[b.plan_type]||b.plan_type}</td><td>{b.start_date}</td><td>₹{b.price_inr.toLocaleString("en-IN")}</td><td>₹{b.advance_received_inr.toLocaleString("en-IN")}</td><td><span className={`status-dot payment-${b.payment_status}`}>{b.payment_status}</span></td><td><span className="status-dot">{b.status}</span></td></tr>)}</tbody></table></div>}
