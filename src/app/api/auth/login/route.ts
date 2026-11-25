@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { checkAdminPassword, createAdminSession, getAdminCookieName } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
@@ -10,12 +11,13 @@ export async function POST(request: NextRequest) {
   }
 
   const password = typeof body.password === "string" ? body.password : "";
-  if (!checkAdminPassword(password, process.env.ADMIN_PASSWORD)) {
+  const env = getCloudflareContext().env as { ADMIN_PASSWORD?: string; SESSION_SECRET?: string };
+  if (!checkAdminPassword(password, env.ADMIN_PASSWORD)) {
     return NextResponse.json({ error: "Password is incorrect." }, { status: 401 });
   }
 
   try {
-    const token = await createAdminSession(process.env.SESSION_SECRET);
+    const token = await createAdminSession(env.SESSION_SECRET);
     const response = NextResponse.json({ ok: true });
     response.cookies.set(getAdminCookieName(), token, {
       httpOnly: true,
