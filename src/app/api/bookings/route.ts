@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   if (!["advance","full","later"].includes(paymentChoice)) return NextResponse.json({ error: "Choose advance, full payment or pay later." }, { status: 400 });
   const advance = paymentChoice === "full" ? totalPrice : paymentChoice === "advance" ? Number(body.advance_received_inr || 0) : 0;
   const paymentMethod = ["cash","upi","bank","other"].includes(String(body.payment_method)) ? String(body.payment_method) : "upi";
-  if (!Number.isInteger(advance) || advance < 0 || advance > totalPrice || advance > 10000000) return NextResponse.json({ error: "Invalid booking payment amount." }, { status: 400 });
+  if (!Number.isInteger(advance) || advance < 0 || advance > totalPrice || advance > 10000000 || (paymentChoice === "advance" && advance === 0)) return NextResponse.json({ error: "Invalid booking payment amount." }, { status: 400 });
   try {
     const dog = await env.DB.prepare("SELECT id FROM dogs WHERE id=? AND customer_id=?").bind(dogId,customerId).all();
     if (!dog.results?.length) return NextResponse.json({ error: "This dog does not belong to the selected customer." }, { status: 400 });
