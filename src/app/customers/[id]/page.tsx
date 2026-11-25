@@ -57,7 +57,7 @@ export default function CustomerDetail() {
     finally{setSavingCustomer(false);}
   }
 
-  function startDogEdit(d:R){setEditingDog(d.id);setAddingDog(false);setDogForm({name:d.name||"",breed:d.breed||"",age_text:d.age_text||"",size:d.size||"",gender:d.gender||"",temperament:d.temperament||"",medical_notes:d.medical_notes||"",emergency_notes:d.emergency_notes||" "});}
+  function startDogEdit(d:R){setEditingDog(d.id);setAddingDog(false);setDogForm({name:d.name||"",breed:d.breed||"",age_text:d.age_text||"",size:d.size||"",gender:d.gender||"",temperament:d.temperament||"",medical_notes:d.medical_notes||"",emergency_notes:d.emergency_notes||""});}
   async function saveDog(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setSavingDog(true);setError("");setSuccess("");
     try{
