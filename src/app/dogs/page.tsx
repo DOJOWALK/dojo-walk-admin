@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, Dog as DogIcon, Plus, Search } from "lucide-react";
 import Link from "next/link";
+import ManagementTabs from "@/components/management-tabs";
 
 type Customer = { id: string; full_name: string };
 type DogRecord = { id: string; name: string; breed?: string; age_text?: string; size?: string; customer_name: string; customer_phone: string };
@@ -42,6 +43,7 @@ export default function DogsPage() {
   const filtered=dogs.filter(d=>`${d.name} ${d.breed||""} ${d.customer_name}`.toLowerCase().includes(query.toLowerCase()));
   return <main className="main">
     <div className="topbar"><div><Link href="/" className="back-link"><ArrowLeft size={15}/> Dashboard</Link><div className="eyebrow">Dog profiles</div><h1 className="page-title">Dogs</h1><p className="subtle">Every dog is linked to its customer profile.</p></div><button className="action" onClick={()=>setShowForm(!showForm)}><Plus size={15}/> Add dog</button></div>
+    <ManagementTabs active="dogs"/>
     {error&&<div className="error-box">{error}</div>}
     {showForm&&<form className="panel customer-form" onSubmit={submit}><div className="panel-head"><div><div className="panel-title">Register a dog</div><div className="panel-note">Choose the dog's owner first.</div></div><button type="button" className="plain-button" onClick={()=>setShowForm(false)}>Close</button></div>
       {customers.length===0?<div className="empty">Add a customer before registering a dog.</div>:<><div className="form-grid">
@@ -56,7 +58,7 @@ export default function DogsPage() {
       </div><div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save dog profile"}</button></div></>}
     </form>}
     <section className="panel"><div className="customer-toolbar"><div className="panel-title">{dogs.length} dog{dogs.length===1?"":"s"}</div><div className="search-box"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search dog or owner"/></div></div>
-      {loading?<div className="empty">Loading dogs…</div>:filtered.length===0?<div className="empty"><DogIcon size={24}/><strong>{dogs.length?"No matching dogs":"No dogs registered yet"}</strong>{dogs.length?"Try another search.":"Register a customer’s dog to get started."}</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Dog</th><th>Breed</th><th>Age</th><th>Size</th><th>Customer</th><th>Phone</th></tr></thead><tbody>{filtered.map(d=><tr key={d.id}><td><Link href={`/dogs/${d.id}`} className="table-link"><strong>{d.name}</strong></Link></td><td>{d.breed||"—"}</td><td>{d.age_text||"—"}</td><td>{d.size||"—"}</td><td>{d.customer_name}</td><td>{d.customer_phone}</td></tr>)}</tbody></table></div>}
+      {loading?<div className="empty">Loading dogs…</div>:filtered.length===0?<div className="empty"><DogIcon size={24}/><strong>{dogs.length?"No matching dogs":"No dogs registered yet"}</strong>{dogs.length?"Try another search.":"Register a customer’s dog to get started."}</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Dog</th><th>Breed</th><th>Age</th><th>Size</th><th>Customer</th><th>Phone</th></tr></thead><tbody>{filtered.map(d=><tr key={d.id}><td><Link href={`/dogs/${d.id}`} className="table-link"><strong>{d.name}</strong></Link></td><td>{d.breed||"—"}</td><td>{d.age_text||"—"}</td><td>{d.size||"—"}</td><td><Link href={`/customers/${(d as DogRecord & {customer_id:string}).customer_id}`} className="table-link">{d.customer_name}</Link></td><td>{d.customer_phone}</td></tr>)}</tbody></table></div>}
     </section>
   </main>;
 }
