@@ -30,7 +30,10 @@ export default function BookingsPage(){
   finally{setLoading(false);}
  }
  useEffect(()=>{void load();},[]);
- const customerDogs=dogs.filter(d=>d.customer_id===form.customer_id);\n const monthlyPlan=form.plan_type.startsWith("monthly_");\n const basePrice=({monthly_am_pm:2999,monthly_once:1999,temporary_am_pm:150,single_walk:100} as Record<string,number>)[form.plan_type];\n const totalPrice=basePrice+(monthlyPlan&&form.sunday_extra_enabled?500:0);
+ const customerDogs=dogs.filter(d=>d.customer_id===form.customer_id);
+ const monthlyPlan=form.plan_type.startsWith("monthly_");
+ const basePrice=({monthly_am_pm:2999,monthly_once:1999,temporary_am_pm:150,single_walk:100} as Record<string,number>)[form.plan_type];
+ const totalPrice=basePrice+(monthlyPlan&&form.sunday_extra_enabled?500:0);
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();setSaving(true);setError("");
   try{
@@ -48,7 +51,8 @@ export default function BookingsPage(){
     <label>Customer *<select required value={form.customer_id} onChange={e=>setForm({...form,customer_id:e.target.value,dog_id:""})}><option value="">Select customer</option>{customers.map(c=><option key={c.id} value={c.id}>{c.full_name}</option>)}</select></label>
     <label>Dog *<select required value={form.dog_id} onChange={e=>setForm({...form,dog_id:e.target.value})}><option value="">Select dog</option>{customerDogs.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
     <label>Package *<select value={form.plan_type} onChange={e=>setForm({...form,plan_type:e.target.value})}><option value="monthly_am_pm">Morning + Evening · ₹2,999/month</option><option value="monthly_once">One walk daily · ₹1,999/month</option><option value="temporary_am_pm">Temporary Morning + Evening · ₹150/day</option><option value="single_walk">Single walk · ₹100</option></select></label>
-    <label className="full-field sunday-toggle"><span><input type="checkbox" checked={form.sunday_extra_enabled} disabled={!monthlyPlan} onChange={e=>setForm({...form,sunday_extra_enabled:e.target.checked})}/> Sunday Extra Walk <strong>+₹500/month</strong></span><small>{monthlyPlan?"Sunday walks included in this monthly plan.":"Sunday Extra is available with monthly plans only."}</small></label>\n    <label>Start date *<input type="date" required value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/></label>
+    <label className="full-field sunday-toggle"><span><input type="checkbox" checked={form.sunday_extra_enabled} disabled={!monthlyPlan} onChange={e=>setForm({...form,sunday_extra_enabled:e.target.checked})}/> Sunday Extra Walk <strong>+₹500/month</strong></span><small>{monthlyPlan?"Sunday walks included in this monthly plan.":"Sunday Extra is available with monthly plans only."}</small></label>
+    <label>Start date *<input type="date" required value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/></label>
     <label>Morning time<input type="time" value={form.morning_time} onChange={e=>setForm({...form,morning_time:e.target.value})}/></label>
     <label>Evening time<input type="time" value={form.evening_time} onChange={e=>setForm({...form,evening_time:e.target.value})}/></label>
     <label>Booking source<select value={form.booking_source} onChange={e=>setForm({...form,booking_source:e.target.value})}><option value="whatsapp">WhatsApp</option><option value="phone">Phone call</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></label>
