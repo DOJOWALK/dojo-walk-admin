@@ -70,14 +70,21 @@ export async function PATCH(request: NextRequest) {
     if (!record) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
     const customerId = String(record.customer_id);
     const dogId = String(record.dog_id);
-    const address = typeof body.address === "string" ? body.address.trim() : "";
+    const flatTower = typeof body.flat_tower === "string" ? body.flat_tower.trim() : "";
+    const society = typeof body.society === "string" ? body.society.trim() : "";
+    const locality = typeof body.locality === "string" ? body.locality.trim() : "";
     const city = typeof body.city === "string" ? body.city.trim() : "";
     const state = typeof body.state === "string" ? body.state.trim() : "";
-    const area = [city,state].filter(Boolean).join(", ");
-    await env.DB.prepare("UPDATE customers SET full_name=?,phone=?,whatsapp_phone=?,address=?,area=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
-      .bind(ownerName,phone,whatsapp || null,address || null,area || null,customerId).run();
-    await env.DB.prepare("UPDATE dogs SET name=?,breed=?,age_text=?,size=? WHERE id=?")
-      .bind(dogName,typeof body.dog_breed==="string"?body.dog_breed.trim()||null:null,typeof body.dog_age==="string"?body.dog_age.trim()||null:null,["Small","Medium","Large","Extra Large"].includes(String(body.dog_size))?String(body.dog_size):null,dogId).run();
+    const pincode = typeof body.pincode === "string" ? body.pincode.trim() : "";
+    const address = [flatTower,society].filter(Boolean).join(", ");
+    const area = [locality,city,state,pincode].filter(Boolean).join(", ");
+    const gender = ["Male","Female"].includes(String(body.dog_gender)) ? String(body.dog_gender) : null;
+    const temperament = ["Friendly","Shy","Energetic","Calm","Anxious","Reactive","Other"].includes(String(body.dog_temperament)) ? String(body.dog_temperament) : null;
+    if (!city || !state || !/^\\d{6}$/.test(pincode)) return NextResponse.json({ error: "City, state and valid six-digit PIN Code are required." }, { status: 400 });
+    await env.DB.prepare("UPDATE customers SET full_name=?,phone=?,whatsapp_phone=?,address=?,area=?,flat_tower=?,society=?,locality=?,city=?,state=?,pincode=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
+      .bind(ownerName,phone,whatsapp || null,address || null,area || null,flatTower || null,society || null,locality || null,city,state,pincode,customerId).run();
+    await env.DB.prepare("UPDATE dogs SET name=?,breed=?,age_text=?,size=?,gender=?,temperament=? WHERE id=?")
+      .bind(dogName,typeof body.dog_breed==="string"?body.dog_breed.trim()||null:null,typeof body.dog_age==="string"?body.dog_age.trim()||null:null,["Small","Medium","Large","Extra Large"].includes(String(body.dog_size))?String(body.dog_size):null,gender,temperament,dogId).run();
     await env.DB.prepare("UPDATE bookings SET start_date=?,end_date=?,start_slot=?,morning_time=?,evening_time=?,walks_per_day=?,walk_duration_minutes=?,price_per_walk_inr=?,status=?,booking_source=?,notes=? WHERE id=?")
       .bind(startDate,endDate,startSlot,morning,evening,walksPerDay,duration,rate,status,source,typeof body.notes==="string"?body.notes.slice(0,1000):null,id).run();
     return NextResponse.json({ ok: true });
