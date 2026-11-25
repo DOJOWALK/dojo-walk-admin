@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, Plus, Search, Users } from "lucide-react";
 import Link from "next/link";
+import ManagementTabs from "@/components/management-tabs";
 
 type Customer = {
   id: string; full_name: string; phone: string; whatsapp_phone?: string;
@@ -57,6 +58,7 @@ export default function CustomersPage() {
       <div><Link href="/" className="back-link"><ArrowLeft size={15}/> Dashboard</Link><div className="eyebrow">Customer management</div><h1 className="page-title">Customers</h1><p className="subtle">Customer contact details, dogs, bookings and payment history.</p></div>
       <button className="action" onClick={() => setShowForm(!showForm)}><Plus size={15}/> Add customer</button>
     </div>
+    <ManagementTabs active="customers"/>
     {error && <div className="error-box">{error}</div>}
     {showForm && <form className="panel customer-form" onSubmit={submit}>
       <div className="panel-head"><div><div className="panel-title">New customer</div><div className="panel-note">Booking can come from WhatsApp or phone call.</div></div><button type="button" className="plain-button" onClick={() => setShowForm(false)}>Close</button></div>
