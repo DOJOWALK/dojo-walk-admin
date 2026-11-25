@@ -16,7 +16,7 @@ export default function BookingsPage(){
  const [customers,setCustomers]=useState<Customer[]>([]);
  const [dogs,setDogs]=useState<Dog[]>([]);
  const [bookings,setBookings]=useState<Booking[]>([]);
- const [form,setForm]=useState({customer_id:"",dog_id:"",plan_type:"monthly_am_pm",sunday_extra_enabled:false,start_date:localDate(),morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",payment_choice:"later",payment_method:"upi",notes:""});
+ const [form,setForm]=useState({customer_id:"",dog_id:"",plan_type:"monthly_am_pm",sunday_extra_enabled:false,start_date:localDate(),start_slot:"morning",morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",payment_choice:"later",payment_method:"upi",notes:""});
  const [show,setShow]=useState(false),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState("");
  async function load(){
   setLoading(true);setError("");
@@ -55,6 +55,7 @@ export default function BookingsPage(){
     <label>Package *<select value={form.plan_type} onChange={e=>setForm({...form,plan_type:e.target.value})}><option value="monthly_am_pm">Morning + Evening · ₹2,999/month</option><option value="monthly_once">One walk daily · ₹1,999/month</option><option value="temporary_am_pm">Temporary Morning + Evening · ₹150/day</option><option value="single_walk">Single walk · ₹100</option></select></label>
     <label className="full-field sunday-toggle"><span><input type="checkbox" checked={form.sunday_extra_enabled} disabled={!monthlyPlan} onChange={e=>setForm({...form,sunday_extra_enabled:e.target.checked})}/> Sunday Extra Walk <strong>+₹500/month</strong></span><small>{monthlyPlan?"Sunday walks included in this monthly plan.":"Sunday Extra is available with monthly plans only."}</small></label>
     <label>Start date *<input type="date" required value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/></label>
+    <label>Start from *<select value={form.start_slot} onChange={e=>setForm({...form,start_slot:e.target.value})}><option value="morning">Morning walk</option><option value="evening">Evening walk</option></select></label>
     <label>Morning time<input type="time" value={form.morning_time} onChange={e=>setForm({...form,morning_time:e.target.value})}/></label>
     <label>Evening time<input type="time" value={form.evening_time} onChange={e=>setForm({...form,evening_time:e.target.value})}/></label>
     <label>Booking source<select value={form.booking_source} onChange={e=>setForm({...form,booking_source:e.target.value})}><option value="whatsapp">WhatsApp</option><option value="phone">Phone call</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></label>
