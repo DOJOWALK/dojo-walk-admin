@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyAdminSession, getAdminCookieName } from "@/lib/auth";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { Activity, CalendarDays, Camera, ChartNoAxesCombined, CircleDollarSign, ClipboardList, Dog, House, MessageCircle, PawPrint, Settings, Users, Wallet } from "lucide-react";
 
 const navigation = [
@@ -27,7 +28,8 @@ const stats = [
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
-  const isAdmin = await verifyAdminSession(cookieStore.get(getAdminCookieName())?.value, process.env.SESSION_SECRET);
+  const env = getCloudflareContext().env as { SESSION_SECRET?: string };
+  const isAdmin = await verifyAdminSession(cookieStore.get(getAdminCookieName())?.value, env.SESSION_SECRET);
   if (!isAdmin) redirect("/login");
   return (
     <div className="shell">
