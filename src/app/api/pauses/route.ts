@@ -52,7 +52,7 @@ export async function PATCH(request:NextRequest){
  if(!id||!validDate(resumeDate)||!["morning","evening"].includes(resumeSlot))return NextResponse.json({error:"Choose when walks should resume."},{status:400});
  try{
   const found=await env.DB.prepare("SELECT p.*,b.end_date,b.walks_per_day FROM booking_pauses p JOIN bookings b ON b.id=p.booking_id WHERE p.id=? AND p.status='active'").bind(id).all();
-  const pause=found.results?.[0] as {id:string;booking_id:string;pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;end_date:string|null}|undefined;
+  const pause=found.results?.[0] as {id:string;booking_id:string;pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;end_date:string|null;walks_per_day:number}|undefined;
   if(!pause)return NextResponse.json({error:"Active away record not found."},{status:404});
   if(key(resumeDate,resumeSlot)<=key(pause.pause_from_date,pause.pause_from_slot))return NextResponse.json({error:"Return time must be after the pause start."},{status:400});
   await env.DB.prepare("UPDATE walks SET status='cancelled',notes='Customer away pause' WHERE booking_id=? AND status='scheduled' AND (walk_date>? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END >= CASE ? WHEN 'morning' THEN 0 ELSE 1 END)) AND (walk_date<? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END < CASE ? WHEN 'morning' THEN 0 ELSE 1 END))").bind(pause.booking_id,pause.expected_resume_date,pause.expected_resume_date,pause.expected_resume_slot,resumeDate,resumeDate,resumeSlot).run();
