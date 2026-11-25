@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   if (!customerId || !dogId || !selected || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
     return NextResponse.json({ error: "Customer, dog, plan and start date are required." }, { status: 400 });
   }
-  const advance = Number(body.advance_received_inr || 0);
+  const paymentChoice = ["advance","full","later"].includes(String(body.payment_choice)) ? String(body.payment_choice) : "advance";\n  const advance = paymentChoice === "full" ? totalPrice : paymentChoice === "later" ? 0 : Number(body.advance_received_inr || 0);\n  const paymentMethod = ["cash","upi","bank","other"].includes(String(body.payment_method)) ? String(body.payment_method) : "upi";
   if (!Number.isInteger(advance) || advance < 0 || advance > 10000000) return NextResponse.json({ error: "Enter a valid advance amount." }, { status: 400 });
   try {
     const dog = await env.DB.prepare("SELECT id FROM dogs WHERE id=? AND customer_id=?").bind(dogId,customerId).all();
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     await env.DB.prepare(
       "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
     ).bind(id,customerId,dogId,plan,startDate,body.morning_time || null,body.evening_time || null,selected.walks,selected.duration,totalPrice,sundayExtra?1:0,source,advance,typeof body.notes==="string"?body.notes:null).run();
-    return NextResponse.json({ok:true,id,price_inr:totalPrice,sunday_extra_enabled:sundayExtra},{status:201});
+    if (advance > 0) {\n      await env.DB.prepare("INSERT INTO payments (id,customer_id,booking_id,amount_inr,payment_date,payment_method,reference_note) VALUES (?,?,?,?,?,?,?)").bind(crypto.randomUUID(),customerId,id,advance,new Date().toISOString().slice(0,10),paymentMethod,"Initial booking payment").run();\n    }\n    return NextResponse.json({ok:true,id,price_inr:totalPrice,received_inr:advance,balance_inr:totalPrice-advance,sunday_extra_enabled:sundayExtra},{status:201});
   } catch {
     return NextResponse.json({error:"Booking could not be saved. Check database setup."},{status:503});
   }
