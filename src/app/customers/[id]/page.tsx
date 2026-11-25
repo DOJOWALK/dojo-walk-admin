@@ -35,6 +35,7 @@ export default function CustomerDetail() {
   const [showBlockConfirm,setShowBlockConfirm]=useState(false);
   const [blockReason,setBlockReason]=useState("Payment pending");
   const [blockDuration,setBlockDuration]=useState("1 month");
+  const [stateTarget,setStateTarget]=useState<"leave"|"blocked">("blocked");
   const [deleteReason,setDeleteReason]=useState("Customer requested deletion");
   const [adminPassword,setAdminPassword]=useState("");
   const [showAdminPassword,setShowAdminPassword]=useState(false);
@@ -60,13 +61,13 @@ export default function CustomerDetail() {
 
   useEffect(() => { void loadProfile(); }, [id]);
 
-  async function changeBookingAccess(nextStatus:"active"|"inactive") {
+  async function changeBookingAccess(nextStatus:"active"|"leave"|"blocked") {
     setActionBusy(true); setError(""); setSuccess("");
     try {
-      const r=await fetch("/api/customers",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:nextStatus,reason:blockReason,duration:blockDuration})});
+      const r=await fetch("/api/customers",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,state:nextStatus,reason:blockReason,duration:blockDuration})});
       const j=await r.json(); if(!r.ok) throw new Error(j.error||"Customer status could not be changed.");
-      setCustomer((current:R|null)=>current?{...current,status:nextStatus,blocked_until:j.blocked_until}:current);
-      setShowBlockConfirm(false); setSuccess(nextStatus==="inactive"?"New bookings are now blocked for this customer.":"New bookings are enabled for this customer.");
+      setCustomer((current:R|null)=>current?{...current,status:nextStatus==="active"?"active":"inactive",customer_state:nextStatus,blocked_until:j.blocked_until}:current);
+      setShowBlockConfirm(false); setSuccess(nextStatus==="blocked"?"Customer is blocked from new bookings.":nextStatus==="leave"?"Customer is marked as on leave.":"New bookings are enabled for this customer.");
     } catch(e) { setError(e instanceof Error?e.message:"Could not update booking access."); }
     finally { setActionBusy(false); }
   }
@@ -125,14 +126,15 @@ export default function CustomerDetail() {
     <section className="panel">
       <div className="panel-head"><div><div className="booking-section-heading">Customer booking access</div><p className="subtle">{customer.status==="inactive"?"New bookings are blocked for this customer.":"This customer can receive new bookings."}</p></div><span className={`record-status status-${customer.status||"active"}`}>{customer.status==="inactive"?"Booking blocked":"Active"}</span></div>
       <div className="form-actions">
-        <button type="button" className="action" disabled={actionBusy} onClick={()=>customer.status==="inactive"?void changeBookingAccess("active"):setShowBlockConfirm(true)}>{actionBusy?"Please wait…":customer.status==="inactive"?"Unblock":"Block"}</button>
+        <button type="button" className="action" disabled={actionBusy} onClick={()=>customer.status==="inactive"?void changeBookingAccess("active"):(setStateTarget("blocked"),setShowBlockConfirm(true))}>{actionBusy?"Please wait…":customer.status==="inactive"?"Unblock":"Block"}</button>
+        {customer.status!=="inactive"&&<button type="button" className="plain-button" onClick={()=>{setStateTarget("leave");setShowBlockConfirm(true);}}>Leave</button>}
         <button type="button" className="plain-button" onClick={()=>{setShowDeleteConfirm(true);setAdminPassword("");}}>Delete customer</button>
       </div>
       {showBlockConfirm&&<div className="booking-notes">
-        <strong>Block {customer.full_name}?</strong>
+        <strong>{stateTarget==="leave"?"Mark "+customer.full_name+" on leave?":"Block "+customer.full_name+"?"}</strong>
         <label>Reason<select value={blockReason} onChange={e=>setBlockReason(e.target.value)}><option>Payment pending</option><option>Customer request</option><option>Misbehaviour</option><option>Repeated cancellations</option><option>Other</option></select></label>
         <label>Duration<select value={blockDuration} onChange={e=>setBlockDuration(e.target.value)}><option>7 days</option><option>15 days</option><option>1 month</option><option>3 months</option><option>6 months</option><option>Permanent</option></select></label>
-        <div className="form-actions"><button type="button" className="action" disabled={actionBusy} onClick={()=>void changeBookingAccess("inactive")}>Confirm block</button><button type="button" className="plain-button" onClick={()=>setShowBlockConfirm(false)}>Cancel</button></div>
+        <div className="form-actions"><button type="button" className="action" disabled={actionBusy} onClick={()=>void changeBookingAccess(stateTarget)}>Confirm {stateTarget==="leave"?"leave":"block"}</button><button type="button" className="plain-button" onClick={()=>setShowBlockConfirm(false)}>Cancel</button></div>
       </div>}
       {showDeleteConfirm&&<div className="booking-notes">
         <strong>Confirm permanent deletion</strong>
