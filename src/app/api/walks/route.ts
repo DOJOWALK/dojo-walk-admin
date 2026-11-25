@@ -7,7 +7,7 @@ type Statement={bind(...values:unknown[]):Statement;all():Promise<{results?:unkn
 type DBLike={prepare(sql:string):Statement};
 type Env={DB:DBLike;SESSION_SECRET?:string};
 async function adminEnv(){const {env}=getCloudflareContext();const runtime=env as unknown as Env;const jar=await cookies();return await verifyAdminSession(jar.get(getAdminCookieName())?.value,runtime.SESSION_SECRET)?runtime:null;}
-function validDate(value:string){if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(value))return false;const d=new Date(value+"T00:00:00Z");return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value;}
+function validDate(value:string){if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value))return false;const d=new Date(value+"T00:00:00Z");return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value;}
 
 export async function GET(request:NextRequest){
  const env=await adminEnv();if(!env)return NextResponse.json({error:"Unauthorized"},{status:401});
