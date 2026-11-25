@@ -20,7 +20,7 @@ export async function GET() {
   if (!env) return NextResponse.json({error:"Unauthorized"},{status:401});
   try {
     const result = await env.DB.prepare(
-      "SELECT p.*, c.full_name AS customer_name, b.plan_type, d.name AS dog_name FROM payments p JOIN customers c ON c.id=p.customer_id LEFT JOIN bookings b ON b.id=p.booking_id LEFT JOIN dogs d ON d.id=b.dog_id ORDER BY p.payment_date DESC, p.created_at DESC"
+      "SELECT p.*, c.full_name AS customer_name, d.name AS dog_name FROM payments p JOIN customers c ON c.id=p.customer_id LEFT JOIN bookings b ON b.id=p.booking_id LEFT JOIN dogs d ON d.id=b.dog_id ORDER BY p.payment_date DESC, p.created_at DESC"
     ).all();
     return NextResponse.json({payments:result.results ?? []});
   } catch {
@@ -38,22 +38,19 @@ export async function POST(request: NextRequest) {
   const method = ["cash","upi","bank","other"].includes(String(body.payment_method)) ? String(body.payment_method) : "upi";
   const date = typeof body.payment_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.payment_date) ? body.payment_date : new Date().toISOString().slice(0,10);
   const note = typeof body.reference_note === "string" ? body.reference_note.trim().slice(0,250) : "";
-  if (!bookingId || !Number.isSafeInteger(amount) || amount <= 0 || amount > 10000000) {
-    return NextResponse.json({error:"Select a booking and enter a valid payment amount."},{status:400});
-  }
+  if (!bookingId || !Number.isSafeInteger(amount) || amount <= 0 || amount > 10000000) return NextResponse.json({error:"Select a booking and enter a valid payment amount."},{status:400});
   try {
-    const bookingResult = await env.DB.prepare("SELECT id,customer_id,price_inr,advance_received_inr FROM bookings WHERE id=? AND status!='cancelled'").bind(bookingId).all();
-    const booking = bookingResult.results?.[0] as {id:string;customer_id:string;price_inr:number;advance_received_inr:number} | undefined;
+    const result = await env.DB.prepare(
+      "SELECT b.id,b.customer_id,b.price_per_walk_inr,COALESCE((SELECT COUNT(*) FROM walks w WHERE w.booking_id=b.id AND w.status='completed'),0) AS completed_walks,COALESCE((SELECT SUM(p.amount_inr) FROM payments p WHERE p.booking_id=b.id),0) AS paid_inr FROM bookings b WHERE b.id=? AND b.status!='cancelled'"
+    ).bind(bookingId).all();
+    const booking = result.results?.[0] as {id:string;customer_id:string;price_per_walk_inr:number;completed_walks:number;paid_inr:number} | undefined;
     if (!booking) return NextResponse.json({error:"Booking not found or cancelled."},{status:404});
-    const due = Math.max(0, booking.price_inr - booking.advance_received_inr);
-    if (amount > due) return NextResponse.json({error:`Amount exceeds the pending balance of ₹${due}.`},{status:400});
+    const due = Math.max(0, booking.completed_walks * booking.price_per_walk_inr - booking.paid_inr);
+    if (amount > due) return NextResponse.json({error:`Amount exceeds the completed-walk balance of ₹${due}.`},{status:400});
     const paymentId = crypto.randomUUID();
-    await env.DB.batch([
-      env.DB.prepare("INSERT INTO payments (id,customer_id,booking_id,amount_inr,payment_date,payment_method,reference_note) VALUES (?,?,?,?,?,?,?)").bind(paymentId,booking.customer_id,bookingId,amount,date,method,note || null),
-      env.DB.prepare("UPDATE bookings SET advance_received_inr=advance_received_inr+? WHERE id=?").bind(amount,bookingId)
-    ]);
+    await env.DB.prepare("INSERT INTO payments (id,customer_id,booking_id,amount_inr,payment_date,payment_method,reference_note) VALUES (?,?,?,?,?,?,?)").bind(paymentId,booking.customer_id,bookingId,amount,date,method,note || null).run();
     return NextResponse.json({ok:true,id:paymentId,received_inr:amount,balance_inr:due-amount},{status:201});
   } catch {
-    return NextResponse.json({error:"Payment could not be saved. Please retry."},{status:503});
+    return NextResponse.json({error:"Payment could not be saved. Apply migration 0004 and retry."},{status:503});
   }
 }
