@@ -4,9 +4,10 @@ import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
-type Booking={id:string;customer_id:string;dog_id:string;customer_name:string;dog_name:string;plan_type:string;start_date:string;price_inr:number;advance_received_inr:number;status:string;sunday_extra_enabled:number};
+type Booking={id:string;customer_id:string;dog_id:string;customer_name:string;dog_name:string;plan_type:string;start_date:string;end_date:string|null;price_inr:number;advance_received_inr:number;status:string;sunday_extra_enabled:number};
 const plans=[{id:"monthly_am_pm",label:"Morning + Evening · ₹2,999/month",price:2999},{id:"monthly_once",label:"One walk daily · ₹1,999/month",price:1999},{id:"temporary_am_pm",label:"Temporary Morning + Evening · ₹150/day",price:150},{id:"single_walk",label:"Single walk · ₹100",price:100}];
 function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}
+function nextDate(value:string){const d=new Date(value+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10);}
 
 export default function ContinueBookingPage(){
  const [bookings,setBookings]=useState<Booking[]>([]);
@@ -30,7 +31,7 @@ export default function ContinueBookingPage(){
      <label className="full-field">Existing customer booking *<select required value={form.source_booking_id} onChange={e=>setForm({...form,source_booking_id:e.target.value})}><option value="">Select customer and dog</option>{eligible.map(b=><option key={b.id} value={b.id}>{b.customer_name} · {b.dog_name} · {b.plan_type.replaceAll("_"," ")} · {b.start_date}</option>)}</select></label>
      {selected?<div className="full-field booking-price">Selected: <strong>{selected.customer_name} · {selected.dog_name}</strong><br/>Previous plan amount: ₹{selected.price_inr.toLocaleString("en-IN")} · Received: ₹{selected.advance_received_inr.toLocaleString("en-IN")}</div>:null}
      <label>New plan *<select value={form.plan_type} onChange={e=>setForm({...form,plan_type:e.target.value,sunday_extra_enabled:false})}>{plans.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
-     <label>New plan start date *<input type="date" required min={selected?selected.start_date:undefined} value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/></label>
+     <label>New plan start date *<input type="date" required min={selected?nextDate(selected.end_date||selected.start_date):undefined} value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/></label>
      <label className="full-field sunday-toggle"><span><input type="checkbox" checked={form.sunday_extra_enabled} disabled={!monthly} onChange={e=>setForm({...form,sunday_extra_enabled:e.target.checked})}/> Sunday Extra <strong>+₹500/month</strong></span><small>{monthly?"Optional Sunday service for monthly plans.":"Available with monthly plans only."}</small></label>
      <label>Morning time<input type="time" value={form.morning_time} onChange={e=>setForm({...form,morning_time:e.target.value})}/></label>
      <label>Evening time<input type="time" value={form.evening_time} onChange={e=>setForm({...form,evening_time:e.target.value})}/></label>
