@@ -57,8 +57,9 @@ export async function PATCH(request:NextRequest){
   if(key(resumeDate,resumeSlot)<=key(pause.pause_from_date,pause.pause_from_slot))return NextResponse.json({error:"Return time must be after the pause start."},{status:400});
   await env.DB.prepare("UPDATE walks SET status='cancelled',notes='Customer away pause' WHERE booking_id=? AND status='scheduled' AND (walk_date>? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END >= CASE ? WHEN 'morning' THEN 0 ELSE 1 END)) AND (walk_date<? OR (walk_date=? AND CASE slot WHEN 'morning' THEN 0 ELSE 1 END < CASE ? WHEN 'morning' THEN 0 ELSE 1 END))").bind(pause.booking_id,pause.expected_resume_date,pause.expected_resume_date,pause.expected_resume_slot,resumeDate,resumeDate,resumeSlot).run();
   await env.DB.prepare("UPDATE booking_pauses SET actual_resume_date=?,actual_resume_slot=?,status='resumed',resumed_at=CURRENT_TIMESTAMP WHERE id=?").bind(resumeDate,resumeSlot,id).run();
-  let fullDays=0;
-  if(pause.end_date){
+  const fullDays=0;
+  /* Per-walk billing has no package expiry to extend. Away periods only suppress scheduled walks. */
+  if(false && pause.end_date){
    const firstDate=pause.pause_from_date>pause.start_date?pause.pause_from_date:pause.start_date;
    const lastDate=resumeDate<pause.end_date?resumeDate:pause.end_date;
    const d=new Date(firstDate+"T00:00:00Z"),end=new Date(lastDate+"T00:00:00Z");
