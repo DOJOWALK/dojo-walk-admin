@@ -68,7 +68,7 @@ export default function DashboardPage() {
 
       <section className="dashboard-kpis">
         <a className="dashboard-kpi" href="/bookings"><span className="dashboard-kpi-icon orange"><CalendarDays size={19}/></span><span className="dashboard-kpi-label">Active Bookings</span><strong>{loading ? "—" : number(count.active)}</strong><small>{number(count.paused)} paused · {number(count.ending_soon)} ending soon</small></a>
-        <a className="dashboard-kpi" href="/schedule"><span className="dashboard-kpi-icon green"><Footprints size={19}/></span><span className="dashboard-kpi-label">Today's Walks</span><strong>{loading ? "—" : totalWalks}</strong><small>{completed} completed · {number(walks.scheduled)} scheduled</small></a>
+        <a className="dashboard-kpi" href="/schedule"><span className="dashboard-kpi-icon green"><Footprints size={19}/></span><span className="dashboard-kpi-label">Today's Walks</span><strong>{loading ? "—" : totalWalks}</strong><small>{completed} completed · {number(walks.scheduled)} scheduled · {number(walks.missed)} missed</small></a>
         <a className="dashboard-kpi" href="/payments"><span className="dashboard-kpi-icon blue"><Wallet size={19}/></span><span className="dashboard-kpi-label">Pending Payments</span><strong>{loading ? "—" : money(data?.dues.total)}</strong><small>{number(data?.dues.bookings_due)} bookings with balance</small></a>
         <a className="dashboard-kpi" href="/customers"><span className="dashboard-kpi-icon violet"><Users size={19}/></span><span className="dashboard-kpi-label">Customers</span><strong>{loading ? "—" : number(count.customers)}</strong><small>{number(count.dogs)} dogs in profiles</small></a>
       </section>
