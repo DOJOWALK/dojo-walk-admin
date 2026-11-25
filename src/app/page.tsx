@@ -5,7 +5,7 @@ const stats = [
   { label: "Active customers", value: "—", note: "Add your first customer" },
   { label: "Dogs registered", value: "—", note: "Customer dogs will appear here" },
   { label: "Today's walks", value: "—", note: "Daily schedule at a glance" },
-  { label: "Pending payments", value: "—", note: "Track monthly balances" }
+  { label: "Pending payments", value: "—", note: "Charges from completed walks" }
 ];
 
 export default function DashboardPage() {
@@ -18,11 +18,11 @@ export default function DashboardPage() {
         <div className="panel"><div className="panel-head"><div><div className="panel-title">Quick actions</div><div className="panel-note">Get common tasks done faster</div></div></div><div className="quick-list">
           <a className="quick-item" href="/customers"><div className="quick-icon"><Users size={17}/></div><div><div className="quick-title">Add a customer</div><div className="quick-desc">Save contact and booking source</div></div></a>
           <a className="quick-item" href="/dogs"><div className="quick-icon"><PawPrint size={17}/></div><div><div className="quick-title">Register a dog</div><div className="quick-desc">Keep each dog under its customer</div></div></a>
-          <a className="quick-item" href="/bookings"><div className="quick-icon"><CalendarDays size={17}/></div><div><div className="quick-title">Create a booking</div><div className="quick-desc">Choose plan, timing and advance</div></div></a>
+          <a className="quick-item" href="/bookings"><div className="quick-icon"><CalendarDays size={17}/></div><div><div className="quick-title">Create a booking</div><div className="quick-desc">Set dog, timing and walk frequency</div></div></a>
           <div className="quick-item"><div className="quick-icon"><MessageCircle size={17}/></div><div><div className="quick-title">WhatsApp updates</div><div className="quick-desc">Prepare customer messages to review</div></div></div>
         </div></div>
       </section>
-      <div className="notice"><strong>Business rules:</strong> Sunday weekly off · monthly plans use 26 working days · cancellation fee ₹299 · WhatsApp messages are manually reviewed before sending.</div>
+      <div className="notice"><strong>Business rules:</strong> ₹65 per dog per completed 30-minute walk · missed/cancelled walks are not charged · Sundays off · WhatsApp messages are manually reviewed before sending.</div>
     </main>
   </AppShell>;
 }
