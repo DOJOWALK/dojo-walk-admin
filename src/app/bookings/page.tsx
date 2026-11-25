@@ -4,7 +4,6 @@ import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, CalendarPlus, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import ManagementTabs from "@/components/management-tabs";
 
 type Booking={id:string;customer_id:string;dog_id:string;customer_name:string;customer_phone?:string;dog_name:string;start_date:string;walks_per_day:number;walk_duration_minutes:number;price_per_walk_inr:number;completed_walks:number;accrued_inr:number;paid_inr:number;due_inr:number;status:string};
 const STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry"];
@@ -41,9 +40,9 @@ export default function BookingsPage(){
   }catch(e){setError(e instanceof Error?e.message:"Booking could not be saved.");}
   finally{setSaving(false);}
  }
+ const filteredBookings=bookings.filter(b=>`${b.customer_name} ${b.customer_phone||""} ${b.dog_name} ${b.status}`.toLowerCase().includes(query.toLowerCase()));
  return <main className="main">
   <div className="topbar"><div><Link href="/" className="back-link"><ArrowLeft size={15}/> Dashboard</Link><div className="eyebrow">Booking-first workflow</div><h1 className="page-title">Bookings</h1><p className="subtle">Add the owner, dog and complete address here. Their profiles are created or matched automatically.</p></div><button className="action" onClick={()=>{setShow(!show);setSuccess("");}}><Plus size={15}/> Add booking</button></div>
-  <ManagementTabs active="bookings"/>
   {error&&<div className="error-box">{error}</div>}{success&&<div className="success-box">{success}</div>}
   {show&&<form className="panel customer-form" onSubmit={submit}>
    <div className="panel-head"><div><div className="panel-title">New booking · Owner + Dog</div><div className="panel-note">Existing owners are matched by mobile number; an existing dog with the same name is reused.</div></div><button type="button" className="plain-button" onClick={()=>setShow(false)}>Close</button></div>
@@ -76,8 +75,8 @@ export default function BookingsPage(){
    <div className="booking-price">Rate: <strong>₹{({20:45,30:65,45:95,60:125} as Record<number,number>)[Number(form.walk_duration_minutes)]} per dog, per completed {form.walk_duration_minutes}-minute walk</strong><br/>Only completed walks are charged. Missed or cancelled walks: ₹0.</div>
    <div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save booking + owner + dog"}</button></div>
   </form>}
-  <section className="panel"><div className="panel-head"><div><div className="panel-title">{bookings.length} booking{bookings.length===1?"":"s"}</div><div className="panel-note">Billing is calculated from completed walks only.</div></div></div>
-   {loading?<div className="empty">Loading bookings…</div>:bookings.length===0?<div className="empty"><CalendarPlus size={24}/><strong>No bookings recorded yet</strong>Use Add booking to create the owner, dog and booking together.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Customer</th><th>Mobile</th><th>Dog</th><th>Start date</th><th>Walks/day</th><th>Duration</th><th>Completed</th><th>Charges</th><th>Received</th><th>Due</th><th>Status</th></tr></thead><tbody>{bookings.map(b=><tr key={b.id} className="clickable-row" role="link" tabIndex={0} aria-label={`Open booking for ${b.customer_name} and ${b.dog_name}`} onClick={()=>router.push(`/bookings/${b.id}`)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();router.push(`/bookings/${b.id}`);}}}><td><strong>{b.customer_name}</strong></td><td>{b.customer_phone||"—"}</td><td>{b.dog_name}</td><td>{b.start_date}</td><td>{b.walks_per_day}</td><td>{b.walk_duration_minutes} min</td><td>{b.completed_walks}</td><td>₹{Number(b.accrued_inr||0).toLocaleString("en-IN")}</td><td>₹{Number(b.paid_inr||0).toLocaleString("en-IN")}</td><td><strong>₹{Number(b.due_inr||0).toLocaleString("en-IN")}</strong></td><td><span className="status-dot">{b.status}</span></td></tr>)}</tbody></table></div>}
+  <section className="panel"><div className="list-toolbar"><div className="panel-title">{bookings.length} booking{bookings.length===1?"":"s"}</div><div className="search-box"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search customer, phone or dog"/></div></div>
+   {loading?<div className="empty">Loading bookings…</div>:filteredBookings.length===0?<div className="empty"><CalendarPlus size={24}/><strong>{bookings.length?"No matching bookings":"No bookings recorded yet"}</strong>{bookings.length?"Try another name, phone or dog.":"Use Add booking to create an owner, dog and booking together."}</div>:<div className="record-list">{filteredBookings.map(b=><button type="button" className="record-card" key={b.id} onClick={()=>router.push(`/bookings/${b.id}`)}><div className="record-main"><div className="record-heading"><strong>{b.dog_name}</strong><span className={`record-status status-${b.status}`}>{b.status}</span></div><span className="record-subtitle">{b.customer_name} · {b.customer_phone||"No phone"}</span><span className="record-subtitle">{b.start_date} · {b.walk_duration_minutes} min · {b.walks_per_day} walk(s)/day</span></div><div className="record-side"><strong>₹{Number(b.due_inr||0).toLocaleString("en-IN")} due</strong><span>{b.completed_walks||0} completed</span><span className="record-open">View details →</span></div></button>)}</div>}
   </section>
  </main>;
 }
