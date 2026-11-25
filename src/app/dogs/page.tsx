@@ -4,7 +4,6 @@ import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, Dog as DogIcon, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import ManagementTabs from "@/components/management-tabs";
 
 type Customer = { id: string; full_name: string };
 type DogRecord = { id: string; name: string; breed?: string; age_text?: string; size?: string; customer_name: string; customer_phone: string };
@@ -45,7 +44,6 @@ export default function DogsPage() {
   const filtered=dogs.filter(d=>`${d.name} ${d.breed||""} ${d.customer_name}`.toLowerCase().includes(query.toLowerCase()));
   return <main className="main">
     <div className="topbar"><div><Link href="/" className="back-link"><ArrowLeft size={15}/> Dashboard</Link><div className="eyebrow">Dog profiles</div><h1 className="page-title">Dogs</h1><p className="subtle">Every dog is linked to its customer profile.</p></div><button className="action" onClick={()=>setShowForm(!showForm)}><Plus size={15}/> Add dog</button></div>
-    <ManagementTabs active="dogs"/>
     {error&&<div className="error-box">{error}</div>}
     {showForm&&<form className="panel customer-form" onSubmit={submit}><div className="panel-head"><div><div className="panel-title">Register a dog</div><div className="panel-note">Choose the dog's owner first.</div></div><button type="button" className="plain-button" onClick={()=>setShowForm(false)}>Close</button></div>
       {customers.length===0?<div className="empty">Add a customer before registering a dog.</div>:<><div className="form-grid">
