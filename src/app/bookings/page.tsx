@@ -46,7 +46,7 @@ export default function BookingsPage(){
   finally{setSaving(false);}
  }
  return <main className="main">
-  <div className="topbar"><div><Link href="/" className="back-link"><ArrowLeft size={15}/> Dashboard</Link><div className="eyebrow">Bookings & plans</div><h1 className="page-title">Bookings</h1><p className="subtle">Record customer plans and full or later payment.</p></div><button className="action" onClick={()=>setShow(!show)}><Plus size={15}/> New booking</button></div>
+  <div className="topbar"><div><Link href="/" className="back-link"><ArrowLeft size={15}/> Dashboard</Link><div className="eyebrow">Bookings & plans</div><h1 className="page-title">Bookings</h1><p className="subtle">Record customer plans and full or later payment.</p></div><div style={{display:"flex",gap:9,flexWrap:"wrap"}}><Link className="action" href="/bookings/continue">Continue / Change Plan</Link><button className="action" onClick={()=>setShow(!show)}><Plus size={15}/> New booking</button></div></div>
   {error&&<div className="error-box">{error}</div>}
   {show&&<form className="panel customer-form" onSubmit={submit}><div className="panel-head"><div><div className="panel-title">Create booking</div><div className="panel-note">Prices are set from your confirmed Dojo Walk rates.</div></div><button type="button" className="plain-button" onClick={()=>setShow(false)}>Close</button></div>
    {customers.length===0?<div className="empty">Add a customer and dog before creating a booking.</div>:<><div className="form-grid">
