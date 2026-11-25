@@ -27,12 +27,12 @@ export async function POST(request:NextRequest){
   let created=0;
   for(const b of bookings){
    const slots=b.walks_per_day>=2?["morning","evening"]:["morning"];
-   const pauses=await env.DB.prepare("SELECT pause_from_date,pause_from_slot,expected_resume_date,expected_resume_slot FROM booking_pauses WHERE booking_id=? AND status='active'").bind(b.id).all();
-   const activePauses=(pauses.results??[]) as Array<{pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string}>;
+   const pauses=await env.DB.prepare("SELECT pause_from_date,pause_from_slot,expected_resume_date,expected_resume_slot,actual_resume_date,actual_resume_slot,status FROM booking_pauses WHERE booking_id=?").bind(b.id).all();
+   const activePauses=(pauses.results??[]) as Array<{pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;actual_resume_date:string|null;actual_resume_slot:string|null;status:string}>;
    for(const slot of slots){
     const order=(d:string,s:string)=>d+":"+(s==="morning"?"0":"1");
     const slotKey=order(date,slot);
-    const isPaused=activePauses.some(p=>slotKey>=order(p.pause_from_date,p.pause_from_slot)&&slotKey<order(p.expected_resume_date,p.expected_resume_slot));
+    const isPaused=activePauses.some(p=>slotKey>=order(p.pause_from_date,p.pause_from_slot)&&slotKey<order(p.status==='resumed'&&p.actual_resume_date?p.actual_resume_date:p.expected_resume_date,p.status==='resumed'&&p.actual_resume_slot?p.actual_resume_slot:p.expected_resume_slot));
     if(isPaused)continue;
     await env.DB.prepare("UPDATE walks SET status='scheduled',notes=NULL WHERE booking_id=? AND walk_date=? AND slot=? AND status='cancelled' AND notes='Customer away pause'").bind(b.id,date,slot).run();
     const time=slot==="morning"?b.morning_time:b.evening_time;
