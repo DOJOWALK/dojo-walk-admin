@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     if (existing.results?.length) return NextResponse.json({ error: "This dog already has an active walking booking. Continue using that booking or cancel it first." }, { status: 409 });
     const id = crypto.randomUUID();
     await env.DB.prepare(
-      "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,end_date,start_slot,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes,price_per_walk_inr) VALUES (?,?,?,'single_walk',?,NULL,?,?,?,?,?,?,0,0,?,0,?,?)"
+      "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,end_date,start_slot,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes,price_per_walk_inr) VALUES (?,?,?,'single_walk',?,NULL,?,?,?,?,?,0,0,?,0,?,?)"
     ).bind(id,customerId,dogId,startDate,startSlot,morningTime,eveningTime,walksPerDay,walkDuration,source,typeof body.notes==="string"?body.notes.slice(0,1000):null,walkRate).run();
     return NextResponse.json({ok:true,id,walk_duration_minutes:walkDuration,price_per_walk_inr:walkRate,walks_per_day:walksPerDay},{status:201});
   } catch {
