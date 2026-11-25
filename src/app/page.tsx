@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import AppShell from "@/components/app-shell";
 import { Activity, CalendarDays, CheckCircle2, Clock3, CreditCard, Dog, Footprints, Plus, Sunrise, Sunset, Users, Wallet, ArrowUpRight } from "lucide-react";
 
@@ -67,34 +67,34 @@ export default function DashboardPage() {
       {loading && <div className="dashboard-loading">Loading your live business summary…</div>}
 
       <section className="dashboard-kpis">
-        <a className="dashboard-kpi" href="/bookings"><span className="dashboard-kpi-icon orange"><CalendarDays size={19}/></span><span className="dashboard-kpi-label">Active Bookings</span><strong>{loading ? "—" : number(count.active)}</strong><small>{number(count.paused)} paused · {number(count.ending_soon)} ending soon</small></a>
-        <a className="dashboard-kpi" href="/schedule"><span className="dashboard-kpi-icon green"><Footprints size={19}/></span><span className="dashboard-kpi-label">Today's Walks</span><strong>{loading ? "—" : totalWalks}</strong><small>{completed} completed · {number(walks.scheduled)} scheduled · {number(walks.missed)} missed</small></a>
-        <a className="dashboard-kpi" href="/payments"><span className="dashboard-kpi-icon blue"><Wallet size={19}/></span><span className="dashboard-kpi-label">Pending Payments</span><strong>{loading ? "—" : money(data?.dues.total)}</strong><small>{number(data?.dues.bookings_due)} bookings with balance</small></a>
-        <a className="dashboard-kpi" href="/customers"><span className="dashboard-kpi-icon violet"><Users size={19}/></span><span className="dashboard-kpi-label">Customers</span><strong>{loading ? "—" : number(count.customers)}</strong><small>{number(count.dogs)} dogs in profiles</small></a>
+        <a className="dashboard-kpi" href="/bookings"><span className="dashboard-kpi-icon orange"><CalendarDays size={19}/></span><span className="dashboard-kpi-label">Active Bookings</span><strong>{loading || !data ? "—" : number(count.active)}</strong><small>{data ? `${number(count.paused)} paused · ${number(count.ending_soon)} ending soon` : "Booking summary unavailable"}</small></a>
+        <a className="dashboard-kpi" href="/schedule"><span className="dashboard-kpi-icon green"><Footprints size={19}/></span><span className="dashboard-kpi-label">Today's Walks</span><strong>{loading || !data ? "—" : totalWalks}</strong><small>{data ? `${completed} completed · ${number(walks.scheduled)} scheduled · ${number(walks.missed)} missed` : "Walk summary unavailable"}</small></a>
+        <a className="dashboard-kpi" href="/payments"><span className="dashboard-kpi-icon blue"><Wallet size={19}/></span><span className="dashboard-kpi-label">Pending Payments</span><strong>{loading || !data ? "—" : money(data?.dues.total)}</strong><small>{data ? `${number(data.dues.bookings_due)} bookings with balance` : "Payment summary unavailable"}</small></a>
+        <a className="dashboard-kpi" href="/customers"><span className="dashboard-kpi-icon violet"><Users size={19}/></span><span className="dashboard-kpi-label">Customers</span><strong>{loading || !data ? "—" : number(count.customers)}</strong><small>{data ? `${number(count.dogs)} dogs in profiles` : "Customer summary unavailable"}</small></a>
       </section>
 
       <section className="dashboard-main-grid">
         <div className="panel dashboard-walk-panel">
           <div className="dashboard-section-head"><div><div className="panel-title">Today's Walks</div><div className="panel-note">Daily attendance and walk progress</div></div><a className="dashboard-text-link" href="/schedule">Open schedule <ArrowUpRight size={14}/></a></div>
           <div className="walk-progress-layout">
-            <div className="walk-progress-number"><strong>{loading ? "—" : completed}<span> / {totalWalks}</span></strong><small>Completed walks</small></div>
-            <div className="walk-progress-ring" style={{ "--progress": progress } as React.CSSProperties}><div><strong>{loading ? "—" : progress + "%"}</strong><small>Done</small></div></div>
+            <div className="walk-progress-number"><strong>{loading || !data ? "—" : completed}<span> / {data ? totalWalks : "—"}</span></strong><small>Completed walks</small></div>
+            <div className="walk-progress-ring" style={{ "--progress": progress } as CSSProperties}><div><strong>{loading || !data ? "—" : progress + "%"}</strong><small>Done</small></div></div>
           </div>
           <div className="walk-progress-track"><span style={{ width: progress + "%" }}/></div>
           <div className="walk-slot-grid">
-            <div className="walk-slot-card morning"><div className="walk-slot-heading"><span><Sunrise size={17}/> Morning</span><small>{number(morning.completed)}/{number(morning.total)} done</small></div><strong>{number(morning.scheduled)}</strong><small>Scheduled remaining</small></div>
-            <div className="walk-slot-card evening"><div className="walk-slot-heading"><span><Sunset size={17}/> Evening</span><small>{number(evening.completed)}/{number(evening.total)} done</small></div><strong>{number(evening.scheduled)}</strong><small>Scheduled remaining</small></div>
+            <div className="walk-slot-card morning"><div className="walk-slot-heading"><span><Sunrise size={17}/> Morning</span><small>{data ? `${number(morning.completed)}/${number(morning.total)} done` : "—"}</small></div><strong>{data ? number(morning.scheduled) : "—"}</strong><small>Scheduled remaining</small></div>
+            <div className="walk-slot-card evening"><div className="walk-slot-heading"><span><Sunset size={17}/> Evening</span><small>{data ? `${number(evening.completed)}/${number(evening.total)} done` : "—"}</small></div><strong>{data ? number(evening.scheduled) : "—"}</strong><small>Scheduled remaining</small></div>
           </div>
           {!loading && totalWalks === 0 && <div className="dashboard-empty-note">No walks are scheduled for today yet. Generate today's schedule from Walk Schedule.</div>}
         </div>
 
         <div className="panel dashboard-bookings-panel">
           <div className="dashboard-section-head"><div><div className="panel-title">Active Bookings</div><div className="panel-note">Your current walking subscriptions</div></div><a className="dashboard-text-link" href="/bookings">View all <ArrowUpRight size={14}/></a></div>
-          <div className="active-booking-total"><div><strong>{loading ? "—" : number(count.active)}</strong><small>Active bookings</small></div><span className="active-booking-icon"><Dog size={25}/></span></div>
+          <div className="active-booking-total"><div><strong>{loading || !data ? "—" : number(count.active)}</strong><small>Active bookings</small></div><span className="active-booking-icon"><Dog size={25}/></span></div>
           <div className="booking-status-list">
-            <div><span><i className="status-mark active"/>Active</span><strong>{number(count.active)}</strong></div>
-            <div><span><i className="status-mark paused"/>Paused</span><strong>{number(count.paused)}</strong></div>
-            <div><span><i className="status-mark ending"/>Ending in 7 days</span><strong>{number(count.ending_soon)}</strong></div>
+            <div><span><i className="status-mark active"/>Active</span><strong>{data ? number(count.active) : "—"}</strong></div>
+            <div><span><i className="status-mark paused"/>Paused</span><strong>{data ? number(count.paused) : "—"}</strong></div>
+            <div><span><i className="status-mark ending"/>Ending in 7 days</span><strong>{data ? number(count.ending_soon) : "—"}</strong></div>
           </div>
           <a className="dashboard-outline-link" href="/bookings">Manage bookings <ArrowUpRight size={14}/></a>
         </div>
@@ -102,8 +102,8 @@ export default function DashboardPage() {
 
       <section className="dashboard-finance-grid">
         <a className="dashboard-finance-card due" href="/payments"><span className="dashboard-finance-icon"><CreditCard size={19}/></span><span className="dashboard-finance-label">Total outstanding</span><strong>{loading ? "—" : money(data?.dues.total)}</strong><small>{number(data?.dues.bookings_due)} bookings need payment follow-up</small></a>
-        <a className="dashboard-finance-card received" href="/payments"><span className="dashboard-finance-icon"><CheckCircle2 size={19}/></span><span className="dashboard-finance-label">Received today</span><strong>{loading ? "—" : money(data?.payments.total)}</strong><small>{number(data?.payments.count)} payments recorded today</small></a>
-        <a className="dashboard-finance-card expense" href="/expenses"><span className="dashboard-finance-icon"><Wallet size={19}/></span><span className="dashboard-finance-label">Expenses today</span><strong>{loading ? "—" : money(data?.expenses.total)}</strong><small>{number(data?.expenses.count)} expense entries</small></a>
+        <a className="dashboard-finance-card received" href="/payments"><span className="dashboard-finance-icon"><CheckCircle2 size={19}/></span><span className="dashboard-finance-label">Received today</span><strong>{loading || !data ? "—" : money(data?.payments.total)}</strong><small>{data ? `${number(data.payments.count)} payments recorded today` : "Payment summary unavailable"}</small></a>
+        <a className="dashboard-finance-card expense" href="/expenses"><span className="dashboard-finance-icon"><Wallet size={19}/></span><span className="dashboard-finance-label">Expenses today</span><strong>{loading || !data ? "—" : money(data?.expenses.total)}</strong><small>{data ? `${number(data.expenses.count)} expense entries` : "Expense summary unavailable"}</small></a>
       </section>
 
       <section className="panel dashboard-activity-panel">
