@@ -119,8 +119,8 @@ export async function POST(request: NextRequest) {
   const source = ["whatsapp","phone","walk_in","other"].includes(String(body.booking_source)) ? String(body.booking_source) : "whatsapp";
   const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
-  if (ownerName.length < 2 || ownerName.length > 100 || !/^[+0-9()\-\s]{7,20}$/.test(phone) || dogName.length < 1 || dogName.length > 80 || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-    return NextResponse.json({ error: "Owner name, valid mobile number, dog name and start date are required." }, { status: 400 });
+  if (ownerName.length < 2 || ownerName.length > 100 || !/^[+0-9()\-\s]{7,20}$/.test(phone) || dogName.length < 1 || dogName.length > 80 || !dogSize || !dogGender || !city || !state || !/^\d{6}$/.test(pincode) || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+    return NextResponse.json({ error: "Owner, valid mobile, dog name, size, gender, city, state, six-digit PIN Code and start date are required." }, { status: 400 });
   }
   if (!["morning","evening"].includes(startSlot) || ![1,2].includes(walksPerDay) || !walkRate) {
     return NextResponse.json({ error: "Choose a valid starting walk, daily walk count and walk duration." }, { status: 400 });
