@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
   const dogId = typeof body.dog_id === "string" ? body.dog_id : "";
   const plan = String(body.plan_type || "");
   const startDate = typeof body.start_date === "string" ? body.start_date : "";
+  const startSlot = String(body.start_slot || "morning");
   const source = ["whatsapp","phone","walk_in","other"].includes(String(body.booking_source)) ? String(body.booking_source) : "whatsapp";
   const plans: Record<string,{price:number;walks:number;duration:number}> = {
     monthly_am_pm: {price:2999,walks:2,duration:30},
@@ -63,8 +64,8 @@ export async function POST(request: NextRequest) {
     const id = crypto.randomUUID();
     const endDate = planEndDate(startDate, plan.startsWith("monthly_"));
     await env.DB.prepare(
-      "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,end_date,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-    ).bind(id,customerId,dogId,plan,startDate,endDate,body.morning_time || null,body.evening_time || null,selected.walks,selected.duration,totalPrice,sundayExtra?1:0,source,advance,typeof body.notes==="string"?body.notes:null).run();
+      "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,end_date,start_slot,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    ).bind(id,customerId,dogId,plan,startDate,endDate,startSlot,body.morning_time || null,body.evening_time || null,selected.walks,selected.duration,totalPrice,sundayExtra?1:0,source,advance,typeof body.notes==="string"?body.notes:null).run();
     if (advance > 0) {
       await env.DB.prepare("INSERT INTO payments (id,customer_id,booking_id,amount_inr,payment_date,payment_method,reference_note) VALUES (?,?,?,?,?,?,?)").bind(crypto.randomUUID(),customerId,id,advance,new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date()),paymentMethod,"Initial booking payment").run();
     }
