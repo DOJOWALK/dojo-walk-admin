@@ -8,13 +8,13 @@ type Customer={id:string;full_name:string};
 type Dog={id:string;name:string;customer_id:string};
 type Booking={id:string;customer_name:string;dog_name:string;plan_type:string;start_date:string;price_inr:number;status:string;advance_received_inr:number};
 
-const planLabels:Record<string,string>={monthly_am_pm:"Morning + Evening · Monthly",monthly_once:"One walk daily · Monthly",temporary_am_pm:"Temporary Morning + Evening",single_walk:"Single walk"};
+function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}\n\nconst planLabels:Record<string,string>={monthly_am_pm:"Morning + Evening · Monthly",monthly_once:"One walk daily · Monthly",temporary_am_pm:"Temporary Morning + Evening",single_walk:"Single walk"};
 
 export default function BookingsPage(){
  const [customers,setCustomers]=useState<Customer[]>([]);
  const [dogs,setDogs]=useState<Dog[]>([]);
  const [bookings,setBookings]=useState<Booking[]>([]);
- const [form,setForm]=useState({customer_id:"",dog_id:"",plan_type:"monthly_am_pm",start_date:new Date().toLocaleDateString("en-CA"),morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",advance_received_inr:"",notes:""});
+ const [form,setForm]=useState({customer_id:"",dog_id:"",plan_type:"monthly_am_pm",start_date:localDate(),morning_time:"07:00",evening_time:"18:00",booking_source:"whatsapp",advance_received_inr:"",notes:""});
  const [show,setShow]=useState(false),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState("");
  async function load(){
   setLoading(true);setError("");
@@ -50,8 +50,8 @@ export default function BookingsPage(){
     <label>Morning time<input type="time" value={form.morning_time} onChange={e=>setForm({...form,morning_time:e.target.value})}/></label>
     <label>Evening time<input type="time" value={form.evening_time} onChange={e=>setForm({...form,evening_time:e.target.value})}/></label>
     <label>Booking source<select value={form.booking_source} onChange={e=>setForm({...form,booking_source:e.target.value})}><option value="whatsapp">WhatsApp</option><option value="phone">Phone call</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></label>
-    <label>Advance received (₹)<input type="number" min="0" step="1" value={form.advance_received_inr} onChange={e=>setForm({...form,advance_received_inr:e.target.value})} placeholder="0"/></label>
-    <label className="full-field">Notes<textarea rows={2} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
+    <label>Advance received (₹)<input type="number" inputMode="numeric" min="0" max="10000000" step="1" value={form.advance_received_inr} onChange={e=>setForm({...form,advance_received_inr:e.target.value})} placeholder="0"/></label>
+    <label className="full-field">Notes<textarea rows={2} maxLength={1000} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
    </div><div className="booking-price">Package amount: <strong>₹{({monthly_am_pm:2999,monthly_once:1999,temporary_am_pm:150,single_walk:100} as Record<string,number>)[form.plan_type].toLocaleString("en-IN")}</strong> <span>· 30 minutes per walk</span></div><div className="form-actions"><button className="action" disabled={saving}>{saving?"Saving…":"Save booking"}</button></div></>}
   </form>}
   <section className="panel"><div className="panel-head"><div><div className="panel-title">{bookings.length} booking{bookings.length===1?"":"s"}</div><div className="panel-note">Latest bookings first</div></div></div>
