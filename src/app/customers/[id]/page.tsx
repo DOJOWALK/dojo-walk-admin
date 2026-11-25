@@ -11,6 +11,8 @@ type DogForm = {name:string;breed:string;age_text:string;size:string;gender:stri
 const STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Chandigarh","Jammu and Kashmir","Ladakh","Puducherry"];
 const LOCALITIES = ["Gaur City 1","Gaur City 2","Crossings Republik","Techzone 4","Noida Extension","Bisrakh","Char Murti","Sector 1 Greater Noida West","Sector 2 Greater Noida West","Sector 3 Greater Noida West","Sector 4 Greater Noida West","Sector 10 Greater Noida West","Other"];
 const CITIES = ["Greater Noida West","Greater Noida","Noida","Ghaziabad","Dadri","Delhi","Other"];
+const BREEDS = ["Indie / Indian Pariah","Labrador Retriever","Golden Retriever","German Shepherd","Beagle","Pug","Shih Tzu","Rottweiler","Siberian Husky","Boxer","Dachshund","Pomeranian","German Spitz","Cocker Spaniel","French Bulldog","Doberman","Great Dane","Chihuahua","Lhasa Apso","Other"];
+const AGE_RANGES = ["Below 6 months","6–12 months","1–2 years","3–5 years","6–8 years","9–12 years","12+ years"];
 const emptyDog:DogForm={name:"",breed:"",age_text:"",size:"",gender:"",temperament:"",medical_notes:"",emergency_notes:""};
 
 export default function CustomerDetail() {
@@ -80,8 +82,8 @@ export default function CustomerDetail() {
   const selectField=(label:string,key:"locality"|"city"|"state",options:string[])=>{const current=customerForm[key];const list=current&&!options.includes(current)?[current,...options]:options;return <label>{label}<select value={current} onChange={e=>setCustomerForm({...customerForm,[key]:e.target.value})}><option value="">Select {label.toLowerCase()}</option>{list.map(x=><option key={x} value={x}>{x}</option>)}</select></label>;};
   const dogFields=<div className="form-grid">
     <label>Dog name *<input required maxLength={80} value={dogForm.name} onChange={e=>setDogForm({...dogForm,name:e.target.value})}/></label>
-    <label>Breed<input value={dogForm.breed} onChange={e=>setDogForm({...dogForm,breed:e.target.value})}/></label>
-    <label>Age range / age<input value={dogForm.age_text} onChange={e=>setDogForm({...dogForm,age_text:e.target.value})}/></label>
+    <label>Breed<select value={dogForm.breed} onChange={e=>setDogForm({...dogForm,breed:e.target.value})}><option value="">Select breed</option>{(dogForm.breed&&!BREEDS.includes(dogForm.breed)?[dogForm.breed,...BREEDS]:BREEDS).map(x=><option key={x} value={x}>{x}</option>)}</select></label>
+    <label>Age range / age<select value={dogForm.age_text} onChange={e=>setDogForm({...dogForm,age_text:e.target.value})}><option value="">Select age range</option>{(dogForm.age_text&&!AGE_RANGES.includes(dogForm.age_text)?[dogForm.age_text,...AGE_RANGES]:AGE_RANGES).map(x=><option key={x} value={x}>{x}</option>)}</select></label>
     <label>Size<select value={dogForm.size} onChange={e=>setDogForm({...dogForm,size:e.target.value})}><option value="">Select size</option>{["Small","Medium","Large","Extra Large"].map(x=><option key={x}>{x}</option>)}</select></label>
     <label>Gender<select value={dogForm.gender} onChange={e=>setDogForm({...dogForm,gender:e.target.value})}><option value="">Select gender</option><option>Male</option><option>Female</option></select></label>
     <label>Temperament<select value={dogForm.temperament} onChange={e=>setDogForm({...dogForm,temperament:e.target.value})}><option value="">Select temperament</option>{["Friendly","Shy","Energetic","Calm","Anxious","Reactive","Other"].map(x=><option key={x}>{x}</option>)}</select></label>
