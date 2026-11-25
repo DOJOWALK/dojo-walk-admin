@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       const result = await env.DB.prepare("SELECT id, customer_name, dog_names, reason, deleted_at FROM customer_deletion_history ORDER BY deleted_at DESC").all();
       return NextResponse.json({ records: result.results ?? [] });
     }
-    const result = await env.DB.prepare("SELECT c.*, CASE WHEN c.status='inactive' AND c.blocked_until IS NOT NULL AND datetime(c.blocked_until)<=datetime('now') THEN 'active' ELSE c.status END AS status, CASE WHEN c.status='inactive' AND c.blocked_until IS NOT NULL AND datetime(c.blocked_until)<=datetime('now') THEN 'active' ELSE COALESCE(c.customer_state,'active') END AS customer_state, (SELECT COUNT(*) FROM dogs d WHERE d.customer_id = c.id) AS dog_count FROM customers c ORDER BY c.created_at DESC").all();
+    const result = await env.DB.prepare("SELECT c.*, CASE WHEN c.status='inactive' AND c.blocked_until IS NOT NULL AND datetime(c.blocked_until)<=datetime('now') THEN 'active' ELSE c.status END AS status, CASE WHEN c.status='inactive' AND c.blocked_until IS NOT NULL AND datetime(c.blocked_until)<=datetime('now') THEN 'active' WHEN c.status='inactive' AND COALESCE(c.customer_state,'active')='active' THEN 'blocked' ELSE COALESCE(c.customer_state,'active') END AS customer_state, (SELECT COUNT(*) FROM dogs d WHERE d.customer_id = c.id) AS dog_count FROM customers c ORDER BY c.created_at DESC").all();
     return NextResponse.json({ customers: result.results ?? [] });
   } catch {
     return NextResponse.json({ error: "Customer list is not available. Check D1 setup." }, { status: 503 });
