@@ -20,7 +20,7 @@ export async function GET() {
   if (!env) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const result = await env.DB.prepare(
-      "SELECT b.*, c.full_name AS customer_name, d.name AS dog_name FROM bookings b JOIN customers c ON c.id=b.customer_id JOIN dogs d ON d.id=b.dog_id ORDER BY b.created_at DESC"
+      "SELECT b.*, c.full_name AS customer_name, d.name AS dog_name, CASE WHEN b.advance_received_inr >= b.price_inr THEN 'paid' WHEN b.advance_received_inr > 0 THEN 'partial' ELSE 'unpaid' END AS payment_status FROM bookings b JOIN customers c ON c.id=b.customer_id JOIN dogs d ON d.id=b.dog_id ORDER BY b.created_at DESC"
     ).all();
     return NextResponse.json({ bookings: result.results ?? [] });
   } catch {
@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
     temporary_am_pm: {price:150,walks:2,duration:30},
     single_walk: {price:100,walks:1,duration:30}
   };
-  const selected = plans[plan];\n  const sundayExtra = body.sunday_extra_enabled === true && (plan === "monthly_am_pm" || plan === "monthly_once");\n  const totalPrice = selected ? selected.price + (sundayExtra ? 500 : 0) : 0;
+  const selected = plans[plan];
+  const sundayExtra = body.sunday_extra_enabled === true && (plan === "monthly_am_pm" || plan === "monthly_once");
+  const totalPrice = selected ? selected.price + (sundayExtra ? 500 : 0) : 0;
   if (!customerId || !dogId || !selected || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
     return NextResponse.json({ error: "Customer, dog, plan and start date are required." }, { status: 400 });
   }
