@@ -7,6 +7,8 @@ type Result = { results?: unknown[] };
 type DBLike = { prepare(sql: string): { bind(...values: unknown[]): { all(): Promise<Result>; run(): Promise<unknown> } } };
 type Env = { DB: DBLike; SESSION_SECRET?: string };
 
+function planEndDate(start:string, monthly:boolean){const d=new Date(start+"T00:00:00Z");if(!monthly)return start;let days=0;while(days<26){if(d.getUTCDay()!==0)days++;if(days<26)d.setUTCDate(d.getUTCDate()+1);}return d.toISOString().slice(0,10);}
+
 async function adminEnv() {
   const { env } = getCloudflareContext();
   const runtime = env as unknown as Env;
@@ -59,9 +61,10 @@ export async function POST(request: NextRequest) {
     const dog = await env.DB.prepare("SELECT id FROM dogs WHERE id=? AND customer_id=?").bind(dogId,customerId).all();
     if (!dog.results?.length) return NextResponse.json({ error: "This dog does not belong to the selected customer." }, { status: 400 });
     const id = crypto.randomUUID();
+    const endDate = planEndDate(startDate, plan.startsWith("monthly_"));
     await env.DB.prepare(
-      "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-    ).bind(id,customerId,dogId,plan,startDate,body.morning_time || null,body.evening_time || null,selected.walks,selected.duration,totalPrice,sundayExtra?1:0,source,advance,typeof body.notes==="string"?body.notes:null).run();
+      "INSERT INTO bookings (id,customer_id,dog_id,plan_type,start_date,end_date,morning_time,evening_time,walks_per_day,walk_duration_minutes,price_inr,sunday_extra_enabled,booking_source,advance_received_inr,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    ).bind(id,customerId,dogId,plan,startDate,endDate,body.morning_time || null,body.evening_time || null,selected.walks,selected.duration,totalPrice,sundayExtra?1:0,source,advance,typeof body.notes==="string"?body.notes:null).run();
     if (advance > 0) {
       await env.DB.prepare("INSERT INTO payments (id,customer_id,booking_id,amount_inr,payment_date,payment_method,reference_note) VALUES (?,?,?,?,?,?,?)").bind(crypto.randomUUID(),customerId,id,advance,new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date()),paymentMethod,"Initial booking payment").run();
     }
