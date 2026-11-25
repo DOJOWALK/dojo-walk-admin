@@ -6,10 +6,10 @@ import Link from "next/link";
 
 type Booking={booking_id:string;customer_name:string;dog_name:string;plan_type:string;start_date:string;end_date:string|null};
 type Pause={id:string;booking_id:string;customer_name:string;dog_name:string;pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;actual_resume_date:string|null;actual_resume_slot:string|null;status:string;reason:string|null};
-function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}
+function localDate(){const d=new Date();const offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);}\nfunction nextDate(){const d=new Date(localDate()+"T00:00:00");d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);}
 export default function AwayPage(){
  const [bookings,setBookings]=useState<Booking[]>([]),[pauses,setPauses]=useState<Pause[]>([]);
- const [form,setForm]=useState({booking_id:"",pause_from_date:localDate(),pause_from_slot:"morning",expected_resume_date:localDate(),expected_resume_slot:"morning",reason:""});
+ const [form,setForm]=useState({booking_id:"",pause_from_date:localDate(),pause_from_slot:"morning",expected_resume_date:nextDate(),expected_resume_slot:"morning",reason:""});
  const [resume,setResume]=useState<Record<string,{date:string;slot:string}>>({});
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState("");
  async function load(){setLoading(true);setError("");try{const r=await fetch("/api/pauses");if(r.status===401){window.location.assign("/login");return;}const j=await r.json();if(!r.ok)throw new Error(j.error||"Away records could not be loaded.");setBookings(j.bookings||[]);setPauses(j.pauses||[]);}catch(e){setError(e instanceof Error?e.message:"Could not load away records.");}finally{setLoading(false);}}
