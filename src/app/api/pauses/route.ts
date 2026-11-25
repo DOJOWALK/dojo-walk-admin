@@ -54,7 +54,7 @@ export async function PATCH(request:NextRequest){
   const found=await env.DB.prepare("SELECT p.*,b.end_date FROM booking_pauses p JOIN bookings b ON b.id=p.booking_id WHERE p.id=? AND p.status='active'").bind(id).all();
   const pause=found.results?.[0] as {id:string;booking_id:string;pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;end_date:string|null}|undefined;
   if(!pause)return NextResponse.json({error:"Active away record not found."},{status:404});
-  if(key(resumeDate,resumeSlot)<=key(pause.pause_from_date,pause.pause_from_slot)||key(resumeDate,resumeSlot)>key(pause.expected_resume_date,pause.expected_resume_slot))return NextResponse.json({error:"Early return must be after the pause start and no later than the expected return."},{status:400});
+  if(key(resumeDate,resumeSlot)<=key(pause.pause_from_date,pause.pause_from_slot))return NextResponse.json({error:"Return time must be after the pause start."},{status:400});
   await env.DB.prepare("UPDATE booking_pauses SET actual_resume_date=?,actual_resume_slot=?,status='resumed',resumed_at=CURRENT_TIMESTAMP WHERE id=?").bind(resumeDate,resumeSlot,id).run();
   let fullDays=0;
   if(pause.end_date){
