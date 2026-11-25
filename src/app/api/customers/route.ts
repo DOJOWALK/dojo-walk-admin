@@ -79,8 +79,8 @@ export async function PATCH(request: NextRequest) {
   if (!id || fullName.length < 2 || fullName.length > 100 || !/^[+0-9()\\-\\s]{7,20}$/.test(phone)) {
     return NextResponse.json({ error: "Name and a valid mobile number are required." }, { status: 400 });
   }
-  if (!city || !state || !/^\\d{6}$/.test(pincode)) {
-    return NextResponse.json({ error: "City, state and a valid six-digit PIN code are required." }, { status: 400 });
+  if (pincode && !/^\d{6}$/.test(pincode)) {
+    return NextResponse.json({ error: "PIN code must contain six digits." }, { status: 400 });
   }
   const address = [flatTower, society].filter(Boolean).join(", ");
   const area = [locality, city, state, pincode].filter(Boolean).join(", ");
