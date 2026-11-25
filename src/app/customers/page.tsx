@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, Plus, Search, Users } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ManagementTabs from "@/components/management-tabs";
 
 type Customer = {
@@ -11,6 +12,7 @@ type Customer = {
 };
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -76,7 +78,7 @@ export default function CustomersPage() {
     <section className="panel">
       <div className="customer-toolbar"><div className="panel-title">{customers.length} customer{customers.length === 1 ? "" : "s"}</div><div className="search-box"><Search size={15}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name, phone or area"/></div></div>
       {loading ? <div className="empty">Loading customers…</div> : filtered.length === 0 ? <div className="empty"><Users size={24}/><strong>{customers.length ? "No matching customers" : "No customers added yet"}</strong>{customers.length ? "Try another name or phone number." : "Add your first customer to start recording dogs and bookings."}</div> :
-        <div className="table-wrap"><table className="data-table"><thead><tr><th>Customer</th><th>Phone</th><th>Area</th><th>Dogs</th><th>Source</th><th>Status</th></tr></thead><tbody>{filtered.map(c => <tr key={c.id}><td><Link href={`/customers/${c.id}`} className="table-link"><strong>{c.full_name}</strong></Link></td><td>{c.phone}</td><td>{c.area || "—"}</td><td>{c.dog_count}</td><td>{c.booking_source.replace("_"," ")}</td><td><span className="status-dot">{c.status}</span></td></tr>)}</tbody></table></div>}
+        <div className="table-wrap"><table className="data-table"><thead><tr><th>Customer</th><th>Phone</th><th>Area</th><th>Dogs</th><th>Source</th><th>Status</th></tr></thead><tbody>{filtered.map(c => <tr key={c.id} className="clickable-row" role="link" tabIndex={0} aria-label={`Open customer profile for ${c.full_name}`} onClick={()=>router.push(`/customers/${c.id}`)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();router.push(`/customers/${c.id}`);}}}><td><strong>{c.full_name}</strong></td><td>{c.phone}</td><td>{c.area || "—"}</td><td>{c.dog_count}</td><td>{c.booking_source.replace("_"," ")}</td><td><span className="status-dot">{c.status}</span></td></tr>)}</tbody></table></div>}
     </section>
   </main>;
 }
