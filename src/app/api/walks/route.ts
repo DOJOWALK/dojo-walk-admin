@@ -22,11 +22,11 @@ export async function POST(request:NextRequest){
  let body:Record<string,unknown>;try{body=await request.json();}catch{return NextResponse.json({error:"Invalid request."},{status:400});}
  const date=typeof body.date==="string"?body.date:"";if(!validDate(date))return NextResponse.json({error:"Choose a valid date."},{status:400});
  try{
-  const result=await env.DB.prepare("SELECT b.id,b.dog_id,b.walks_per_day,b.walk_duration_minutes,b.morning_time,b.evening_time,b.plan_type,b.sunday_extra_enabled FROM bookings b WHERE b.status='active' AND b.start_date<=? AND (b.end_date IS NULL OR b.end_date>=?) AND (strftime('%w',?)!='0' OR (b.plan_type IN ('monthly_am_pm','monthly_once') AND b.sunday_extra_enabled=1))").bind(date,date,date).all();
-  const bookings=(result.results??[]) as Array<{id:string;dog_id:string;walks_per_day:number;walk_duration_minutes:number;morning_time:string|null;evening_time:string|null}>;
+  const result=await env.DB.prepare("SELECT b.id,b.dog_id,b.walks_per_day,b.walk_duration_minutes,b.morning_time,b.evening_time,b.plan_type,b.sunday_extra_enabled,b.start_date,b.start_slot FROM bookings b WHERE b.status='active' AND b.start_date<=? AND (b.end_date IS NULL OR b.end_date>=?) AND (strftime('%w',?)!='0' OR (b.plan_type IN ('monthly_am_pm','monthly_once') AND b.sunday_extra_enabled=1))").bind(date,date,date).all();
+  const bookings=(result.results??[]) as Array<{id:string;dog_id:string;walks_per_day:number;walk_duration_minutes:number;morning_time:string|null;evening_time:string|null;start_date:string;start_slot:string}>;
   let created=0;
   for(const b of bookings){
-   const slots=b.walks_per_day>=2?["morning","evening"]:["morning"];
+   const slots=b.walks_per_day>=2?(date===b.start_date&&b.start_slot==="evening"?["evening"]:["morning","evening"]):[b.start_slot==="evening"?"evening":"morning"];
    const pauses=await env.DB.prepare("SELECT pause_from_date,pause_from_slot,expected_resume_date,expected_resume_slot,actual_resume_date,actual_resume_slot,status FROM booking_pauses WHERE booking_id=?").bind(b.id).all();
    const activePauses=(pauses.results??[]) as Array<{pause_from_date:string;pause_from_slot:string;expected_resume_date:string;expected_resume_slot:string;actual_resume_date:string|null;actual_resume_slot:string|null;status:string}>;
    for(const slot of slots){
