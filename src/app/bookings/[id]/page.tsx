@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { UserRound, PawPrint, CalendarDays, Clock3, Footprints, ReceiptText, Phone, MapPin } from "lucide-react";
 
 type RecordData = Record<string, any>;
 const STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry"];
@@ -17,6 +18,8 @@ export default function BookingDetail() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const money = (v: any) => "₹" + Number(v || 0).toLocaleString("en-IN");
+  const displayDate = (v: string) => v ? new Date(`${v}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+  const statusLabel = (v: string) => ({ active: "Active", paused: "Paused", completed: "Completed", cancelled: "Cancelled" }[v] || v);
 
   async function load() {
     const [br, pr] = await Promise.all([fetch("/api/bookings"), fetch("/api/payments")]);
@@ -98,15 +101,44 @@ export default function BookingDetail() {
       <div className="booking-price">Rate is based on duration: <strong>{money(({20:45,30:65,45:95,60:125} as Record<number,number>)[Number(form.walk_duration_minutes)])} per dog, per completed walk.</strong> Changing duration/rate also changes the rate used in the booking's billing calculation, including its existing billable completed walks.</div>
       <div className="form-actions"><button className="action" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button><button type="button" className="plain-button" onClick={()=>setEditing(false)}>Cancel</button></div>
     </form>}
-    <section className="panel"><h2 className="panel-title">Booking details</h2>
-      <p>Owner: <Link className="table-link" href={"/customers/"+booking.customer_id}>View {booking.customer_name} profile →</Link></p>
-      <p>Dog: <Link className="table-link" href={"/dogs/"+booking.dog_id}>View {booking.dog_name} profile →</Link></p>
-      <p>Mobile: {booking.customer_phone}</p><p>Start date: {booking.start_date}</p><p>End date: {booking.end_date || "—"}</p>
-      <p>Status: {booking.status}</p><p>Walks per day: {booking.walks_per_day}</p><p>Duration: {booking.walk_duration_minutes} minutes</p>
-      <p>Morning: {booking.morning_time || "—"} · Evening: {booking.evening_time || "—"}</p>
-      <p>Completed walks: {booking.completed_walks}</p><p>Charges: {money(booking.accrued_inr)}</p><p>Received: {money(booking.paid_inr)}</p><p>Due: <strong>{money(booking.due_inr)}</strong></p>
-      {booking.notes && <p>Notes: {booking.notes}</p>}
+    <section className="booking-overview panel">
+      <div className="booking-overview-head">
+        <div><div className="eyebrow">Booking overview</div><h2 className="booking-overview-title">{booking.dog_name}’s walking plan</h2><p className="subtle">Booking details, schedule and billing at a glance.</p></div>
+        <span className={`booking-status status-${booking.status}`}>{statusLabel(booking.status)}</span>
+      </div>
+      <div className="booking-people-grid">
+        <div className="booking-person">
+          <div className="booking-avatar"><UserRound size={20}/></div>
+          <div className="booking-person-copy"><span className="booking-label">OWNER</span><strong>{booking.customer_name}</strong><span className="booking-meta"><Phone size={13}/>{booking.customer_phone || "No mobile number"}</span><Link className="booking-profile-link" href={"/customers/"+booking.customer_id}>View customer profile <span>→</span></Link></div>
+        </div>
+        <div className="booking-person">
+          <div className="booking-avatar dog-avatar"><PawPrint size={20}/></div>
+          <div className="booking-person-copy"><span className="booking-label">DOG</span><strong>{booking.dog_name}</strong><span className="booking-meta">{[booking.dog_breed, booking.dog_age, booking.dog_size].filter(Boolean).join(" · ") || "Dog profile"}</span><Link className="booking-profile-link" href={"/dogs/"+booking.dog_id}>View dog profile <span>→</span></Link></div>
+        </div>
+      </div>
+      <div className="booking-section-heading"><CalendarDays size={17}/> Walk schedule</div>
+      <div className="booking-facts-grid">
+        <div className="booking-fact"><span>Start date</span><strong>{displayDate(booking.start_date)}</strong></div>
+        <div className="booking-fact"><span>End date</span><strong>{booking.end_date ? displayDate(booking.end_date) : "No end date"}</strong></div>
+        <div className="booking-fact"><span>Walks per day</span><strong>{booking.walks_per_day} {Number(booking.walks_per_day) === 1 ? "walk" : "walks"}</strong></div>
+        <div className="booking-fact"><span>Duration</span><strong>{booking.walk_duration_minutes} minutes</strong></div>
+        <div className="booking-fact"><span>Completed walks</span><strong>{booking.completed_walks ?? 0}</strong></div>
+        <div className="booking-fact"><span>Usual time</span><strong>{Number(booking.walks_per_day) === 1 ? (booking.start_slot === "evening" ? booking.evening_time : booking.morning_time) || "—" : `AM ${booking.morning_time || "—"} · PM ${booking.evening_time || "—"}`}</strong></div>
+      </div>
+      {booking.address && <div className="booking-address"><MapPin size={14}/>{booking.address}{booking.area ? `, ${booking.area}` : ""}</div>}
+      {booking.notes && <div className="booking-notes"><strong>Notes:</strong> {booking.notes}</div>}
     </section>
-    <section className="panel"><h2 className="panel-title">Payment history</h2>{payments.length ? payments.map(x=><p key={x.id}>{x.payment_date} · {money(x.amount_inr)} · {x.payment_method}</p>) : <p>No payments recorded.</p>}</section>
+    <section className="booking-billing panel">
+      <div className="booking-section-heading"><ReceiptText size={17}/> Billing summary</div>
+      <div className="booking-money-grid">
+        <div className="booking-money-card"><span>Total charges</span><strong>{money(booking.accrued_inr)}</strong></div>
+        <div className="booking-money-card received"><span>Received</span><strong>{money(booking.paid_inr)}</strong></div>
+        <div className="booking-money-card due"><span>Outstanding due</span><strong>{money(booking.due_inr)}</strong></div>
+      </div>
+    </section>
+    <section className="panel booking-payments">
+      <div className="panel-head"><div><h2 className="panel-title">Payment history</h2><p className="panel-note">Payments recorded against this booking.</p></div><span className="payment-count">{payments.length} {payments.length === 1 ? "payment" : "payments"}</span></div>
+      {payments.length ? <div className="payment-history-list">{payments.map(x=><div className="payment-history-row" key={x.id}><div><strong>{displayDate(x.payment_date)}</strong><span>{x.payment_method || "Payment"}</span></div><strong className="payment-amount">{money(x.amount_inr)}</strong></div>)}</div> : <div className="booking-empty-payments"><div className="booking-empty-icon"><ReceiptText size={22}/></div><strong>No payments recorded yet</strong><span>Payments received for this booking will appear here.</span></div>}
+    </section>
   </main>;
 }
