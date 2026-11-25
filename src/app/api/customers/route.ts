@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       const result = await env.DB.prepare("SELECT id, customer_name, dog_names, reason, deleted_at FROM customer_deletion_history ORDER BY deleted_at DESC").all();
       return NextResponse.json({ records: result.results ?? [] });
     }
-    const result = await env.DB.prepare("SELECT c.*, CASE WHEN c.status='inactive' AND c.blocked_until IS NOT NULL AND datetime(c.blocked_until)<=datetime('now') THEN 'active' ELSE c.status END AS status, (SELECT COUNT(*) FROM dogs d WHERE d.customer_id = c.id) AS dog_count FROM customers c ORDER BY c.created_at DESC").all();
+    const result = await env.DB.prepare("SELECT c.*, CASE WHEN c.status='inactive' AND c.blocked_until IS NOT NULL AND datetime(c.blocked_until)<=datetime('now') THEN 'active' ELSE c.status END AS status, CASE WHEN c.status='inactive' AND c.blocked_until IS NOT NULL AND datetime(c.blocked_until)<=datetime('now') THEN 'active' ELSE COALESCE(c.customer_state,'active') END AS customer_state, (SELECT COUNT(*) FROM dogs d WHERE d.customer_id = c.id) AS dog_count FROM customers c ORDER BY c.created_at DESC").all();
     return NextResponse.json({ customers: result.results ?? [] });
   } catch {
     return NextResponse.json({ error: "Customer list is not available. Check D1 setup." }, { status: 503 });
@@ -137,16 +137,17 @@ export async function PUT(request: NextRequest) {
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   const id = typeof body.id === "string" ? body.id : "";
-  const status = body.status === "inactive" ? "inactive" : body.status === "active" ? "active" : "";
+  const state = ["active","leave","blocked"].includes(String(body.state)) ? String(body.state) : body.status === "inactive" ? "blocked" : body.status === "active" ? "active" : "";
   const reason = typeof body.reason === "string" ? body.reason.trim().slice(0,160) : "";
   const duration = typeof body.duration === "string" ? body.duration : "";
   const days: Record<string, number> = {"7 days":7,"15 days":15,"1 month":30,"3 months":90,"6 months":180};
-  if (!id || !status) return NextResponse.json({ error: "Choose a valid customer status." }, { status: 400 });
-  if (status === "inactive" && (!reason || !(duration === "Permanent" || days[duration]))) return NextResponse.json({ error: "Choose a block reason and duration." }, { status: 400 });
+  if (!id || !state) return NextResponse.json({ error: "Choose a valid customer status." }, { status: 400 });
+  if (state !== "active" && (!reason || !(duration === "Permanent" || days[duration]))) return NextResponse.json({ error: "Choose a reason and duration." }, { status: 400 });
   try {
-    const until = status === "inactive" && duration !== "Permanent" ? new Date(Date.now() + days[duration] * 86400000).toISOString() : null;
-    await env.DB.prepare("UPDATE customers SET status=?,blocked_until=?,block_reason=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(status, status === "inactive" ? until : null, status === "inactive" ? reason : null, id).run();
-    return NextResponse.json({ ok: true, blocked_until: until });
+    const until = state !== "active" && duration !== "Permanent" ? new Date(Date.now() + days[duration] * 86400000).toISOString() : null;
+    await env.DB.prepare("UPDATE customers SET status=?,customer_state=?,blocked_until=?,block_reason=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
+      .bind(state === "active" ? "active" : "inactive", state, state === "active" ? null : until, state === "active" ? null : reason, id).run();
+    return NextResponse.json({ ok: true, customer_state: state, blocked_until: until });
   } catch {
     return NextResponse.json({ error: "Customer booking status could not be changed." }, { status: 503 });
   }
