@@ -35,7 +35,7 @@ export default function PaymentsPage(){
    const r=await fetch("/api/payments",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...form,amount_inr:Number(form.amount_inr)})});
    const j=await r.json();if(!r.ok)throw new Error(j.error||"Payment could not be saved.");
    setSuccess("Payment saved. Remaining balance: ₹"+Number(j.balance_inr).toLocaleString("en-IN"));
-   setForm({...form,amount_inr:"",reference_note:""});await load();
+   setForm({...form,booking_id:"",amount_inr:"",reference_note:""});await load();
   }catch(e){setError(e instanceof Error?e.message:"Payment could not be saved.");}
   finally{setSaving(false);}
  }
