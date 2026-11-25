@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, UserRound, Phone, MapPin, PawPrint, CalendarDays, ReceiptText, Wallet, Pencil, Plus } from "lucide-react";
 
 type R = Record<string, any>;
@@ -17,6 +17,7 @@ const emptyDog:DogForm={name:"",breed:"",age_text:"",size:"",gender:"",temperame
 
 export default function CustomerDetail() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [customer, setCustomer] = useState<R | null>(null);
   const [dogs, setDogs] = useState<R[]>([]);
   const [bookings, setBookings] = useState<R[]>([]);
@@ -30,6 +31,10 @@ export default function CustomerDetail() {
   const [savingDog,setSavingDog]=useState(false);
   const [error,setError]=useState("");
   const [success,setSuccess]=useState("");
+  const [showDeleteConfirm,setShowDeleteConfirm]=useState(false);
+  const [adminPassword,setAdminPassword]=useState("");
+  const [showAdminPassword,setShowAdminPassword]=useState(false);
+  const [actionBusy,setActionBusy]=useState(false);
   const money = (v: any) => "₹" + Number(v || 0).toLocaleString("en-IN");
   const date = (v: string) => v ? new Date(v + "T12:00:00Z").toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"}) : "—";
 
@@ -50,6 +55,29 @@ export default function CustomerDetail() {
   }
 
   useEffect(() => { void loadProfile(); }, [id]);
+
+  async function changeBookingAccess(nextStatus:"active"|"inactive") {
+    if (!adminPassword) { setError("Please enter the admin password."); return; }
+    setActionBusy(true); setError(""); setSuccess("");
+    try {
+      const r=await fetch("/api/customers",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:nextStatus,password:adminPassword})});
+      const j=await r.json(); if(!r.ok) throw new Error(j.error||"Customer status could not be changed.");
+      setCustomer((current:R|null)=>current?{...current,status:nextStatus}:current);
+      setAdminPassword(""); setSuccess(nextStatus==="inactive"?"New bookings are now blocked for this customer.":"New bookings are enabled for this customer.");
+    } catch(e) { setError(e instanceof Error?e.message:"Could not update booking access."); }
+    finally { setActionBusy(false); }
+  }
+
+  async function deleteCustomer() {
+    if (!adminPassword) { setError("Please enter the admin password."); return; }
+    setActionBusy(true); setError("");
+    try {
+      const r=await fetch("/api/customers",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,password:adminPassword})});
+      const j=await r.json(); if(!r.ok) throw new Error(j.error||"Customer could not be deleted.");
+      router.replace("/customers");
+    } catch(e) { setError(e instanceof Error?e.message:"Customer could not be deleted."); }
+    finally { setActionBusy(false); }
+  }
 
   async function saveCustomer(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setSavingCustomer(true);setError("");setSuccess("");
@@ -91,6 +119,25 @@ export default function CustomerDetail() {
     <Link href="/customers" className="back-link"><ArrowLeft size={15}/> Back to customers</Link>
     <div className="topbar"><div><div className="eyebrow">Customer profile</div><h1 className="page-title">{customer.full_name}</h1><p className="subtle">Customer contact, address and records.</p></div><Link className="action" href="/bookings">＋ New booking</Link></div>
     {error&&<div className="error-box">{error}</div>}{success&&<div className="success-box">{success}</div>}
+    <section className="panel">
+      <div className="panel-head"><div><div className="booking-section-heading">Customer booking access</div><p className="subtle">{customer.status==="inactive"?"New bookings are blocked for this customer.":"This customer can receive new bookings."}</p></div><span className={`record-status status-${customer.status||"active"}`}>{customer.status==="inactive"?"Booking blocked":"Active"}</span></div>
+      <div className="form-grid">
+        <label className="full-field">Admin password<input type={showAdminPassword?"text":"password"} autoComplete="current-password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="Enter admin password to confirm"/></label>
+      </div>
+      <div className="form-actions">
+        <button type="button" className="action" disabled={actionBusy||!adminPassword} onClick={()=>void changeBookingAccess(customer.status==="inactive"?"active":"inactive")}>{actionBusy?"Please wait…":customer.status==="inactive"?"Unblock new bookings":"Block new bookings"}</button>
+        <button type="button" className="plain-button" onClick={()=>setShowAdminPassword(!showAdminPassword)}>{showAdminPassword?"Hide password":"Show password"}</button>
+        <button type="button" className="plain-button" onClick={()=>{setShowDeleteConfirm(true);setAdminPassword("");}}>Delete customer</button>
+      </div>
+      {showDeleteConfirm&&<div className="booking-notes">
+        <strong>Confirm permanent deletion</strong>
+        <p>This removes the customer, dogs, bookings, walks and payment records. This cannot be undone.</p>
+        <strong>Customer: {customer.full_name}</strong>
+        <div>Dogs: {dogs.length?dogs.map(d=>d.name).join(", "):"No dogs registered"}</div>
+        <label>Admin password<input type={showAdminPassword?"text":"password"} autoComplete="current-password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="Enter admin password"/></label>
+        <div className="form-actions"><button type="button" className="action" disabled={actionBusy||!adminPassword} onClick={()=>void deleteCustomer()}>{actionBusy?"Deleting…":"Confirm permanent delete"}</button><button type="button" className="plain-button" onClick={()=>{setShowDeleteConfirm(false);setAdminPassword("");}}>Cancel</button></div>
+      </div>}
+    </section>
     <section className="booking-overview panel">
       <div className="booking-overview-head"><div><div className="eyebrow">Owner information</div><h2 className="booking-overview-title">{customer.full_name}</h2><p className="subtle">{customer.phone || "Mobile number not added"}</p></div><button className="action" type="button" onClick={()=>{setEditingCustomer(!editingCustomer);setError("");}}><Pencil size={14}/> {editingCustomer?"Close edit":"Edit customer"}</button></div>
       <div className="booking-people-grid">
