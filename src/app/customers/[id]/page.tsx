@@ -31,7 +31,7 @@ export default function CustomerDetail() {
   const [error,setError]=useState("");
   const [success,setSuccess]=useState("");
   const money = (v: any) => "₹" + Number(v || 0).toLocaleString("en-IN");
-  const date = (v: string) => v ? new Date(v + "T00:00:00").toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"}) : "—";
+  const date = (v: string) => v ? new Date(v + "T12:00:00Z").toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"}) : "—";
 
   async function loadProfile() {
     setLoading(true);
@@ -56,7 +56,7 @@ export default function CustomerDetail() {
     try{
       const r=await fetch("/api/customers",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,...customerForm,whatsapp_phone:customerForm.same_whatsapp?customerForm.phone:customerForm.whatsapp_phone})});
       const j=await r.json();if(!r.ok)throw new Error(j.error||"Customer details could not be saved.");
-      setEditingCustomer(false);setSuccess("Customer mobile number and address updated.");await loadProfile();
+      setEditingCustomer(false);setSuccess("Customer details updated successfully.");await loadProfile();
     }catch(e){setError(e instanceof Error?e.message:"Could not save customer.");}
     finally{setSavingCustomer(false);}
   }
