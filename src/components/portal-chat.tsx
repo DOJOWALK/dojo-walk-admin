@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ImagePlus, LogOut, PawPrint, Send } from "lucide-react";
+import { ArrowLeft, LogOut, PawPrint, Send } from "lucide-react";
 
 type Message = { id: string; sender_role: string; sender_id: string; message_text: string | null; created_at: string };
 
