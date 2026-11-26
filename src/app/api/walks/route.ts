@@ -53,7 +53,6 @@ export async function PATCH(request:NextRequest){
  if(!["scheduled","in_progress","completed","missed","cancelled"].includes(status))return NextResponse.json({error:"Invalid walk status."},{status:400});
  try{
   await env.DB.prepare("UPDATE walks SET status=CASE WHEN ?='in_progress' THEN 'scheduled' ELSE ? END,started_at=CASE WHEN ? IN ('in_progress','completed') THEN COALESCE(started_at,CURRENT_TIMESTAMP) WHEN ?='scheduled' THEN NULL ELSE started_at END,completed_at=CASE WHEN ?='completed' THEN CURRENT_TIMESTAMP WHEN ? IN ('scheduled','in_progress') THEN NULL ELSE NULL END WHERE id=?").bind(status,status,status,status,status,status,id).run();
-  if(status==='in_progress'||status==='completed'){const event=status==='in_progress'?'started':'completed';await env.DB.prepare("INSERT INTO walk_events (id,walk_id,actor_role,actor_user_id,event_type) VALUES (?,?,'admin','admin',?)").bind(crypto.randomUUID(),id,event).run();}
   return NextResponse.json({ok:true});
  }catch{return NextResponse.json({error:"Walk status could not be updated."},{status:503});}
 }
