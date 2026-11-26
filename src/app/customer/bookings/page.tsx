@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { ArrowLeft, CalendarPlus, MapPin } from "lucide-react";
 import Link from "next/link";
 
@@ -15,7 +15,7 @@ export default function CustomerBookingsPage() {
   const [requests,setRequests]=useState<RequestRow[]>([]);
   const [form,setForm]=useState({dog_id:"",service_type:"single_walk",preferred_date:today(),preferred_time:"07:00",duration_minutes:"30",pickup_address:"",instructions:"",pickup_latitude:"",pickup_longitude:""});
   const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState("");
-  async function load(){
+  const load=useCallback(async()=>{
     setLoading(true);
     try { const r=await fetch("/api/customer/booking-requests",{cache:"no-store"}); const j=await r.json(); if(r.status===401){window.location.assign("/customer/login");return;} if(!r.ok)throw new Error(j.error||"Requests load nahi hui."); setDogs(j.dogs||[]);setRequests(j.requests||[]); if(!form.dog_id && j.dogs?.[0])setForm(v=>({...v,dog_id:j.dogs[0].id})); }
     catch(e){setError(e instanceof Error?e.message:"Requests load nahi hui.");} finally{setLoading(false);}
