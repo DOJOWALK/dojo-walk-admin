@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     const accountId = String(account.id);
-    const phoneToText = String(account.phone || "");
+    const phoneToText = normalized;
     const limit = await db.prepare(
       "SELECT sends, window_started_at FROM portal_otp_send_limits WHERE role=? AND phone_normalized=?"
     ).bind(role, normalized).all();
