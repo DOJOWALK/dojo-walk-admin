@@ -22,8 +22,21 @@ export default {
     if (path === "/" || path === "/login") {
       return Response.redirect(new URL(APP_PATH + "/login", request.url), 302);
     }
-    if (path === "/walker-icon.svg" || path === "/favicon.ico" ||
-        path === "/walker/manifest.webmanifest" || path.startsWith("/_next/")) {
+    if (path === "/walker/manifest.webmanifest") {
+      return new Response(JSON.stringify({
+        id: "/walker/",
+        name: "Dojo Walk Walker",
+        short_name: "DW Walker",
+        description: "Manage assigned dog walks and walk history",
+        start_url: "/walker/dashboard",
+        scope: "/walker/",
+        display: "standalone",
+        background_color: "#f0fdf4",
+        theme_color: "#16a34a",
+        icons: [{ src: "/walker-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }]
+      }), { headers: { "content-type": "application/manifest+json; charset=utf-8", "cache-control": "public, max-age=3600" } });
+    }
+    if (path === "/walker-icon.svg" || path === "/favicon.ico" || path.startsWith("/_next/")) {
       return env.BACKEND.fetch(request);
     }
     if (path.startsWith("/api/")) {
