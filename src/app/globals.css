@@ -179,3 +179,10 @@
 .walk-state.live{background:#e8f4ff;color:#1f6399}
 
 .portal-safety-note{display:grid;gap:5px;margin:0 0 11px;padding:10px 11px;border:1px solid #f2d6c4;border-radius:10px;background:#fff8f2;color:#805536;font-size:10px;line-height:1.5;overflow-wrap:anywhere}.portal-safety-note strong{font-size:10px;color:#a44d16}
+
+/* Semantic status colours: brand orange is reserved for primary navigation and actions. */
+.status-active,.status-completed,.payment-paid,.walk-state.complete,.portal-status.status-completed,.record-status.status-converted,.record-status.status-customer_confirmed{background:#eaf7ee!important;color:#167a3e!important}
+.status-paused,.payment-partial,.status-pending,.portal-status.status-time_proposed,.record-status.status-under_review,.record-status.status-time_proposed{background:#fff5df!important;color:#a96500!important}
+.status-cancelled,.payment-unpaid,.status-rejected,.status-missed,.walk-state.issue,.portal-status.status-cancelled,.portal-status.status-missed,.record-status.status-rejected,.record-status.status-cancelled{background:#fff0ed!important;color:#c62828!important}
+.walk-state:not(.complete):not(.issue),.walk-state.live,.portal-status.status-scheduled,.portal-status.status-in_progress,.record-status.status-new_request{background:#eff6ff!important;color:#2563eb!important}
+.record-status{background:#f1f3f5;color:#596579}
