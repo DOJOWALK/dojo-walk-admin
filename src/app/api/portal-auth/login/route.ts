@@ -39,12 +39,13 @@ export async function POST(request: NextRequest) {
       "SELECT u.id,u.password_hash,u.password_salt,u.password_iterations FROM portal_users u LEFT JOIN customers c ON c.id=u.customer_id LEFT JOIN walkers w ON w.id=u.walker_id WHERE u.role=? AND u.phone_normalized=? AND u.is_active=1 AND ((u.role='customer' AND c.status='active') OR (u.role='walker' AND w.status='active')) LIMIT 1"
     ).bind(role, normalized).all();
     const user = found.results?.[0];
-    const valid = !!user && await verifyPortalPassword(
+    const passwordMatches = await verifyPortalPassword(
       password,
-      String(user.password_salt),
-      String(user.password_hash),
-      Number(user.password_iterations)
+      user ? String(user.password_salt) : "00000000000000000000000000000000",
+      user ? String(user.password_hash) : "0".repeat(64),
+      user ? Number(user.password_iterations) : 210000
     );
+    const valid = !!user && passwordMatches;
 
     if (!valid) {
       await db.prepare(
