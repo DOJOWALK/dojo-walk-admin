@@ -25,5 +25,21 @@
   "vars": {
     "APP_NAME": "Dojo Walk",
     "APP_TIMEZONE": "Asia/Kolkata"
+  },
+  "previews": {
+    "vars": {
+      "APP_NAME": "Dojo Walk Testing",
+      "APP_TIMEZONE": "Asia/Kolkata",
+      "PORTAL_OTP_MODE": "demo",
+      "OTP_PEPPER": "dojo-walk-preview-only-demo-pepper-not-for-production"
+    },
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "dojo-walk-preview-db",
+        "database_id": "d220195d-8d07-4dba-a97e-f2f68bca249c",
+        "migrations_dir": "migrations"
+      }
+    ]
   }
 }
