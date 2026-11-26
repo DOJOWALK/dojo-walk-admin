@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     const sendUrl = new URL("https://control.msg91.com/api/v5/otp");
     sendUrl.searchParams.set("template_id", config.MSG91_OTP_TEMPLATE_ID);
-    sendUrl.searchParams.set("mobile", phoneToText.replace(/^\\+/, ""));
+    sendUrl.searchParams.set("mobile", phoneToText.replace(/^\+/, ""));
     sendUrl.searchParams.set("otp", code);
     sendUrl.searchParams.set("otp_length", "6");
     sendUrl.searchParams.set("otp_expiry", "5");
