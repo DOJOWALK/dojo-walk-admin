@@ -72,7 +72,6 @@ export async function PATCH(request: NextRequest) {
     const action = body.action;
     if (!id || !["confirm","cancel"].includes(String(action))) return NextResponse.json({ error: "Invalid action." }, { status: 400 });
     const status = action === "confirm" ? "customer_confirmed" : "cancelled";
-    const allowed = action === "confirm" ? "time_proposed" : "new_request,under_review,time_proposed";
     const result = await db.prepare(
       action === "confirm"
         ? "UPDATE booking_requests SET status=?,customer_confirmed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=? AND customer_id=? AND status='time_proposed'"
