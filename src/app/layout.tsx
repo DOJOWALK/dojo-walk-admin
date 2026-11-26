@@ -4,7 +4,10 @@ import "./login/login.css";
 
 export const metadata: Metadata = {
   title: "Dojo Walk Admin",
-  description: "Private operations dashboard for Dojo Walk"
+  description: "Private operations dashboard for Dojo Walk",
+  manifest: "/manifest.webmanifest",
+  applicationName: "Dojo Walk Admin",
+  icons: { icon: "/admin-icon.svg", apple: "/admin-icon.svg" }
 };
 
 export const viewport: Viewport = {
