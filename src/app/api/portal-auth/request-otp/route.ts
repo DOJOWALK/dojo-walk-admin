@@ -82,6 +82,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
+function normalizeOtpPhone(value: string) {
+  const digits = value.replace(/\\D/g, "");
+  if (digits.length === 10) return "+91" + digits;
+  if (digits.length === 11 && digits.startsWith("0")) return "+91" + digits.slice(1);
+  if (digits.length === 12 && digits.startsWith("91")) return "+" + digits;
+  if (digits.length >= 10 && digits.length <= 15) return "+" + digits;
+  return "";
+}
+
 async function hashOtp(pepper: string, id: string, code: string) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pepper), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(id + ":" + code));
