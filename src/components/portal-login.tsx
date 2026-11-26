@@ -17,7 +17,6 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
   const [busy, setBusy] = useState(false);
   const title = role === "walker" ? "Walker Login" : "Customer Login";
   const destination = role === "walker" ? "/walker/dashboard" : "/customer/dashboard";
-  const other = role === "walker" ? { label: "Customer login", href: "/customer/login" } : { label: "Walker login", href: "/walker/login" };
 
   async function requestOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -93,7 +92,6 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
         <button type="button" className="portal-other-link" disabled={busy} onClick={() => { setChallengeId(""); setCode(""); setDemoCode(""); setNotice(""); setError(""); }}>Change mobile number</button>
       </form>}
       <div className="login-security"><ShieldCheck size={15}/> OTP verified · Secure account access</div>
-      <a className="portal-other-link" href={other.href}>{other.label}</a>
     </section>
   </main>;
 }
