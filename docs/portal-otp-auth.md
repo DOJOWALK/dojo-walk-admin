@@ -10,7 +10,9 @@
 - Existing portal sessions are revoked by migration 0015 so old password-authenticated sessions do not bypass OTP-only login.
 - Walker status is checked after OTP verification. Suspended, On Leave, Exited, Pending, and other non-active states are denied with a clear message. Active employment status is also re-checked for every authenticated request.
 - Unknown Walker mobile numbers are told that no Walker registration exists. Walker self-registration is not allowed; Admin must create the Walker record and portal access.
-- Customer OTP sign-in currently supports an existing Customer record with an already linked portal account. Customer self-registration and safe automatic linking are still pending.
+- Customer can self-register with name, mobile number, and address. Account creation and activation happen automatically only after MSG91 verifies phone ownership; Admin approval is not required.
+- If a verified phone matches exactly one active legacy Customer record, the portal account is safely linked to that record instead of creating a duplicate. Multiple matches, inactive records, or conflicting portal links are rejected and sent to Admin support.
+- New registrations are held as short-lived pending details and become a Customer + active portal account together after OTP verification.
 
 ## MSG91 configuration required
 
@@ -28,6 +30,17 @@ The app calls:
 Both calls send the MSG91 Authkey in the `authkey` header. The app checks the response `type` equals `success`; HTTP 200 alone is not enough for Verify OTP. MSG91's own docs specify international-format mobile numbers and an OTP template containing `##OTP##`.
 
 Before production use, create/approve the OTP template in MSG91 and complete the applicable Indian DLT registration, sender/template approvals and wallet funding. MSG91's published India OTP rate varies by volume; check the current account rate card before adding balance. No SMS is sent until all three Worker settings are present.
+
+## Customer self-registration behavior
+
+1. Customer chooses “New customer? Register here”.
+2. Customer enters name, mobile number, and full address; area is optional.
+3. Backend checks existing Customer records using normalized Indian mobile number.
+4. If exactly one active legacy record matches, it is retained and linked after successful OTP verification. If no record matches, temporary registration details are held for 15 minutes.
+5. MSG91 verifies the OTP. Only then are a new Customer record (if needed) and active Customer portal account created together in one D1 batch.
+6. Duplicate phone matches, inactive legacy records, or an already-conflicting portal account are not linked automatically; user is directed to Admin support.
+
+No Admin approval is required for a normal verified Customer registration.
 
 ## Walker sign-in behavior
 
@@ -48,7 +61,7 @@ A phone match alone never grants access. Walker self-registration is not allowed
 - Keep Walker and Customer role scopes separate.
 - Do not reveal a registered account's status before OTP ownership verification.
 - Re-check account status on every authenticated request.
-- Customer self-registration must verify phone ownership before linking a legacy Customer record or creating a new record; ambiguous duplicate phone matches must go to support, never guess.
+- Customer self-registration verifies phone ownership before linking a legacy Customer record or creating a new record; ambiguous duplicate phone matches go to support, never guess. The registration draft expires after 15 minutes.
 - Migration history must be reconciled before applying migration 0015. It revokes existing portal sessions intentionally; Admin sessions are not affected.
 - Admin accounts continue using the existing Admin authentication system.
 - No production migration or Worker deployment has been made.
