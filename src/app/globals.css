@@ -120,3 +120,16 @@
 
 /* Walker booking and completed walk history */
 .walker-history{padding:12px 13px;border:1px solid #f2e8df;background:#fffaf6;border-radius:11px;display:grid;gap:9px}.walker-history-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.walker-history-head strong{font-size:10px;color:#554a42}.walker-history-head>span{font-size:9px;font-weight:800;color:#27834d}.walker-history-list{display:grid;gap:7px}.walker-history-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #f1e9e2}.walker-history-row>div{display:grid;gap:3px;min-width:0}.walker-history-row strong{font-size:10px;color:#302a26}.walker-history-row span,.walker-history-row small{font-size:9px;color:#81766e;overflow-wrap:anywhere}.walker-history-row .record-status{white-space:nowrap}
+
+/* Walk schedule: readable cards without horizontal scrolling */
+.walk-card-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.walk-card{min-width:0;border:1px solid var(--line);border-radius:13px;padding:14px;background:#fff;cursor:pointer;transition:border-color .16s,background .16s}
+.walk-card:hover{border-color:#f2c29f;background:#fffdfa}
+.walk-card:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.walk-card-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.walk-card-person{display:grid;gap:4px;min-width:0}.walk-card-person>strong{font:800 14px Manrope;color:var(--ink)}.walk-card-person>span{font-size:11px;color:#625c56;overflow-wrap:anywhere}.walk-card-person>small{font-size:10px;color:var(--muted)}
+.walk-card-time{display:grid;gap:4px;text-align:right;flex:0 0 auto}.walk-card-time>strong{font:800 13px Manrope;color:#b95712}.walk-card-time>span{font-size:10px;color:var(--muted)}
+.walk-card-ids{display:flex;flex-wrap:wrap;gap:6px 13px;padding:10px 0;margin-top:10px;border-top:1px solid #f2eee9;border-bottom:1px solid #f2eee9;color:#817a73;font-size:9px}.walk-card-ids b{color:#554e48;font-weight:800;letter-spacing:.2px}
+.walk-card-controls{display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap;margin-top:11px}.walk-card-controls label{display:grid;gap:4px;color:#817a73;font-size:9px;font-weight:700;flex:1 1 115px;min-width:0}.walk-card-controls select{width:100%;min-width:0;border:1px solid #e0e9e2;border-radius:8px;padding:8px 7px;background:#fff;color:#393631;font-size:10px}.walk-card-controls>.status-dot{align-self:center}.walk-card-open{margin-left:auto;align-self:center;color:#d95d0b;font-size:9px;font-weight:800;white-space:nowrap}
+@media(max-width:900px){.walk-card-list{grid-template-columns:1fr}}
+@media(max-width:560px){.walk-card{padding:12px}.walk-card-top{gap:8px}.walk-card-person>strong{font-size:13px}.walk-card-ids{gap:6px 10px}.walk-card-controls{gap:7px}.walk-card-controls label{flex-basis:calc(50% - 5px)}}
