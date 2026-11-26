@@ -57,6 +57,12 @@ export async function POST(request: NextRequest) {
       ).bind(String(challenge.account_id)).all();
       const row = walker.results?.[0];
       if (!row) return NextResponse.json({ error: "Walker record nahi mila. Admin se sampark karein." }, { status: 404 });
+      const currentWalkerPhone = await db.prepare(
+        "SELECT id FROM (SELECT id,replace(replace(replace(replace(replace(mobile_number,' ',''),'-',''),'(',''),')',''),'+','') AS clean_phone FROM walkers) WHERE CASE WHEN substr(clean_phone,1,2)='91' THEN substr(clean_phone,3) WHEN substr(clean_phone,1,1)='0' THEN substr(clean_phone,2) ELSE clean_phone END=? AND id=? LIMIT 1"
+      ).bind(phone.replace(/^\+91/, ""), String(challenge.account_id)).all();
+      if (!currentWalkerPhone.results?.length) {
+        return NextResponse.json({ error: "Walker mobile number record change hua hai. Admin se dobara verify karwayein." }, { status: 409 });
+      }
       status = String(row.employment_status || row.status || "active").toLowerCase();
       if (status !== "active" || String(row.status).toLowerCase() !== "active") {
         return NextResponse.json({ error: statusMessage(status, String(row.status)) }, { status: 403 });
