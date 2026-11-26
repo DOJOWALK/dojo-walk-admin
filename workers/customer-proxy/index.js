@@ -22,8 +22,21 @@ export default {
     if (path === "/" || path === "/login") {
       return Response.redirect(new URL(APP_PATH + "/login", request.url), 302);
     }
-    if (path === "/customer-icon.svg" || path === "/favicon.ico" ||
-        path === "/customer/manifest.webmanifest" || path.startsWith("/_next/")) {
+    if (path === "/customer/manifest.webmanifest") {
+      return new Response(JSON.stringify({
+        id: "/customer/",
+        name: "Dojo Walk Customer",
+        short_name: "DW Customer",
+        description: "Manage your dogs, bookings and walks",
+        start_url: "/customer/dashboard",
+        scope: "/customer/",
+        display: "standalone",
+        background_color: "#fff7ed",
+        theme_color: "#f97316",
+        icons: [{ src: "/customer-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }]
+      }), { headers: { "content-type": "application/manifest+json; charset=utf-8", "cache-control": "public, max-age=3600" } });
+    }
+    if (path === "/customer-icon.svg" || path === "/favicon.ico" || path.startsWith("/_next/")) {
       return env.BACKEND.fetch(request);
     }
     if (path.startsWith("/api/")) {
