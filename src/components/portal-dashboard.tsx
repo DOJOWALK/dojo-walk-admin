@@ -11,6 +11,7 @@ type Walk = {
 
 export default function PortalDashboard({ role }: { role: "walker" | "customer" }) {
   const [name, setName] = useState("");
+  const [today, setToday] = useState("");
   const [walks, setWalks] = useState<Walk[]>([]);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState("");
@@ -24,6 +25,7 @@ export default function PortalDashboard({ role }: { role: "walker" | "customer" 
       if (response.status === 401) { window.location.assign(base + "/login"); return; }
       if (!response.ok) throw new Error(data.error || "Dashboard load nahi hua.");
       setName(data.user.name);
+      setToday(data.today || "");
       setWalks(data.walks || []);
       setError("");
     } catch (reason) {
@@ -54,6 +56,25 @@ export default function PortalDashboard({ role }: { role: "walker" | "customer" 
     }
   }
 
+  async function updateWalk(walkId: string, action: "start" | "complete") {
+    setBusyId(walkId);
+    setError("");
+    try {
+      const response = await fetch("/api/portal-walks/" + walkId + "/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Walk update nahi hua.");
+      await load();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Walk update nahi hua.");
+    } finally {
+      setBusyId("");
+    }
+  }
+
   async function logout() {
     await fetch("/api/portal-auth/logout", { method: "POST" });
     window.location.assign(base + "/login");
@@ -68,7 +89,7 @@ export default function PortalDashboard({ role }: { role: "walker" | "customer" 
         <div className="portal-walk-top"><span className="portal-date">{new Date(walk.walk_date + "T00:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span><span className={"portal-status status-" + walk.status}>{walk.status.replace("_"," ")}</span></div>
         <h3>{walk.dog_name}</h3><p className="portal-muted">{walk.breed || "Dog"} · {walk.slot} · {walk.scheduled_time || "Time pending"} · {walk.duration_minutes} min</p>
         {role === "walker" ? <div className="portal-person"><strong>{walk.customer_name}</strong><span>{walk.customer_phone}</span><span>{[walk.customer_address,walk.customer_area].filter(Boolean).join(", ")}</span></div> : <div className="portal-person"><strong>{walk.walker_name || "Walker not assigned"}</strong></div>}
-        <button className="portal-chat-button" disabled={busyId === walk.id} onClick={() => void openConversation("walk", walk.id)}><MessageCircle size={15}/>{busyId === walk.id ? "Opening…" : "Open Walk Chat"}</button>
+        <div className="portal-walk-actions">{role === "walker" && walk.status === "scheduled" && walk.walk_date === today && <button className="portal-live-button" disabled={busyId === walk.id} onClick={() => void updateWalk(walk.id, "start")}>Start Walk</button>}{role === "walker" && walk.status === "in_progress" && <button className="portal-live-button complete" disabled={busyId === walk.id} onClick={() => void updateWalk(walk.id, "complete")}>Complete Walk</button>}<button className="portal-chat-button" disabled={busyId === walk.id} onClick={() => void openConversation("walk", walk.id)}><MessageCircle size={15}/>{busyId === walk.id ? "Please wait…" : "Open Walk Chat"}</button></div>
       </article>)}</div> : <div className="portal-empty"><ShieldCheck size={22}/><strong>Abhi koi walk listed nahi hai</strong><span>New assignments ya bookings yahan update hongi.</span></div>}
     </section>
     <footer className="portal-footer">Dojo Walk · Secure {role} access · Photos only when enabled · No video</footer>
