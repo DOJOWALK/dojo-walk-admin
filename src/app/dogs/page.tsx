@@ -51,7 +51,7 @@ export default function DogsPage() {
         <label>Dog's name *<input required maxLength={80} value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Dog name"/></label>
         <label>Breed<input maxLength={80} value={form.breed} onChange={e=>setForm({...form,breed:e.target.value})} placeholder="Breed"/></label>
         <label>Age<input maxLength={40} value={form.age_text} onChange={e=>setForm({...form,age_text:e.target.value})} placeholder="e.g. 2 years"/></label>
-        <label>Size<select value={form.size} onChange={e=>setForm({...form,size:e.target.value})}><option value="">Select size</option><option>Small</option><option>Medium</option><option>Large</option></select></label>
+        <label>Size<select value={form.size} onChange={e=>setForm({...form,size:e.target.value})}><option value="">Select size</option><option>Small</option><option>Medium</option><option>Large</option><option>Extra Large</option></select></label>
         <label>Temperament<input maxLength={200} value={form.temperament} onChange={e=>setForm({...form,temperament:e.target.value})} placeholder="Friendly, shy, energetic…"/></label>
         <label className="full-field">Medical notes<textarea rows={2} maxLength={1000} value={form.medical_notes} onChange={e=>setForm({...form,medical_notes:e.target.value})}/></label>
         <label className="full-field">Emergency notes<textarea rows={2} maxLength={1000} value={form.emergency_notes} onChange={e=>setForm({...form,emergency_notes:e.target.value})}/></label>
