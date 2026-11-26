@@ -3,7 +3,9 @@
   "name": "dojo-walk-admin",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-11-25",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
@@ -26,20 +28,29 @@
     "APP_NAME": "Dojo Walk",
     "APP_TIMEZONE": "Asia/Kolkata"
   },
-  "previews": {
-    "vars": {
-      "APP_NAME": "Dojo Walk Testing",
-      "APP_TIMEZONE": "Asia/Kolkata",
-      "PORTAL_OTP_MODE": "demo",
-      "OTP_PEPPER": "dojo-walk-preview-only-demo-pepper-not-for-production"
-    },
-    "d1_databases": [
-      {
-        "binding": "DB",
-        "database_name": "dojo-walk-preview-db",
-        "database_id": "d220195d-8d07-4dba-a97e-f2f68bca249c",
-        "migrations_dir": "migrations"
+  "env": {
+    "testing": {
+      "name": "dojo-walk-testing",
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "dojo-walk-testing"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "dojo-walk-preview-db",
+          "database_id": "d220195d-8d07-4dba-a97e-f2f68bca249c",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "vars": {
+        "APP_NAME": "Dojo Walk Testing",
+        "APP_TIMEZONE": "Asia/Kolkata",
+        "PORTAL_OTP_MODE": "demo",
+        "OTP_PEPPER": "dojo-walk-preview-only-demo-pepper-not-for-production"
       }
-    ]
+    }
   }
 }
