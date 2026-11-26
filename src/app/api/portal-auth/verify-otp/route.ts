@@ -35,7 +35,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "OTP galat hai. Dobara check karein." }, { status: 401 });
     }
 
-    await db.prepare("UPDATE portal_otp_challenges SET consumed_at=datetime('now') WHERE id=? AND consumed_at IS NULL").bind(challengeId).run();
+    const consumed = await db.prepare("UPDATE portal_otp_challenges SET consumed_at=datetime('now') WHERE id=? AND consumed_at IS NULL AND attempts<5 AND datetime(expires_at)>datetime('now') RETURNING id").bind(challengeId).all();
+    if (!consumed.results?.length) {
+      return NextResponse.json({ error: "OTP pehle use ho chuka hai ya expire ho gaya. Naya OTP mangwayein." }, { status: 409 });
+    }
     let portalUser: Record<string, unknown> | undefined;
     let status = "";
     if (role === "walker") {
