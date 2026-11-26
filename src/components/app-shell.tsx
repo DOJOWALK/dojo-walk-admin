@@ -9,6 +9,7 @@ const navigation = [
   { label: "Customers", href: "/customers", key: "customers", icon: Users },
   { label: "Walkers", href: "/walkers", key: "walkers", icon: UserRound },
   { label: "Bookings", href: "/bookings", key: "bookings", icon: ClipboardList },
+  { label: "Booking Requests", href: "/booking-requests", key: "booking-requests", icon: CalendarDays },
   { label: "Walk Schedule", href: "/schedule", key: "schedule", icon: CalendarDays },
   { label: "Attendance", href: "/attendance", key: "attendance", icon: Activity },
   { label: "Customer Away", href: "/away", key: "away", icon: Plane },
