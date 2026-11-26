@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export const PORTAL_COOKIE_NAME = "dojo_walk_portal";
 const PORTAL_SESSION_DAYS = 14;
@@ -112,7 +113,7 @@ export async function createPortalSession(db: PortalDB, userId: string) {
   return { token, expiresAt };
 }
 
-export function setPortalCookie(response: Response & { cookies: { set: (...args: any[]) => void } }, token: string) {
+export function setPortalCookie(response: NextResponse, token: string) {
   response.cookies.set(PORTAL_COOKIE_NAME, token, {
     httpOnly: true,
     secure: true,
@@ -122,7 +123,7 @@ export function setPortalCookie(response: Response & { cookies: { set: (...args:
   });
 }
 
-export function clearPortalCookie(response: Response & { cookies: { set: (...args: any[]) => void } }) {
+export function clearPortalCookie(response: NextResponse) {
   response.cookies.set(PORTAL_COOKIE_NAME, "", {
     httpOnly: true,
     secure: true,
