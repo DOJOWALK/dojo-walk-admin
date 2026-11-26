@@ -6,7 +6,8 @@
 - MSG91 SendOTP API delivers the OTP; MSG91 Verify OTP API validates it before the portal session is issued.
 - The application also stores an HMAC hash of the generated OTP in D1, never the plaintext. Challenges expire in five minutes, allow at most five verification attempts, are one-time use, and resend is limited to three per 15-minute phone window.
 - A new OTP request invalidates earlier outstanding challenges for the same role and phone.
-- The old password-based portal login API returns HTTP 410. Admin password login is separate and unchanged.
+- The old password-based portal login and change-password APIs return HTTP 410. Admin password login is separate and unchanged.
+- Admin Portal Access creates, enables, and disables OTP-only accounts; it no longer asks Admins to create or reset portal passwords. Random unusable password placeholders remain only because the existing D1 schema has non-null legacy password columns.
 - Existing portal sessions are revoked by migration 0015 so old password-authenticated sessions do not bypass OTP-only login.
 - Walker status is checked after OTP verification. Suspended, On Leave, Exited, Pending, and other non-active states are denied with a clear message. Active employment status is also re-checked for every authenticated request.
 - Unknown Walker mobile numbers are told that no Walker registration exists. Walker self-registration is not allowed; Admin must create the Walker record and portal access.
@@ -62,6 +63,6 @@ A phone match alone never grants access. Walker self-registration is not allowed
 - Do not reveal a registered account's status before OTP ownership verification.
 - Re-check account status on every authenticated request.
 - Customer self-registration verifies phone ownership before linking a legacy Customer record or creating a new record; ambiguous duplicate phone matches go to support, never guess. The registration draft expires after 15 minutes.
-- Migration history must be reconciled before applying migration 0015. It revokes existing portal sessions intentionally; Admin sessions are not affected.
+- Migration history must be reconciled before applying migrations 0015 and 0016. Migration 0015 revokes existing portal sessions intentionally; Admin sessions are not affected.
 - Admin accounts continue using the existing Admin authentication system.
 - No production migration or Worker deployment has been made.
