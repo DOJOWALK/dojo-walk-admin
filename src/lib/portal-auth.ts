@@ -60,7 +60,7 @@ export async function verifyPortalPassword(password: string, saltHex: string, ex
   try {
     const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
     const bits = await crypto.subtle.deriveBits(
-      { name: "PBKDF2", salt: fromHex(saltHex), iterations, hash: "SHA-256" },
+      { name: "PBKDF2", salt: fromHex(saltHex).buffer as ArrayBuffer, iterations, hash: "SHA-256" },
       key,
       256
     );
