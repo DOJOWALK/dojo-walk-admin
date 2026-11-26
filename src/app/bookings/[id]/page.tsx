@@ -36,7 +36,7 @@ export default function BookingDetail() {
       const parts = String(item.area || "").split(",");
       setForm({
         owner_name: item.customer_name || "", phone: item.customer_phone || "",
-        whatsapp_phone: item.whatsapp_phone || "", address: item.address || "",
+        address: item.address || "",
         flat_tower: item.flat_tower || "", society: item.society || "",
         locality: item.locality || parts[0]?.trim() || "", city: item.city || parts[1]?.trim() || "Greater Noida West",
         state: item.state || parts.slice(2).join(",").trim() || "Uttar Pradesh", pincode: item.pincode || "",
@@ -47,7 +47,7 @@ export default function BookingDetail() {
         start_slot: item.start_slot || "morning", morning_time: item.morning_time || "07:00",
         evening_time: item.evening_time || "18:00", walks_per_day: String(item.walks_per_day || 1),
         walk_duration_minutes: String(item.walk_duration_minutes || 30),
-        status: item.status || "active", booking_source: item.booking_source || "whatsapp",
+        status: item.status || "active", booking_source: item.booking_source || "phone",
         notes: item.notes || ""
       });
     }
@@ -105,7 +105,7 @@ export default function BookingDetail() {
         <label>Walks per day<select value={form.walks_per_day} onChange={e=>change("walks_per_day",e.target.value)}><option value="1">1 walk per day</option><option value="2">2 walks per day</option></select></label>
         <label>First walk from<select value={form.start_slot} onChange={e=>change("start_slot",e.target.value)}><option value="morning">Morning</option><option value="evening">Evening</option></select></label>
         {form.walks_per_day === "1" ? <label>{form.start_slot === "morning" ? "Morning" : "Evening"} time<input type="time" value={form.start_slot === "morning" ? form.morning_time : form.evening_time} onChange={e=>change(form.start_slot === "morning" ? "morning_time" : "evening_time",e.target.value)}/></label> : <><label>Morning time<input type="time" value={form.morning_time} onChange={e=>change("morning_time",e.target.value)}/></label><label>Evening time<input type="time" value={form.evening_time} onChange={e=>change("evening_time",e.target.value)}/></label></>}
-        <label>Booking source<select value={form.booking_source} onChange={e=>change("booking_source",e.target.value)}><option value="whatsapp">WhatsApp</option><option value="phone">Phone call</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></label>
+        <label>Booking source<select value={form.booking_source} onChange={e=>change("booking_source",e.target.value)}><option value="phone">Phone call</option><option value="walk_in">Walk-in</option><option value="other">Other</option></select></label>
         <label className="full-field">Notes<textarea rows={3} maxLength={1000} value={form.notes} onChange={e=>change("notes",e.target.value)}/></label>
       </div>
       <div className="booking-price">Rate is based on duration: <strong>{money(({20:45,30:65,45:95,60:125} as Record<number,number>)[Number(form.walk_duration_minutes)])} per dog, per completed walk.</strong> Changing duration/rate also changes the rate used in the booking's billing calculation, including its existing billable completed walks.</div>
@@ -119,7 +119,7 @@ export default function BookingDetail() {
       <div className="booking-people-grid">
         <div className="booking-person">
           <div className="booking-avatar"><UserRound size={20}/></div>
-          <div className="booking-person-copy"><span className="booking-label">OWNER</span><strong>{booking.customer_name}</strong><span className="booking-meta"><Phone size={13}/>{booking.customer_phone || "No mobile number"}</span>{booking.whatsapp_phone&&<span className="booking-meta">WhatsApp: {booking.whatsapp_phone}</span>}<Link className="booking-profile-link" href={"/customers/"+booking.customer_id}>View customer profile <span>→</span></Link></div>
+          <div className="booking-person-copy"><span className="booking-label">OWNER</span><strong>{booking.customer_name}</strong><span className="booking-meta"><Phone size={13}/>{booking.customer_phone || "No mobile number"}</span><Link className="booking-profile-link" href={"/customers/"+booking.customer_id}>View customer profile <span>→</span></Link></div>
         </div>
         <div className="booking-person">
           <div className="booking-avatar dog-avatar"><PawPrint size={20}/></div>
