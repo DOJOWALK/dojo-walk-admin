@@ -83,7 +83,7 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
         <label htmlFor="portal-phone-verified">Mobile number</label>
         <input id="portal-phone-verified" type="tel" value={phone} readOnly/>
         <label htmlFor="portal-otp">6-digit OTP</label>
-        <input id="portal-otp" type="text" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value.replace(/\\D/g, "").slice(0, 6))} required minLength={6} maxLength={6} placeholder="Enter OTP"/>
+        <input id="portal-otp" type="text" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required minLength={6} maxLength={6} placeholder="Enter OTP"/>
         {error && <p className="login-error" role="alert">{error}</p>}
         {notice && <p className="login-copy" role="status">{notice}</p>}
         <button type="submit" disabled={busy || code.length !== 6}>{busy ? "Verifying…" : "Verify OTP & Sign in"}</button>
