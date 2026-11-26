@@ -39,7 +39,7 @@ export async function GET() {
     await ensureWalkerTable(env);
     const result = await env.DB.prepare("SELECT * FROM walkers ORDER BY created_at DESC").all();
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS walk_assignments (walk_id TEXT PRIMARY KEY REFERENCES walks(id) ON DELETE CASCADE, walker_id TEXT NOT NULL REFERENCES walkers(id), assigned_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
-    const history = await env.DB.prepare("SELECT a.walker_id,w.id AS walk_id,w.booking_id,w.walk_date,w.slot,w.scheduled_time,w.duration_minutes,w.status,c.full_name AS customer_name,c.phone AS customer_phone,d.name AS dog_name FROM walk_assignments a JOIN walks w ON w.id=a.walk_id JOIN bookings b ON b.id=w.booking_id JOIN customers c ON c.id=b.customer_id JOIN dogs d ON d.id=w.dog_id ORDER BY w.walk_date DESC,w.scheduled_time DESC").all();
+    const history = await env.DB.prepare("SELECT a.walker_id,w.id AS walk_id,w.booking_id,w.walk_date,w.slot,w.scheduled_time,w.duration_minutes,w.status,b.customer_id AS customer_id,c.full_name AS customer_name,c.phone AS customer_phone,d.name AS dog_name FROM walk_assignments a JOIN walks w ON w.id=a.walk_id JOIN bookings b ON b.id=w.booking_id JOIN customers c ON c.id=b.customer_id JOIN dogs d ON d.id=w.dog_id ORDER BY w.walk_date DESC,w.scheduled_time DESC").all();
     return NextResponse.json({ walkers: result.results ?? [], walk_history: history.results ?? [] });
   } catch {
     return NextResponse.json({ error: "Walker records could not be loaded. Please try again." }, { status: 503 });
