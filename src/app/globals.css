@@ -177,3 +177,5 @@
 @media(max-width:620px){.portal-walk-actions{grid-template-columns:1fr}}
 
 .walk-state.live{background:#e8f4ff;color:#1f6399}
+
+.portal-safety-note{display:grid;gap:5px;margin:0 0 11px;padding:10px 11px;border:1px solid #f2d6c4;border-radius:10px;background:#fff8f2;color:#805536;font-size:10px;line-height:1.5;overflow-wrap:anywhere}.portal-safety-note strong{font-size:10px;color:#a44d16}
