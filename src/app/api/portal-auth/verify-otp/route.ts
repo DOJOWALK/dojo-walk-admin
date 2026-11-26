@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { createPortalSession, isSameOrigin, normalizePortalPhone, PortalDB, setPortalCookie } from "@/lib/portal-auth";
+import { createPortalSession, isSameOrigin, PortalDB, setPortalCookie } from "@/lib/portal-auth";
 
 type Env = { DB: PortalDB; OTP_PEPPER?: string };
 
@@ -85,7 +85,7 @@ function statusMessage(employment: string, walkerStatus: string) {
 }
 
 function normalizeOtpPhone(value: string) {
-  const digits = value.replace(/\\D/g, "");
+  const digits = value.replace(/\D/g, "");
   if (digits.length === 10) return "+91" + digits;
   if (digits.length === 11 && digits.startsWith("0")) return "+91" + digits.slice(1);
   if (digits.length === 12 && digits.startsWith("91")) return "+" + digits;
