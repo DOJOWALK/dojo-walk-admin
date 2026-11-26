@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { isSameOrigin, PortalDB } from "@/lib/portal-auth";
 
-type SmsBinding = { fetch(request: Request): Promise<Response> };
-type Env = { DB: PortalDB; SMS_OTP?: SmsBinding; OTP_PEPPER?: string };
+type Env = { DB: PortalDB; MSG91_AUTHKEY?: string; MSG91_OTP_TEMPLATE_ID?: string; OTP_PEPPER?: string };
 
 export async function POST(request: NextRequest) {
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
@@ -42,8 +41,8 @@ export async function POST(request: NextRequest) {
       account = rows[0];
     }
 
-    if (!config.SMS_OTP || !config.OTP_PEPPER) {
-      return NextResponse.json({ error: "OTP SMS service abhi configure nahi hai. Admin se sampark karein." }, { status: 503 });
+    if (!config.MSG91_AUTHKEY || !config.MSG91_OTP_TEMPLATE_ID || !config.OTP_PEPPER) {
+      return NextResponse.json({ error: "MSG91 OTP service abhi configure nahi hai. Admin se sampark karein." }, { status: 503 });
     }
 
     const accountId = String(account.id);
@@ -67,14 +66,22 @@ export async function POST(request: NextRequest) {
       "INSERT INTO portal_otp_send_limits (role,phone_normalized,window_started_at,sends) VALUES (?,?,datetime('now'),1) ON CONFLICT(role,phone_normalized) DO UPDATE SET sends=CASE WHEN datetime(window_started_at)<=datetime('now','-15 minutes') THEN 1 ELSE sends+1 END,window_started_at=CASE WHEN datetime(window_started_at)<=datetime('now','-15 minutes') THEN datetime('now') ELSE window_started_at END"
     ).bind(role, normalized).run();
 
-    const smsResponse = await config.SMS_OTP.fetch(new Request("https://sms-otp.internal/send", {
+    const sendUrl = new URL("https://control.msg91.com/api/v5/otp");
+    sendUrl.searchParams.set("template_id", config.MSG91_OTP_TEMPLATE_ID);
+    sendUrl.searchParams.set("mobile", phoneToText.replace(/^\\+/, ""));
+    sendUrl.searchParams.set("otp", code);
+    sendUrl.searchParams.set("otp_length", "6");
+    sendUrl.searchParams.set("otp_expiry", "5");
+    sendUrl.searchParams.set("realTimeResponse", "1");
+    const smsResponse = await fetch(sendUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: phoneToText, code, role, expires_in_minutes: 5, template: "dojo_walk_login_otp" })
-    }));
-    if (!smsResponse.ok) {
+      headers: { authkey: config.MSG91_AUTHKEY, "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const smsResult = await smsResponse.json().catch(() => null) as { type?: string; request_id?: string } | null;
+    if (!smsResponse.ok || smsResult?.type !== "success") {
       await db.prepare("DELETE FROM portal_otp_challenges WHERE id=?").bind(challengeId).run();
-      return NextResponse.json({ error: "OTP SMS deliver nahi ho paya. Thodi der baad try karein." }, { status: 502 });
+      return NextResponse.json({ error: "MSG91 OTP SMS send nahi ho paya. MSG91 balance, Authkey aur approved template check karein." }, { status: 502 });
     }
     return NextResponse.json({ ok: true, challengeId, expiresInSeconds: 300 });
   } catch {
