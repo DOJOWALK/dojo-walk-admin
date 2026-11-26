@@ -31,16 +31,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
       if (String(walk.walk_date) !== today) return NextResponse.json({ error: "Walk ko sirf scheduled date par start kar sakte hain." }, { status: 409 });
       if (walk.started_at) return NextResponse.json({ ok: true, status: "in_progress" });
-      await db.prepare("UPDATE walks SET started_at=CURRENT_TIMESTAMP WHERE id=? AND status='scheduled' AND started_at IS NULL")
+      const started = await db.prepare("UPDATE walks SET started_at=CURRENT_TIMESTAMP WHERE id=? AND status='scheduled' AND started_at IS NULL")
         .bind(id).run();
+      if ((started as { meta?: { changes?: number } }).meta?.changes === 0) return NextResponse.json({ error: "Walk start state changed. Refresh and try again." }, { status: 409 });
       await db.prepare("INSERT INTO walk_events (id,walk_id,actor_role,actor_user_id,event_type) VALUES (?,?, 'walker',?,'started')")
         .bind(crypto.randomUUID(), id, identity.id).run();
       return NextResponse.json({ ok: true, status: "in_progress" });
     }
 
     if (!walk.started_at) return NextResponse.json({ error: "Walk pehle start karein." }, { status: 409 });
-    await db.prepare("UPDATE walks SET status='completed',completed_at=CURRENT_TIMESTAMP WHERE id=? AND status='scheduled' AND started_at IS NOT NULL AND completed_at IS NULL")
+    const completed = await db.prepare("UPDATE walks SET status='completed',completed_at=CURRENT_TIMESTAMP WHERE id=? AND status='scheduled' AND started_at IS NOT NULL AND completed_at IS NULL")
       .bind(id).run();
+    if ((completed as { meta?: { changes?: number } }).meta?.changes === 0) return NextResponse.json({ error: "Walk completion state changed. Refresh and try again." }, { status: 409 });
     await db.prepare("INSERT INTO walk_events (id,walk_id,actor_role,actor_user_id,event_type) VALUES (?,?, 'walker',?,'completed')")
       .bind(crypto.randomUUID(), id, identity.id).run();
     return NextResponse.json({ ok: true, status: "completed" });
