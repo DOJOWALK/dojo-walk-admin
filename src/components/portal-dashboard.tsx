@@ -6,6 +6,7 @@ import { LogOut, MessageCircle, PawPrint, ShieldCheck } from "lucide-react";
 type Walk = {
   id: string; walk_date: string; slot: string; scheduled_time: string | null;
   duration_minutes: number; status: string; dog_name: string; breed: string | null;
+  age_text?: string | null; size?: string | null; temperament?: string | null; medical_notes?: string | null; emergency_notes?: string | null;
   customer_name?: string; customer_phone?: string; customer_address?: string; customer_area?: string; walker_name?: string;
 };
 
@@ -88,7 +89,7 @@ export default function PortalDashboard({ role }: { role: "walker" | "customer" 
       {loading ? <div className="portal-empty">Loading…</div> : walks.length ? <div className="portal-walk-grid">{walks.map((walk) => <article className="portal-walk-card" key={walk.id}>
         <div className="portal-walk-top"><span className="portal-date">{new Date(walk.walk_date + "T00:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span><span className={"portal-status status-" + walk.status}>{walk.status.replace("_"," ")}</span></div>
         <h3>{walk.dog_name}</h3><p className="portal-muted">{walk.breed || "Dog"} · {walk.slot} · {walk.scheduled_time || "Time pending"} · {walk.duration_minutes} min</p>
-        {role === "walker" ? <div className="portal-person"><strong>{walk.customer_name}</strong><span>{walk.customer_phone}</span><span>{[walk.customer_address,walk.customer_area].filter(Boolean).join(", ")}</span></div> : <div className="portal-person"><strong>{walk.walker_name || "Walker not assigned"}</strong></div>}
+        {role === "walker" ? <div className="portal-person"><strong>{walk.customer_name}</strong><span>{walk.customer_phone}</span><span>{[walk.customer_address,walk.customer_area].filter(Boolean).join(", ")}</span></div> : <div className="portal-person"><strong>{walk.walker_name || "Walker not assigned"}</strong></div>}{(walk.age_text || walk.size || walk.temperament) && <div className="portal-person"><strong>Dog care details</strong><span>{[walk.age_text,walk.size,walk.temperament].filter(Boolean).join(" · ")}</span></div>}{(walk.medical_notes || walk.emergency_notes) && <div className="portal-safety-note"><strong>Care & Emergency Notes</strong>{walk.medical_notes && <span>Medical: {walk.medical_notes}</span>}{walk.emergency_notes && <span>Emergency: {walk.emergency_notes}</span>}</div>}
         <div className="portal-walk-actions">{role === "walker" && walk.status === "scheduled" && walk.walk_date === today && <button className="portal-live-button" disabled={busyId === walk.id} onClick={() => void updateWalk(walk.id, "start")}>Start Walk</button>}{role === "walker" && walk.status === "in_progress" && <button className="portal-live-button complete" disabled={busyId === walk.id} onClick={() => void updateWalk(walk.id, "complete")}>Complete Walk</button>}<button className="portal-chat-button" disabled={busyId === walk.id} onClick={() => void openConversation("walk", walk.id)}><MessageCircle size={15}/>{busyId === walk.id ? "Please wait…" : "Open Walk Chat"}</button></div>
       </article>)}</div> : <div className="portal-empty"><ShieldCheck size={22}/><strong>Abhi koi walk listed nahi hai</strong><span>New assignments ya bookings yahan update hongi.</span></div>}
     </section>
