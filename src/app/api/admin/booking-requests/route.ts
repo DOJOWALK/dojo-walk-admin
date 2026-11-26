@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest) {
   const note = typeof body.admin_note === "string" ? body.admin_note.trim().slice(0,1000) : null;
   if (!id || !["review","propose","reject"].includes(action)) return NextResponse.json({ error: "Choose a valid review action." }, { status: 400 });
   try {
-    let result;
+    let result: unknown;
     if (action === "review") {
       result = await db.prepare("UPDATE booking_requests SET status='under_review',admin_note=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('new_request','under_review')").bind(note,id).run();
     } else if (action === "reject") {
