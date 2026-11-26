@@ -96,9 +96,10 @@ export async function POST(request: NextRequest) {
         }
         const linked = await db.prepare("SELECT id,is_active FROM portal_users WHERE role='customer' AND customer_id=? LIMIT 1").bind(customerId).all();
         const linkedUser = linked.results?.[0];
-        const phoneConflict = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND phone_normalized=? AND (? IS NULL OR id<>?) LIMIT 1")
-          .bind(phone, linkedUser ? String(linkedUser.id) : null, linkedUser ? String(linkedUser.id) : null).all();
-        if (phoneConflict.results?.length) return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
+        const phoneMatches = await findCustomerPortalUsersByPhone(db, phone.replace(/^\+91/, ""));
+        if (phoneMatches.some((user) => String(user.customer_id) !== customerId)) {
+          return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
+        }
         if (linkedUser) {
           if (Number(linkedUser.is_active) !== 1) return NextResponse.json({ error: "Customer portal account disabled hai. Admin support se sampark karein." }, { status: 403 });
           await db.prepare("UPDATE portal_users SET name=?,phone=?,phone_normalized=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
@@ -137,9 +138,10 @@ export async function POST(request: NextRequest) {
         }
         const found = await db.prepare("SELECT id,is_active FROM portal_users WHERE role='customer' AND customer_id=? LIMIT 1").bind(String(challenge.account_id)).all();
         const existing = found.results?.[0];
-        const conflict = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND phone_normalized=? AND (? IS NULL OR id<>?) LIMIT 1")
-          .bind(phone, existing ? String(existing.id) : null, existing ? String(existing.id) : null).all();
-        if (conflict.results?.length) return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
+        const phoneMatches = await findCustomerPortalUsersByPhone(db, phone.replace(/^\+91/, ""));
+        if (phoneMatches.some((user) => String(user.customer_id) !== String(challenge.account_id))) {
+          return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
+        }
         if (existing) {
           if (Number(existing.is_active) !== 1) return NextResponse.json({ error: "Customer portal account disabled hai. Admin support se sampark karein." }, { status: 403 });
           await db.prepare("UPDATE portal_users SET name=?,phone=?,phone_normalized=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
@@ -172,6 +174,14 @@ async function findCustomersByPhone(db: PortalDB, phoneDigits: string) {
   const expression = "CASE WHEN substr(clean_phone,1,2)='91' THEN substr(clean_phone,3) WHEN substr(clean_phone,1,1)='0' THEN substr(clean_phone,2) ELSE clean_phone END";
   const result = await db.prepare(
     "SELECT id,full_name,phone,status FROM (SELECT id,full_name,phone,status,replace(replace(replace(replace(replace(phone,' ',''),'-',''),'(',''),')',''),'+','') AS clean_phone FROM customers) WHERE " + expression + "=? LIMIT 2"
+  ).bind(phoneDigits).all();
+  return result.results || [];
+}
+
+async function findCustomerPortalUsersByPhone(db: PortalDB, phoneDigits: string) {
+  const expression = "CASE WHEN substr(clean_phone,1,2)='91' THEN substr(clean_phone,3) WHEN substr(clean_phone,1,1)='0' THEN substr(clean_phone,2) ELSE clean_phone END";
+  const result = await db.prepare(
+    "SELECT id,customer_id,is_active FROM (SELECT id,customer_id,is_active,replace(replace(replace(replace(replace(phone_normalized,' ',''),'-',''),'(',''),')',''),'+','') AS clean_phone FROM portal_users WHERE role='customer') WHERE " + expression + "=?"
   ).bind(phoneDigits).all();
   return result.results || [];
 }
