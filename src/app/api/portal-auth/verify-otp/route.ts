@@ -88,13 +88,16 @@ export async function POST(request: NextRequest) {
           customerName = String(registration.full_name);
           customerPhone = phone;
         }
-        const conflict = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND phone_normalized=? LIMIT 1").bind(phone).all();
-        if (conflict.results?.length) {
-          const existingForCustomer = await db.prepare("SELECT id,is_active FROM portal_users WHERE role='customer' AND customer_id=? LIMIT 1").bind(customerId).all();
-          const existing = existingForCustomer.results?.[0];
-          if (!existing) return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
-          if (Number(existing.is_active) !== 1) return NextResponse.json({ error: "Customer portal account disabled hai. Admin support se sampark karein." }, { status: 403 });
-          portalUser = existing;
+        const linked = await db.prepare("SELECT id,is_active FROM portal_users WHERE role='customer' AND customer_id=? LIMIT 1").bind(customerId).all();
+        const linkedUser = linked.results?.[0];
+        const phoneConflict = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND phone_normalized=? AND (? IS NULL OR id<>?) LIMIT 1")
+          .bind(phone, linkedUser ? String(linkedUser.id) : null, linkedUser ? String(linkedUser.id) : null).all();
+        if (phoneConflict.results?.length) return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
+        if (linkedUser) {
+          if (Number(linkedUser.is_active) !== 1) return NextResponse.json({ error: "Customer portal account disabled hai. Admin support se sampark karein." }, { status: 403 });
+          await db.prepare("UPDATE portal_users SET name=?,phone=?,phone_normalized=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
+            .bind(customerName, customerPhone, phone, String(linkedUser.id)).run();
+          portalUser = linkedUser;
         } else {
           const portalUserId = crypto.randomUUID();
           const placeholderHash = toHex(crypto.getRandomValues(new Uint8Array(32)));
@@ -122,14 +125,21 @@ export async function POST(request: NextRequest) {
         if (!row || String(row.status).toLowerCase() !== "active") {
           return NextResponse.json({ error: "Customer account active nahi hai. Admin support se sampark karein." }, { status: 403 });
         }
+        const currentMatches = await findCustomersByPhone(db, phone.replace(/^\+91/, ""));
+        if (currentMatches.length !== 1 || String(currentMatches[0].id) !== String(challenge.account_id)) {
+          return NextResponse.json({ error: "Customer mobile record change hua hai ya duplicate match mila. Admin support se sampark karein." }, { status: 409 });
+        }
         const found = await db.prepare("SELECT id,is_active FROM portal_users WHERE role='customer' AND customer_id=? LIMIT 1").bind(String(challenge.account_id)).all();
         const existing = found.results?.[0];
+        const conflict = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND phone_normalized=? AND (? IS NULL OR id<>?) LIMIT 1")
+          .bind(phone, existing ? String(existing.id) : null, existing ? String(existing.id) : null).all();
+        if (conflict.results?.length) return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
         if (existing) {
           if (Number(existing.is_active) !== 1) return NextResponse.json({ error: "Customer portal account disabled hai. Admin support se sampark karein." }, { status: 403 });
+          await db.prepare("UPDATE portal_users SET name=?,phone=?,phone_normalized=?,updated_at=CURRENT_TIMESTAMP WHERE id=?")
+            .bind(String(row.full_name), String(row.phone), phone, String(existing.id)).run();
           portalUser = existing;
         } else {
-          const conflict = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND phone_normalized=? LIMIT 1").bind(phone).all();
-          if (conflict.results?.length) return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
           const portalUserId = crypto.randomUUID();
           const placeholderHash = toHex(crypto.getRandomValues(new Uint8Array(32)));
           const placeholderSalt = toHex(crypto.getRandomValues(new Uint8Array(16)));
