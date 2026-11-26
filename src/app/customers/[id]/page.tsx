@@ -170,7 +170,6 @@ export default function CustomerDetail() {
         {field("Customer name *","full_name")}{field("Mobile number *","phone","Mobile number")}<div className="full-field"><label>WhatsApp number<input value={customerForm.same_whatsapp?customerForm.phone:customerForm.whatsapp_phone} disabled={customerForm.same_whatsapp} onChange={e=>setCustomerForm({...customerForm,whatsapp_phone:e.target.value})} placeholder="WhatsApp number"/></label><label className="checkbox-label" style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}><input type="checkbox" checked={customerForm.same_whatsapp} onChange={e=>setCustomerForm({...customerForm,same_whatsapp:e.target.checked,whatsapp_phone:e.target.checked?customerForm.phone:customerForm.whatsapp_phone})}/> WhatsApp number is same as mobile number</label></div>
         {field("Flat / Tower","flat_tower")}{field("Society / Address","society")}{selectField("Area / Locality","locality",LOCALITIES)}{selectField("City *","city",CITIES)}{selectField("State *","state",STATES)}{field("PIN code *","pincode","6-digit PIN")}
       </div><div className="form-actions"><button className="action" disabled={savingCustomer}>{savingCustomer?"Saving…":"Save customer details"}</button><button type="button" className="plain-button" onClick={()=>{setEditingCustomer(false);void loadProfile();}}>Cancel</button></div></form>}
-      {customer.notes && <div className="booking-notes"><strong>Notes:</strong> {customer.notes}</div>}
     </section>
     
     <section className="panel">
@@ -184,6 +183,14 @@ export default function CustomerDetail() {
     </section>
     <section className="panel booking-payments"><div className="panel-head"><div><div className="booking-section-heading"><ReceiptText size={17}/> Payment history</div></div><span className="payment-count">{payments.length} payments</span></div>
       {payments.length ? <div className="payment-history-list">{payments.map(p => <div className="payment-history-row" key={p.id}><div><strong>{date(p.payment_date)}</strong><span>{p.payment_method || "Payment"}</span></div><strong className="payment-amount">{money(p.amount_inr)}</strong></div>)}</div> : <div className="booking-empty-payments"><Wallet size={22}/><strong>No payments recorded yet</strong><span>Payments received from this customer will appear here.</span></div>}
+    </section>
+    <section className="panel">
+      <div className="panel-head"><div><div className="booking-section-heading"><UserRound size={17}/> Customer records</div></div></div>
+      {customer.notes ? <div className="booking-notes"><strong>Customer notes</strong><p>{customer.notes}</p></div> : <div className="booking-empty-payments"><UserRound size={22}/><strong>No customer notes yet</strong><span>Important customer notes and account records will appear here.</span></div>}
+      <div className="customer-record-meta" style={{marginTop:12}}>
+        <span>Customer ID: {customer.id}</span>
+        {customer.created_at&&<span>Registered: {date(String(customer.created_at).slice(0,10))}</span>}
+      </div>
     </section>
   </main>;
 }
