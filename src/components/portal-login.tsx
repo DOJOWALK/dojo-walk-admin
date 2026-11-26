@@ -5,25 +5,49 @@ import { PawPrint, ShieldCheck } from "lucide-react";
 
 export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [challengeId, setChallengeId] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const title = role === "walker" ? "Walker Login" : "Customer Login";
   const destination = role === "walker" ? "/walker/dashboard" : "/customer/dashboard";
   const other = role === "walker" ? { label: "Customer login", href: "/customer/login" } : { label: "Walker login", href: "/walker/login" };
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function requestOtp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    setBusy(true);
+    try {
+      const response = await fetch("/api/portal-auth/request-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role, phone })
+      });
+      const data = await response.json();
+      if (!response.ok) { setError(data.error || "OTP request nahi ho payi."); return; }
+      setChallengeId(data.challengeId);
+      setNotice("OTP aapke registered mobile number par bhej diya gaya hai. 5 minute mein verify karein.");
+    } catch {
+      setError("Connection problem. Dobara try karein.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setBusy(true);
     try {
-      const response = await fetch("/api/portal-auth/login", {
+      const response = await fetch("/api/portal-auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, phone, password })
+        body: JSON.stringify({ role, phone, code, challengeId })
       });
       const data = await response.json();
-      if (!response.ok) { setError(data.error || "Login nahi ho paya."); return; }
+      if (!response.ok) { setError(data.error || "OTP verify nahi hua."); return; }
       window.location.assign(destination);
     } catch {
       setError("Connection problem. Dobara try karein.");
@@ -36,16 +60,23 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
     <section className="login-card">
       <div className="login-brand"><div className="login-mark"><PawPrint size={23}/></div><div><div className="login-title">Dojo Walk</div><div className="login-sub">{role.toUpperCase()} PORTAL</div></div></div>
       <div className="login-heading">{title}</div>
-      <p className="login-copy">Apne registered mobile number aur password se sign in karein.</p>
-      <form onSubmit={submit} className="login-form">
+      <p className="login-copy">Apne registered mobile number par OTP mangwayein aur verify karke sign in karein.</p>
+      {!challengeId ? <form onSubmit={requestOtp} className="login-form">
         <label htmlFor="portal-phone">Mobile number</label>
-        <input id="portal-phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="username" required minLength={7} maxLength={20} placeholder="Registered mobile number"/>
-        <label htmlFor="portal-password">Password</label>
-        <input id="portal-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required maxLength={128} placeholder="Enter your password"/>
+        <input id="portal-phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="tel" required minLength={10} maxLength={16} placeholder="Registered mobile number"/>
         {error && <p className="login-error" role="alert">{error}</p>}
-        <button type="submit" disabled={busy || !phone.trim() || !password}>{busy ? "Signing in…" : "Sign in securely"}</button>
-      </form>
-      <div className="login-security"><ShieldCheck size={15}/> Private account · Secure sign in</div>
+        <button type="submit" disabled={busy || !phone.trim()}>{busy ? "Please wait…" : "Send OTP"}</button>
+      </form> : <form onSubmit={verifyOtp} className="login-form">
+        <label htmlFor="portal-phone-verified">Mobile number</label>
+        <input id="portal-phone-verified" type="tel" value={phone} readOnly/>
+        <label htmlFor="portal-otp">6-digit OTP</label>
+        <input id="portal-otp" type="text" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value.replace(/\\D/g, "").slice(0, 6))} required minLength={6} maxLength={6} placeholder="Enter OTP"/>
+        {error && <p className="login-error" role="alert">{error}</p>}
+        {notice && <p className="login-copy" role="status">{notice}</p>}
+        <button type="submit" disabled={busy || code.length !== 6}>{busy ? "Verifying…" : "Verify OTP & Sign in"}</button>
+        <button type="button" className="portal-other-link" disabled={busy} onClick={() => { setChallengeId(""); setCode(""); setNotice(""); setError(""); }}>Change mobile number</button>
+      </form>}
+      <div className="login-security"><ShieldCheck size={15}/> OTP verified · Secure account access</div>
       <a className="portal-other-link" href={other.href}>{other.label}</a>
     </section>
   </main>;
