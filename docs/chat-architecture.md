@@ -3,25 +3,39 @@
 ## Scope
 - Walk Chat: one conversation per walk, limited to that walk's assigned walker and booking customer.
 - Support Chat: one open support conversation per customer or walker; Admin can reply.
-- Messages: plain text up to 4,000 characters and optional photo attachment.
+- Messages: plain text up to 4,000 characters; photo attachments are planned but not active until private R2 is enabled.
 - Video, audio, voice notes, and video calls are deliberately unsupported.
 
-## Storage
-Migration `0008_chat_schema.sql` adds `chat_conversations` and `chat_messages`. Photo objects are private R2 objects; only their opaque object key and validated image metadata are stored in D1. Allowed photo MIME types are JPEG, PNG, and WebP; maximum size is 10 MiB.
+## Current branch implementation
+- Separate Walker/Customer login endpoints and `dojo_walk_portal` cookie; Admin login remains unchanged.
+- Passwords use PBKDF2-HMAC-SHA-256 with a per-account random salt; session tokens are random and only SHA-256 hashes are stored.
+- Portal sessions are server-side, expire after 14 days, can be revoked, and are checked against active portal accounts.
+- Login attempts are limited per role + normalized phone number; five failed attempts trigger a 15-minute lock.
+- Admin-only APIs provision, disable, enable, and reset portal accounts.
+- Portal dashboard and chat screens exist for both roles. Walk chat access is checked against current walk assignment / booking ownership. Support chat access is restricted to the participant.
+- Admin Support Inbox uses the existing Admin cookie and has reply/close controls.
+- POST chat operations check same-origin requests. Messages are plain text only for now.
+- Photo upload/download, walk start/complete, realtime push, and audit-event persistence are not yet implemented.
 
-## Required authorization before enabling routes
+## Storage
+- `0008_chat_schema.sql`: `chat_conversations` and `chat_messages`. Chat photo metadata is constrained to JPEG, PNG, or WebP and a maximum of 10 MiB.
+- `0009_portal_auth.sql`: portal users, server-side sessions, and login attempt state.
+- `0010_walker_assignment_tables.sql`: declares the existing lazily-created `walkers` and `walk_assignments` tables for fresh database installs. Existing tables are preserved by `IF NOT EXISTS`.
+- Photo objects must be private R2 objects; only opaque keys and validated metadata belong in D1. Never expose public object URLs.
+
+## Security requirements before production
 1. Keep the existing Admin cookie and Admin login unchanged.
-2. Portal sessions must use a separate cookie and server-side session lookup.
+2. Never accept sender role, sender ID, participant IDs, or R2 object keys as trusted client input. Derive identity from the authenticated session.
 3. Every Walk Chat read/write must verify the current walker is assigned to that walk or the current customer owns the booking for that walk.
 4. Every Support Chat read/write must verify the customer/walker participant; Admin access must use Admin authentication only.
-5. Never accept sender role, sender ID, participant IDs, or R2 object keys as trusted client input. Derive identity from the authenticated session.
-6. Photo upload/download must go through authenticated server routes and private R2. Validate actual file bytes, MIME, size, and ownership. Never expose public object URLs.
-7. Add rate limits, origin/CSRF protection, pagination, unread/read handling, and audit events before production use.
+5. Photo upload/download must go through authenticated server routes and private R2. Validate actual file bytes, MIME, size, and ownership. Never expose public object URLs.
+6. Add message rate limits, audit events, and deeper CSRF testing before production use.
+7. Run cross-account tests: Walker A cannot access Walker B's walk; Customer A cannot access Customer B's walk; neither can access another user's support conversation; portal sessions cannot call Admin APIs.
 
 ## Rollout gates
-- Reconcile the existing migration history before applying any migration: production D1 currently has no `d1_migrations` table.
-- Test the migration on an isolated copy of D1 and verify foreign keys and indexes.
+- Reconcile the existing migration history before applying any migration: production D1 currently has no `d1_migrations` table. Do not run the migrations blindly.
+- Test all migrations on an isolated copy of D1 and verify foreign keys, indexes, and preservation of existing records.
+- The existing `walks.status` CHECK constraint does not yet allow `in_progress`; do not enable Start Walk until a tested, data-preserving table rebuild is ready.
 - Enable R2 in Cloudflare before implementing photo upload/download.
-- Implement portal authentication and role/ownership checks before exposing chat APIs.
-- Run Admin regression and cross-account authorization tests.
-- Do not deploy without explicit approval.
+- Run Admin regression, portal login, session revocation, and cross-account authorization tests.
+- Do not merge or deploy without explicit approval.
