@@ -82,6 +82,7 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
           <label htmlFor="portal-area">Area (optional)</label>
           <input id="portal-area" type="text" value={area} onChange={(event) => setArea(event.target.value)} maxLength={100} placeholder="Area / locality"/>
         </>}
+        {notice && <p className="login-copy" role="status">{notice}</p>}
         {error && <p className="login-error" role="alert">{error}</p>}
         <button type="submit" disabled={busy || !phone.trim() || (role === "customer" && registering && (fullName.trim().length < 2 || address.trim().length < 5))}>{busy ? "Please wait…" : "Send OTP"}</button>
         {role === "customer" && registering && <p className="login-copy">Naya customer: naam aur address bhar kar OTP verify karein.</p>}
