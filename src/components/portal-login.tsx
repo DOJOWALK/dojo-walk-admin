@@ -11,6 +11,7 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
   const [registering, setRegistering] = useState(false);
   const [code, setCode] = useState("");
   const [challengeId, setChallengeId] = useState("");
+  const [demoCode, setDemoCode] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,7 +33,8 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
       const data = await response.json();
       if (!response.ok) { setError(data.error || "OTP request nahi ho payi."); return; }
       setChallengeId(data.challengeId);
-      setNotice("MSG91 ko OTP request bhej di gayi hai. SMS milne par 5 minute ke andar verify karein.");
+      setDemoCode(typeof data.demoCode === "string" ? data.demoCode : "");
+      setNotice(data.demoMode ? "Demo Testing Mode: SMS nahi bheja gaya. Neeche diya gaya test OTP 5 minute tak valid hai." : "OTP SMS bhej diya gaya hai. SMS milne par 5 minute ke andar verify karein.");
     } catch {
       setError("Connection problem. Dobara try karein.");
     } finally {
@@ -86,8 +88,9 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
         <input id="portal-otp" type="text" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required minLength={6} maxLength={6} placeholder="Enter OTP"/>
         {error && <p className="login-error" role="alert">{error}</p>}
         {notice && <p className="login-copy" role="status">{notice}</p>}
+        {demoCode && <div className="login-copy" role="note" style={{ border: "1px dashed var(--brand, #f97316)", borderRadius: 10, padding: 12 }}><strong>TEST OTP: {demoCode}</strong><br/>Sirf testing ke liye. Real SMS nahi bheja gaya.</div>}
         <button type="submit" disabled={busy || code.length !== 6}>{busy ? "Verifying…" : "Verify OTP & Sign in"}</button>
-        <button type="button" className="portal-other-link" disabled={busy} onClick={() => { setChallengeId(""); setCode(""); setNotice(""); setError(""); }}>Change mobile number</button>
+        <button type="button" className="portal-other-link" disabled={busy} onClick={() => { setChallengeId(""); setCode(""); setDemoCode(""); setNotice(""); setError(""); }}>Change mobile number</button>
       </form>}
       <div className="login-security"><ShieldCheck size={15}/> OTP verified · Secure account access</div>
       <a className="portal-other-link" href={other.href}>{other.label}</a>
