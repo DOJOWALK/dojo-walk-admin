@@ -79,7 +79,7 @@ export async function PATCH(request: NextRequest) {
   const society = typeof body.society === "string" ? body.society.trim() : "";
   const locality = typeof body.locality === "string" ? body.locality.trim() : "";
   const notes = typeof body.notes === "string" ? body.notes.trim().slice(0, 1000) : "";
-  if (!id || fullName.length < 2 || fullName.length > 100 || !/^[+0-9()\\-\\s]{7,20}$/.test(phone)) {
+  if (!id || fullName.length < 2 || fullName.length > 100 || !/^[+0-9()\-\s]{7,20}$/.test(phone)) {
     return NextResponse.json({ error: "Name and a valid mobile number are required." }, { status: 400 });
   }
   if (pincode && !/^\d{6}$/.test(pincode)) {
