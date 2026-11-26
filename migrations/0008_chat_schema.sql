@@ -51,7 +51,10 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     (photo_r2_key IS NULL AND photo_mime_type IS NULL AND photo_size_bytes IS NULL)
     OR
     (photo_r2_key IS NOT NULL
+      AND length(trim(photo_r2_key)) > 0
+      AND photo_mime_type IS NOT NULL
       AND photo_mime_type IN ('image/jpeg','image/png','image/webp')
+      AND photo_size_bytes IS NOT NULL
       AND photo_size_bytes BETWEEN 1 AND 10485760)
   )
 );
