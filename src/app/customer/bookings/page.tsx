@@ -19,8 +19,8 @@ export default function CustomerBookingsPage() {
     setLoading(true);
     try { const r=await fetch("/api/customer/booking-requests",{cache:"no-store"}); const j=await r.json(); if(r.status===401){window.location.assign("/customer/login");return;} if(!r.ok)throw new Error(j.error||"Requests load nahi hui."); setDogs(j.dogs||[]);setRequests(j.requests||[]); if(!form.dog_id && j.dogs?.[0])setForm(v=>({...v,dog_id:j.dogs[0].id})); }
     catch(e){setError(e instanceof Error?e.message:"Requests load nahi hui.");} finally{setLoading(false);}
-  }
-  useEffect(()=>{void load();},[]);
+  },[form.dog_id]);
+  useEffect(()=>{void load();},[load]);
   function captureLocation(){ if(!navigator.geolocation){setError("Is device par location available nahi hai.");return;} setError(""); navigator.geolocation.getCurrentPosition(pos=>setForm(v=>({...v,pickup_latitude:String(pos.coords.latitude),pickup_longitude:String(pos.coords.longitude)})),()=>setError("Location permission nahi mili. Aap address manually enter kar sakte hain."),{enableHighAccuracy:true,timeout:12000,maximumAge:60000}); }
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setSaving(true);setError("");setSuccess("");
