@@ -19,16 +19,12 @@ export async function POST(request: NextRequest) {
 
   const { env } = getCloudflareContext();
   const config = env as unknown as Env;
-  if (!config.SMS_OTP || !config.OTP_PEPPER) {
-    return NextResponse.json({ error: "OTP SMS service abhi configure nahi hai. Admin se sampark karein." }, { status: 503 });
-  }
-
   const db = config.DB;
   try {
     let account: Record<string, unknown> | undefined;
     if (role === "walker") {
       const result = await db.prepare(
-        "SELECT id, mobile_number AS phone FROM walkers WHERE replace(replace(replace(replace(mobile_number,' ',''),'-',''),'(',''),')','')=? LIMIT 2"
+        "SELECT id, mobile_number AS phone FROM walkers WHERE replace(replace(replace(replace(replace(mobile_number,' ',''),'-',''),'(',''),')',''),'+91','')=? LIMIT 2"
       ).bind(normalized.replace(/^\+91/, "")).all();
       const rows = result.results || [];
       if (rows.length !== 1) {
@@ -37,13 +33,17 @@ export async function POST(request: NextRequest) {
       account = rows[0];
     } else {
       const result = await db.prepare(
-        "SELECT id, phone FROM customers WHERE replace(replace(replace(replace(phone,' ',''),'-',''),'(',''),')','')=? LIMIT 2"
+        "SELECT id, phone FROM customers WHERE replace(replace(replace(replace(replace(phone,' ',''),'-',''),'(',''),')',''),'+91','')=? LIMIT 2"
       ).bind(normalized.replace(/^\+91/, "")).all();
       const rows = result.results || [];
       if (rows.length !== 1) {
         return NextResponse.json({ error: rows.length > 1 ? "Is number par multiple customer records mile. Admin support se sampark karein." : "Yeh mobile number registered customer record se match nahi hua. Pehle customer registration complete karein." }, { status: 404 });
       }
       account = rows[0];
+    }
+
+    if (!config.SMS_OTP || !config.OTP_PEPPER) {
+      return NextResponse.json({ error: "OTP SMS service abhi configure nahi hai. Admin se sampark karein." }, { status: 503 });
     }
 
     const accountId = String(account.id);
@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, "0");
+    await db.prepare("UPDATE portal_otp_challenges SET consumed_at=datetime('now') WHERE role=? AND phone_normalized=? AND consumed_at IS NULL").bind(role, normalized).run();
     const challengeId = crypto.randomUUID();
     const codeHash = await hashOtp(config.OTP_PEPPER, challengeId, code);
     await db.prepare(
