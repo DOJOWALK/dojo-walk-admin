@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createPortalSession, isSameOrigin, PortalDB, setPortalCookie } from "@/lib/portal-auth";
 
-type Env = { DB: PortalDB; MSG91_AUTHKEY?: string; OTP_PEPPER?: string };
+type Env = { DB: PortalDB & { batch(statements: unknown[]): Promise<unknown[]> }; MSG91_AUTHKEY?: string; OTP_PEPPER?: string };
 
 export async function POST(request: NextRequest) {
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
@@ -64,16 +64,83 @@ export async function POST(request: NextRequest) {
       const found = await db.prepare("SELECT id FROM portal_users WHERE role='walker' AND walker_id=? AND is_active=1 LIMIT 1").bind(String(challenge.account_id)).all();
       portalUser = found.results?.[0];
     } else {
-      const customer = await db.prepare("SELECT id,status FROM customers WHERE id=? LIMIT 1").bind(String(challenge.account_id)).all();
-      const row = customer.results?.[0];
-      if (!row || String(row.status).toLowerCase() !== "active") {
-        return NextResponse.json({ error: "Customer account active nahi hai. Admin support se sampark karein." }, { status: 403 });
+      if (String(challenge.account_id).startsWith("registration:")) {
+        const registrationId = String(challenge.account_id).slice("registration:".length);
+        const pending = await db.prepare("SELECT id,phone_normalized,full_name,address,area FROM portal_customer_registrations WHERE id=? AND phone_normalized=? AND datetime(expires_at)>datetime('now') LIMIT 1")
+          .bind(registrationId, phone).all();
+        const registration = pending.results?.[0];
+        if (!registration) return NextResponse.json({ error: "Registration details expire ho gaye. Dobara register karke OTP mangwayein." }, { status: 400 });
+
+        const phoneDigits = phone.replace(/^\+91/, "");
+        const matches = await findCustomersByPhone(db, phoneDigits);
+        if (matches.length > 1) return NextResponse.json({ error: "Is number par multiple customer records mile. Admin support se sampark karein." }, { status: 409 });
+        let customerId: string;
+        let customerName: string;
+        let customerPhone: string;
+        if (matches.length === 1) {
+          const matched = matches[0];
+          if (String(matched.status).toLowerCase() !== "active") return NextResponse.json({ error: "Existing customer record inactive hai. Admin support se sampark karein." }, { status: 403 });
+          customerId = String(matched.id);
+          customerName = String(matched.full_name);
+          customerPhone = String(matched.phone);
+        } else {
+          customerId = crypto.randomUUID();
+          customerName = String(registration.full_name);
+          customerPhone = phone;
+        }
+        const conflict = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND phone_normalized=? LIMIT 1").bind(phone).all();
+        if (conflict.results?.length) {
+          const existingForCustomer = await db.prepare("SELECT id,is_active FROM portal_users WHERE role='customer' AND customer_id=? LIMIT 1").bind(customerId).all();
+          const existing = existingForCustomer.results?.[0];
+          if (!existing) return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
+          if (Number(existing.is_active) !== 1) return NextResponse.json({ error: "Customer portal account disabled hai. Admin support se sampark karein." }, { status: 403 });
+          portalUser = existing;
+        } else {
+          const portalUserId = crypto.randomUUID();
+          const placeholderHash = toHex(crypto.getRandomValues(new Uint8Array(32)));
+          const placeholderSalt = toHex(crypto.getRandomValues(new Uint8Array(16)));
+          const statements = matches.length === 0 ? [
+            db.prepare("INSERT INTO customers (id,full_name,phone,address,area,booking_source,status) VALUES (?,?,?,?,?,'phone','active')")
+              .bind(customerId, customerName, customerPhone, String(registration.address), registration.area == null ? null : String(registration.area)),
+            db.prepare("INSERT INTO portal_users (id,name,phone,phone_normalized,role,customer_id,walker_id,password_hash,password_salt,password_iterations,is_active) VALUES (?,?,?,?,'customer',?,NULL,?,?,210000,1)")
+              .bind(portalUserId, customerName, customerPhone, phone, customerId, placeholderHash, placeholderSalt)
+          ] : [
+            db.prepare("INSERT INTO portal_users (id,name,phone,phone_normalized,role,customer_id,walker_id,password_hash,password_salt,password_iterations,is_active) VALUES (?,?,?,?,'customer',?,NULL,?,?,210000,1)")
+              .bind(portalUserId, customerName, customerPhone, phone, customerId, placeholderHash, placeholderSalt)
+          ];
+          try {
+            await db.batch(statements);
+          } catch {
+            return NextResponse.json({ error: "Customer account create/link nahi ho paya. Admin support se sampark karein." }, { status: 409 });
+          }
+          portalUser = { id: portalUserId };
+        }
+        await db.prepare("DELETE FROM portal_customer_registrations WHERE id=?").bind(registrationId).run();
+      } else {
+        const customer = await db.prepare("SELECT id,full_name,phone,status FROM customers WHERE id=? LIMIT 1").bind(String(challenge.account_id)).all();
+        const row = customer.results?.[0];
+        if (!row || String(row.status).toLowerCase() !== "active") {
+          return NextResponse.json({ error: "Customer account active nahi hai. Admin support se sampark karein." }, { status: 403 });
+        }
+        const found = await db.prepare("SELECT id,is_active FROM portal_users WHERE role='customer' AND customer_id=? LIMIT 1").bind(String(challenge.account_id)).all();
+        const existing = found.results?.[0];
+        if (existing) {
+          if (Number(existing.is_active) !== 1) return NextResponse.json({ error: "Customer portal account disabled hai. Admin support se sampark karein." }, { status: 403 });
+          portalUser = existing;
+        } else {
+          const conflict = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND phone_normalized=? LIMIT 1").bind(phone).all();
+          if (conflict.results?.length) return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
+          const portalUserId = crypto.randomUUID();
+          const placeholderHash = toHex(crypto.getRandomValues(new Uint8Array(32)));
+          const placeholderSalt = toHex(crypto.getRandomValues(new Uint8Array(16)));
+          await db.prepare("INSERT INTO portal_users (id,name,phone,phone_normalized,role,customer_id,walker_id,password_hash,password_salt,password_iterations,is_active) VALUES (?,?,?,?,'customer',?,NULL,?,?,210000,1)")
+            .bind(portalUserId, String(row.full_name), String(row.phone), phone, String(row.id), placeholderHash, placeholderSalt).run();
+          portalUser = { id: portalUserId };
+        }
       }
-      const found = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND customer_id=? AND is_active=1 LIMIT 1").bind(String(challenge.account_id)).all();
-      portalUser = found.results?.[0];
     }
     if (!portalUser) {
-      return NextResponse.json({ error: role === "walker" ? "Aapka Walker portal account abhi Admin ne activate nahi kiya. Admin se sampark karein." : "Customer portal account abhi linked nahi hai. Support se sampark karein." }, { status: 403 });
+      return NextResponse.json({ error: "Walker portal account abhi Admin ne activate nahi kiya. Admin se sampark karein." }, { status: 403 });
     }
 
     const session = await createPortalSession(db, String(portalUser.id));
@@ -83,6 +150,18 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "OTP verification temporarily unavailable." }, { status: 503 });
   }
+}
+
+async function findCustomersByPhone(db: PortalDB, phoneDigits: string) {
+  const expression = "CASE WHEN substr(clean_phone,1,2)='91' THEN substr(clean_phone,3) WHEN substr(clean_phone,1,1)='0' THEN substr(clean_phone,2) ELSE clean_phone END";
+  const result = await db.prepare(
+    "SELECT id,full_name,phone,status FROM (SELECT id,full_name,phone,status,replace(replace(replace(replace(replace(phone,' ',''),'-',''),'(',''),')',''),'+','') AS clean_phone FROM customers) WHERE " + expression + "=? LIMIT 2"
+  ).bind(phoneDigits).all();
+  return result.results || [];
+}
+
+function toHex(bytes: Uint8Array) {
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
 }
 
 function statusMessage(employment: string, walkerStatus: string) {
