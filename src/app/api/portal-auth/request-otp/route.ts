@@ -22,9 +22,11 @@ export async function POST(request: NextRequest) {
   try {
     let account: Record<string, unknown> | undefined;
     if (role === "walker") {
+      const phoneDigits = normalized.replace(/^\+91/, "");
+      const phoneExpr = "CASE WHEN substr(clean_phone,1,2)='91' THEN substr(clean_phone,3) WHEN substr(clean_phone,1,1)='0' THEN substr(clean_phone,2) ELSE clean_phone END";
       const result = await db.prepare(
-        "SELECT id, mobile_number AS phone FROM walkers WHERE replace(replace(replace(replace(replace(mobile_number,' ',''),'-',''),'(',''),')',''),'+91','')=? LIMIT 2"
-      ).bind(normalized.replace(/^\+91/, "")).all();
+        "SELECT id,phone FROM (SELECT id,mobile_number AS phone,replace(replace(replace(replace(replace(mobile_number,' ',''),'-',''),'(',''),')',''),'+','') AS clean_phone FROM walkers) WHERE " + phoneExpr + "=? LIMIT 2"
+      ).bind(phoneDigits).all();
       const rows = result.results || [];
       if (rows.length !== 1) {
         return NextResponse.json({ error: "Yeh mobile number Dojo Walk mein Walker ke roop mein registered nahi hai. Admin se sampark karein." }, { status: 404 });
