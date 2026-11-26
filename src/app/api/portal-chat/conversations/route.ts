@@ -15,7 +15,7 @@ export async function GET() {
       `SELECT c.id,c.conversation_type,c.walk_id,c.status,c.updated_at,
         (SELECT m.message_text FROM chat_messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC,m.id DESC LIMIT 1) AS last_message,
         (SELECT m.created_at FROM chat_messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC,m.id DESC LIMIT 1) AS last_message_at
-       FROM chat_conversations c WHERE c.${column}=? ORDER BY c.updated_at DESC LIMIT 100`
+       FROM chat_conversations c WHERE c.${column}=? AND (c.conversation_type='support' OR (c.conversation_type='walk' AND (c.customer_id IS NOT NULL OR EXISTS (SELECT 1 FROM walk_assignments a WHERE a.walk_id=c.walk_id AND a.walker_id=c.walker_id)))) ORDER BY c.updated_at DESC LIMIT 100`
     ).bind(identity.role === "customer" ? identity.customer_id : identity.walker_id).all();
     return NextResponse.json({ conversations: result.results ?? [] });
   } catch {
