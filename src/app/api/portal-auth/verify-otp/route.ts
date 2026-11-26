@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   const role = body.role === "walker" || body.role === "customer" ? body.role : null;
-  const phone = typeof body.phone === "string" ? normalizePortalPhone(body.phone) : "";
+  const phone = typeof body.phone === "string" ? normalizeOtpPhone(body.phone) : "";
   const challengeId = typeof body.challengeId === "string" ? body.challengeId : "";
   const code = typeof body.code === "string" ? body.code.trim() : "";
   if (!role || !/^\+?[0-9]{10,15}$/.test(phone) || !/^[0-9]{6}$/.test(code) || !/^[0-9a-f-]{36}$/i.test(challengeId)) {
@@ -82,6 +82,15 @@ function statusMessage(employment: string, walkerStatus: string) {
   if (state === "exited") return "Aapka Walker account band (Exited) hai. Admin se sampark karein.";
   if (state === "pending") return "Aapka Walker account abhi Pending approval mein hai. Admin se sampark karein.";
   return "Aapka Walker account active nahi hai. Admin se sampark karein.";
+}
+
+function normalizeOtpPhone(value: string) {
+  const digits = value.replace(/\\D/g, "");
+  if (digits.length === 10) return "+91" + digits;
+  if (digits.length === 11 && digits.startsWith("0")) return "+91" + digits.slice(1);
+  if (digits.length === 12 && digits.startsWith("91")) return "+" + digits;
+  if (digits.length >= 10 && digits.length <= 15) return "+" + digits;
+  return "";
 }
 
 function constantTimeEqual(a: string, b: string) {
