@@ -139,3 +139,24 @@
 .walk-progress-strip{display:grid;grid-template-columns:1fr auto;gap:7px 14px;align-items:center;padding:15px 18px;margin:0 0 18px;border:1px solid #f3e2d5;border-radius:14px;background:linear-gradient(100deg,#fff8f2,#fff)}.walk-progress-strip>div:first-child{display:grid;gap:4px}.walk-progress-strip>div:first-child span{font-size:9px;font-weight:800;letter-spacing:1.2px;color:#b9784a}.walk-progress-strip>div:first-child strong{font-size:11px;color:#51463e}.walk-progress-strip>b{font:800 18px Manrope;color:#b95712}.walk-progress-strip .walk-progress-track{grid-column:1/-1;height:6px;background:#f3e9e1}.walk-progress-strip .walk-progress-track>span{background:linear-gradient(90deg,#f47721,#ffb36e)}
 .walk-card-list{gap:14px}.walk-card-premium{padding:16px;border-radius:16px;box-shadow:0 5px 18px rgba(44,32,22,.035)}.walk-card-premium:hover{box-shadow:0 9px 24px rgba(44,32,22,.07)}.walk-card-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:13px}.walk-state{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:99px;background:#fff2e8;color:#b95712;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.45px}.walk-state:before{content:'';width:6px;height:6px;border-radius:50%;background:#e88a43}.walk-state.complete{background:#eaf6ed;color:#247447}.walk-state.complete:before{background:#2e8b57}.walk-state.issue{background:#fff0ed;color:#a83c2b}.walk-state.issue:before{background:#c94d3d}.walk-id{font-size:9px;color:#999087;font-weight:700;letter-spacing:.35px}.walk-card-hero{display:flex;align-items:center;gap:11px;min-width:0}.walk-dog-avatar{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:15px;background:#fff0e4;color:#c96520}.walk-card-premium .walk-card-person{flex:1;gap:4px}.walk-card-premium .walk-card-person>strong{font-size:15px}.walk-card-person>span i{font-style:normal;color:#b7aaa0}.walk-card-premium .walk-card-person>small{font-size:9px}.walk-card-premium .walk-card-time{display:grid;grid-template-columns:auto auto;align-items:baseline;column-gap:7px;row-gap:3px}.walk-card-premium .walk-card-time>strong{grid-column:1/-1;font-size:18px;color:#b95712}.walk-card-premium .walk-card-time>span{font-size:9px}.walk-card-premium .walk-card-time>b{font:800 11px Manrope;color:#51463e}.walk-card-premium .walk-card-ids{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:11px 0;margin-top:13px}.walk-card-premium .walk-card-ids>span{display:grid;gap:4px;font-size:8px;letter-spacing:.55px;color:#9a9189}.walk-card-premium .walk-card-ids b{font-size:10px;color:#51463e;letter-spacing:.4px}.walk-assignment-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.walk-assignment-row label{display:grid;gap:6px;min-width:0}.walk-assignment-row label>span{font-size:8px;font-weight:800;letter-spacing:.7px;color:#938980}.walk-assignment-row select{width:100%;min-width:0;border:1px solid #e9e1da;border-radius:9px;padding:9px 8px;background:#fff;color:#38332f;font-size:10px}.walk-assignment-row select:focus{outline:2px solid #ffe1cb;border-color:#edaa7c}.walk-card-footer{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #f2eee9;color:#999087;font-size:9px}.walk-card-footer .walk-card-open{margin:0;font-size:9px}.walk-card-footer .walk-card-open b{font-size:13px;margin-left:3px}
 @media(max-width:560px){.walk-progress-strip{padding:12px 13px}.walk-card-premium{padding:13px}.walk-dog-avatar{width:42px;height:42px;flex-basis:42px;border-radius:13px}.walk-card-premium .walk-card-person>strong{font-size:14px}.walk-card-premium .walk-card-time>strong{font-size:16px}.walk-card-footer{align-items:flex-start;flex-direction:column}.walk-card-footer .walk-card-open{align-self:flex-end}}
+
+
+/* Schedule card sizing and mobile assignment controls */
+.walk-card-premium{padding:14px}
+.walk-card-premium .walk-card-hero{gap:10px}
+.walk-card-premium .walk-dog-avatar{width:44px;height:44px;flex-basis:44px;border-radius:13px}
+.walk-card-premium .walk-card-person>strong{font-size:14px}
+.walk-card-premium .walk-card-time>strong{font-size:16px}
+.walk-card-premium .walk-card-ids{padding:9px 0}
+.walk-assignment-row{gap:8px}
+.walk-assignment-row label{gap:5px}
+.walk-assignment-row label>span{font-size:8px;letter-spacing:.55px}
+.walk-assignment-row select{padding:8px 9px;font-size:11px}
+@media(max-width:560px){
+ .walk-card-premium{padding:12px}
+ .walk-assignment-row{grid-template-columns:minmax(0,1fr);gap:10px;margin-top:2px}
+ .walk-assignment-row label{gap:5px}
+ .walk-assignment-row label>span{font-size:9px;letter-spacing:.65px}
+ .walk-assignment-row select{width:100%;min-height:42px;padding:10px 11px;font-size:12px;border-radius:10px}
+ .walk-card-premium .walk-card-ids{gap:8px 10px}
+}
