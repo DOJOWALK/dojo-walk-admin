@@ -21,7 +21,8 @@ export default function CustomerBookingsPage() {
     catch(e){setError(e instanceof Error?e.message:"Requests load nahi hui.");} finally{setLoading(false);}
   }
   useEffect(()=>{void load();},[]);
-  function captureLocation(){ if(!navigator.geolocation){setError("Is device par location available nahi hai.");return;} setError(""); navigator.geolocation.getCurrentPosition(pos=>setForm(v=>({...v,pickup_latitude:String(pos.coords.latitude),pickup_longitude:String(pos.coords.longitude)})),()=>setError("Location permission nahi mili. Aap address manually enter kar sakte hain."),{enableHighAccuracy:true,timeout:12000,maximumAge:60000}); }\n  async function submit(e:FormEvent<HTMLFormElement>){
+  function captureLocation(){ if(!navigator.geolocation){setError("Is device par location available nahi hai.");return;} setError(""); navigator.geolocation.getCurrentPosition(pos=>setForm(v=>({...v,pickup_latitude:String(pos.coords.latitude),pickup_longitude:String(pos.coords.longitude)})),()=>setError("Location permission nahi mili. Aap address manually enter kar sakte hain."),{enableHighAccuracy:true,timeout:12000,maximumAge:60000}); }
+  async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setSaving(true);setError("");setSuccess("");
     try { const r=await fetch("/api/customer/booking-requests",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...form,duration_minutes:Number(form.duration_minutes)})}); const j=await r.json();if(!r.ok)throw new Error(j.error||"Request submit nahi hui.");setSuccess("Booking request Admin ko bhej di gayi hai. Final timing aur price Admin confirm karega.");setForm(v=>({...v,instructions:""}));await load(); }
     catch(e){setError(e instanceof Error?e.message:"Request submit nahi hui.");} finally{setSaving(false);}
