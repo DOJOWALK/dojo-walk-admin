@@ -30,6 +30,11 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
         body: JSON.stringify({ role, phone, ...(role === "customer" && registering ? { full_name: fullName, address, area } : {}) })
       });
       const data = await response.json();
+      if (data.newCustomer === true && role === "customer") {
+        setRegistering(true);
+        setNotice("Yeh naya customer number hai. OTP se pehle apna naam aur poora address bharein.");
+        return;
+      }
       if (!response.ok) { setError(data.error || "OTP request nahi ho payi."); return; }
       setChallengeId(data.challengeId);
       setDemoCode(typeof data.demoCode === "string" ? data.demoCode : "");
@@ -65,7 +70,7 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
     <section className="login-card">
       <div className="login-brand"><div className="login-mark"><PawPrint size={23}/></div><div><div className="login-title">Dojo Walk</div><div className="login-sub">{role.toUpperCase()} PORTAL</div></div></div>
       <div className="login-heading">{title}</div>
-      <p className="login-copy">Apne registered mobile number par OTP mangwayein aur verify karke sign in karein.</p>
+      <p className="login-copy">Mobile number enter karein. Purana account hai to Dashboard khulega; naya number hai to pehli baar naam aur address poocha jayega.</p>
       {!challengeId ? <form onSubmit={requestOtp} className="login-form">
         <label htmlFor="portal-phone">Mobile number</label>
         <input id="portal-phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="tel" required minLength={10} maxLength={16} placeholder="Registered mobile number"/>
@@ -79,7 +84,7 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
         </>}
         {error && <p className="login-error" role="alert">{error}</p>}
         <button type="submit" disabled={busy || !phone.trim() || (role === "customer" && registering && (fullName.trim().length < 2 || address.trim().length < 5))}>{busy ? "Please wait…" : "Send OTP"}</button>
-        {role === "customer" && <button type="button" className="portal-other-link" disabled={busy} onClick={() => { setRegistering(!registering); setError(""); setNotice(""); }}>{registering ? "Already registered? Login" : "New customer? Register here"}</button>}
+        {role === "customer" && registering && <p className="login-copy">Naya customer: naam aur address bhar kar OTP verify karein.</p>}
       </form> : <form onSubmit={verifyOtp} className="login-form">
         <label htmlFor="portal-phone-verified">Mobile number</label>
         <input id="portal-phone-verified" type="tel" value={phone} readOnly/>
