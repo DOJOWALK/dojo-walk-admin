@@ -23,3 +23,6 @@ CREATE TABLE IF NOT EXISTS portal_otp_send_limits (
   sends INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY(role, phone_normalized)
 );
+
+-- Password-based portal sessions must not remain valid after switching to OTP-only sign-in.
+UPDATE portal_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE revoked_at IS NULL;
