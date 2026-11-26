@@ -172,3 +172,6 @@
 
 .portal-access-form{margin-bottom:16px}.portal-access-form .form-grid label{display:grid;gap:7px;color:#526057;font-size:10px;font-weight:800}.portal-access-form .form-grid input,.portal-access-form .form-grid select{width:100%;border:1px solid #e0e9e2;border-radius:11px;background:#fcfdfc;padding:12px 13px;color:var(--ink);outline:none;font-size:12px}.portal-account-actions{display:flex;gap:8px}.portal-account-actions button{border:1px solid #f0dfd2;background:#fff8f2;color:#a65a26;border-radius:8px;padding:7px 9px;font-size:9px;font-weight:800;white-space:nowrap}.portal-access-note{margin-top:13px}.portal-account-list{min-width:0}
 @media(max-width:560px){.portal-account-actions{flex-direction:column;align-items:flex-start}.portal-account-actions button{width:100%}}
+
+.portal-walk-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:5px}.portal-walk-actions .portal-chat-button{margin-top:0}.portal-live-button{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:#24764a;color:#fff;padding:11px 12px;font-size:10px;font-weight:800}.portal-live-button.complete{background:#1e5e3c}.portal-live-button:disabled{opacity:.6}
+@media(max-width:620px){.portal-walk-actions{grid-template-columns:1fr}}
