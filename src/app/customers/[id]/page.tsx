@@ -143,7 +143,8 @@ export default function CustomerDetail() {
       </div>
     </div>
     {error&&<div className="error-box">{error}</div>}{success&&<div className="success-box">{success}</div>}
-    {(showBlockConfirm||showDeleteConfirm)&&<section className="panel" style={{marginBottom:18}}>
+    {(showBlockConfirm||showDeleteConfirm)&&<div role="presentation" onClick={()=>{if(!actionBusy){setShowBlockConfirm(false);setShowDeleteConfirm(false);setAdminPassword("");}}} style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(15,23,42,.58)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <section role="dialog" aria-modal="true" aria-label={showDeleteConfirm?"Confirm customer deletion":stateTarget==="leave"?"Mark customer on leave":"Block customer"} onClick={e=>e.stopPropagation()} className="panel" style={{width:"100%",maxWidth:460,maxHeight:"min(85vh,720px)",overflowY:"auto",margin:0,boxShadow:"0 24px 70px rgba(0,0,0,.28)",border:"1px solid var(--line)",background:"#fff"}}>
       {showBlockConfirm&&<div className="booking-notes">
         <strong>{stateTarget==="leave"?"Mark "+customer.full_name+" on leave?":"Block "+customer.full_name+"?"}</strong>
         <label>Reason<select value={blockReason} onChange={e=>setBlockReason(e.target.value)}><option>Payment pending</option><option>Customer request</option><option>Misbehaviour</option><option>Repeated cancellations</option><option>Other</option></select></label>
@@ -159,7 +160,8 @@ export default function CustomerDetail() {
         <label>Admin password<input type={showAdminPassword?"text":"password"} autoComplete="current-password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="Enter admin password"/></label>
         <div className="form-actions"><button type="button" className="plain-button" onClick={()=>setShowAdminPassword(!showAdminPassword)}>{showAdminPassword?"Hide password":"Show password"}</button><button type="button" className="action" disabled={actionBusy||!adminPassword} onClick={()=>void deleteCustomer()}>{actionBusy?"Deleting…":"Confirm permanent delete"}</button><button type="button" className="plain-button" onClick={()=>{setShowDeleteConfirm(false);setAdminPassword("");}}>Cancel</button></div>
       </div>}
-    </section>}
+      </section>
+    </div>}
     <section className="booking-overview panel">
       <div className="booking-overview-head"><div><div className="eyebrow">Owner information</div><h2 className="booking-overview-title">{customer.full_name}</h2><p className="subtle">{customer.phone || "Mobile number not added"}</p></div><button className="action" type="button" onClick={()=>{setEditingCustomer(!editingCustomer);setError("");}}><Pencil size={14}/> {editingCustomer?"Close edit":"Edit customer"}</button></div>
       <div className="booking-people-grid">
