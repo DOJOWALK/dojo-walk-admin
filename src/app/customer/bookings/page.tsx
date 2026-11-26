@@ -5,6 +5,7 @@ import { ArrowLeft, CalendarPlus, MapPin } from "lucide-react";
 import Link from "next/link";
 
 type Dog = { id: string; name: string; breed: string | null };
+type SavedAddress = { id: string; label: "home" | "work" | "other"; address: string; latitude: number | null; longitude: number | null };
 type RequestRow = { id: string; dog_id: string; service_type: string; preferred_date: string; preferred_time: string; duration_minutes: number; pickup_address: string; estimated_price_inr: number; proposed_date: string | null; proposed_time: string | null; final_price_inr: number | null; admin_note: string | null; status: string };
 const today = () => new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date());
 const labels: Record<string,string> = {monthly_am_pm:"Monthly · Morning + Evening",monthly_once:"Monthly · Once daily",temporary_am_pm:"Temporary · Morning + Evening",single_walk:"Single walk"};
@@ -13,14 +14,19 @@ const statusLabels: Record<string,string> = {new_request:"New request",under_rev
 export default function CustomerBookingsPage() {
   const [dogs,setDogs]=useState<Dog[]>([]);
   const [requests,setRequests]=useState<RequestRow[]>([]);
+  const [savedAddresses,setSavedAddresses]=useState<SavedAddress[]>([]);
+  const [saveLabel,setSaveLabel]=useState<"home"|"work"|"other">("home");
+  const [selectedAddress,setSelectedAddress]=useState("");
   const [form,setForm]=useState({dog_id:"",service_type:"single_walk",preferred_date:today(),preferred_time:"07:00",duration_minutes:"30",pickup_address:"",instructions:"",pickup_latitude:"",pickup_longitude:""});
   const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState("");
   const load=useCallback(async()=>{
     setLoading(true);
-    try { const r=await fetch("/api/customer/booking-requests",{cache:"no-store"}); const j=await r.json(); if(r.status===401){window.location.assign("/customer/login");return;} if(!r.ok)throw new Error(j.error||"Requests load nahi hui."); setDogs(j.dogs||[]);setRequests(j.requests||[]); if(!form.dog_id && j.dogs?.[0])setForm(v=>({...v,dog_id:j.dogs[0].id})); }
+    try { const [r,ar]=await Promise.all([fetch("/api/customer/booking-requests",{cache:"no-store"}),fetch("/api/customer/saved-addresses",{cache:"no-store"})]); const j=await r.json(); const aj=await ar.json().catch(()=>({addresses:[]})); if(r.status===401){window.location.assign("/customer/login");return;} if(!r.ok)throw new Error(j.error||"Requests load nahi hui."); setDogs(j.dogs||[]);setRequests(j.requests||[]);if(ar.ok)setSavedAddresses(aj.addresses||[]); if(!form.dog_id && j.dogs?.[0])setForm(v=>({...v,dog_id:j.dogs[0].id})); }
     catch(e){setError(e instanceof Error?e.message:"Requests load nahi hui.");} finally{setLoading(false);}
   },[form.dog_id]);
   useEffect(()=>{void load();},[load]);
+  function applySavedAddress(id:string){const saved=savedAddresses.find(a=>a.id===id);setSelectedAddress(id);if(saved)setForm(v=>({...v,pickup_address:saved.address,pickup_latitude:saved.latitude===null?"":String(saved.latitude),pickup_longitude:saved.longitude===null?"":String(saved.longitude)}));}
+  async function saveAddress(){setError("");try{const r=await fetch("/api/customer/saved-addresses",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({label:saveLabel,address:form.pickup_address,latitude:form.pickup_latitude||null,longitude:form.pickup_longitude||null})});const j=await r.json();if(!r.ok)throw new Error(j.error||"Address save nahi hua.");setSuccess("Pickup address saved.");await load();}catch(e){setError(e instanceof Error?e.message:"Address save nahi hua.");}}
   function captureLocation(){ if(!navigator.geolocation){setError("Is device par location available nahi hai.");return;} setError(""); navigator.geolocation.getCurrentPosition(pos=>setForm(v=>({...v,pickup_latitude:String(pos.coords.latitude),pickup_longitude:String(pos.coords.longitude)})),()=>setError("Location permission nahi mili. Aap address manually enter kar sakte hain."),{enableHighAccuracy:true,timeout:12000,maximumAge:60000}); }
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();setSaving(true);setError("");setSuccess("");
@@ -45,7 +51,7 @@ export default function CustomerBookingsPage() {
         <label>Walk duration *<select value={form.duration_minutes} onChange={e=>setForm({...form,duration_minutes:e.target.value})}><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></label>
         <label className="full-field">Pickup address *<textarea required minLength={5} maxLength={500} rows={3} value={form.pickup_address} onChange={e=>setForm({...form,pickup_address:e.target.value})} placeholder="Flat, tower, society, street, landmark"/></label>
         <label className="full-field">Instructions (optional)<textarea maxLength={1000} rows={2} value={form.instructions} onChange={e=>setForm({...form,instructions:e.target.value})} placeholder="Pickup instructions or anything the Walker should know"/></label>
-        <div className="full-field" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><button type="button" className="portal-refresh" onClick={captureLocation}><MapPin size={14}/> Use my current location</button><span className="subtle">{form.pickup_latitude ? "Location captured ✓" : "Optional: GPS permission se pickup point attach karein."}</span>{form.pickup_latitude&&<button type="button" className="plain-button" onClick={()=>setForm(v=>({...v,pickup_latitude:"",pickup_longitude:""}))}>Remove location</button>}</div>
+        <div className="full-field" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><button type="button" className="portal-refresh" onClick={captureLocation}><MapPin size={14}/> Use my current location</button><span className="subtle">{form.pickup_latitude ? "GPS location captured ✓" : "Optional: GPS permission se pickup point attach karein."}</span>{form.pickup_latitude&&<button type="button" className="plain-button" onClick={()=>setForm(v=>({...v,pickup_latitude:"",pickup_longitude:""}))}>Remove location</button>}</div><div className="full-field" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}><select value={selectedAddress} onChange={e=>applySavedAddress(e.target.value)}><option value="">Use a saved address…</option>{savedAddresses.map(a=><option key={a.id} value={a.id}>{a.label.toUpperCase()} · {a.address.slice(0,45)}</option>)}</select><select value={saveLabel} onChange={e=>setSaveLabel(e.target.value as "home"|"work"|"other")}><option value="home">Save as Home</option><option value="work">Save as Work</option><option value="other">Save as Other</option></select><button type="button" className="portal-refresh" disabled={form.pickup_address.trim().length<5} onClick={()=>void saveAddress()}>Save this address</button></div>
         <div className="full-field form-actions"><button className="action" disabled={saving||!form.dog_id}>{saving?"Sending…":"Send booking request"}</button></div>
       </form>}
     </section>
