@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { isSameOrigin, normalizePortalPhone, PortalDB } from "@/lib/portal-auth";
+import { isSameOrigin, PortalDB } from "@/lib/portal-auth";
 
 type SmsBinding = { fetch(request: Request): Promise<Response> };
 type Env = { DB: PortalDB; SMS_OTP?: SmsBinding; OTP_PEPPER?: string };
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
   const role = body.role === "walker" || body.role === "customer" ? body.role : null;
   const phone = typeof body.phone === "string" ? body.phone.trim() : "";
-  const normalized = normalizePortalPhone(phone);
+  const normalized = normalizeOtpPhone(phone);
   if (!role || !/^\+?[0-9]{10,15}$/.test(normalized)) {
     return NextResponse.json({ error: "Sahi mobile number enter karein." }, { status: 400 });
   }
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 }
 
 function normalizeOtpPhone(value: string) {
-  const digits = value.replace(/\\D/g, "");
+  const digits = value.replace(/\D/g, "");
   if (digits.length === 10) return "+91" + digits;
   if (digits.length === 11 && digits.startsWith("0")) return "+91" + digits.slice(1);
   if (digits.length === 12 && digits.startsWith("91")) return "+" + digits;
