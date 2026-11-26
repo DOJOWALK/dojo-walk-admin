@@ -175,3 +175,5 @@
 
 .portal-walk-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:5px}.portal-walk-actions .portal-chat-button{margin-top:0}.portal-live-button{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:#24764a;color:#fff;padding:11px 12px;font-size:10px;font-weight:800}.portal-live-button.complete{background:#1e5e3c}.portal-live-button:disabled{opacity:.6}
 @media(max-width:620px){.portal-walk-actions{grid-template-columns:1fr}}
+
+.walk-state.live{background:#e8f4ff;color:#1f6399}
