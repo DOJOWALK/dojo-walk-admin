@@ -75,7 +75,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "MSG91 OTP service abhi configure nahi hai. Admin se sampark karein." }, { status: 503 });
     }
 
-    const accountId = String(account.id);
+    const accountId = String(account?.id ?? "");
+    if (!accountId) return NextResponse.json({ error: "Account lookup failed. Admin support se sampark karein." }, { status: 404 });
     const phoneToText = normalized;
     const limit = await db.prepare(
       "SELECT sends, window_started_at FROM portal_otp_send_limits WHERE role=? AND phone_normalized=?"
