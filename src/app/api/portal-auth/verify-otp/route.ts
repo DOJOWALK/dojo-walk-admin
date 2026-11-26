@@ -110,8 +110,8 @@ export async function POST(request: NextRequest) {
           const placeholderHash = toHex(crypto.getRandomValues(new Uint8Array(32)));
           const placeholderSalt = toHex(crypto.getRandomValues(new Uint8Array(16)));
           const statements = matches.length === 0 ? [
-            db.prepare("INSERT INTO customers (id,full_name,phone,address,area,booking_source,status) VALUES (?,?,?,?,?,'phone','active')")
-              .bind(customerId, customerName, customerPhone, String(registration.address), registration.area == null ? null : String(registration.area)),
+            db.prepare("INSERT INTO customers (id,full_name,phone,address,area,booking_source,status) SELECT ?,?,?,?,?, 'phone','active' WHERE NOT EXISTS (SELECT 1 FROM (SELECT replace(replace(replace(replace(replace(phone,' ',''),'-',''),'(',''),')',''),'+','') AS clean_phone FROM customers) WHERE CASE WHEN substr(clean_phone,1,2)='91' THEN substr(clean_phone,3) WHEN substr(clean_phone,1,1)='0' THEN substr(clean_phone,2) ELSE clean_phone END=?)")
+              .bind(customerId, customerName, customerPhone, String(registration.address), registration.area == null ? null : String(registration.area), phoneDigits),
             db.prepare("INSERT INTO portal_users (id,name,phone,phone_normalized,role,customer_id,walker_id,password_hash,password_salt,password_iterations,is_active) VALUES (?,?,?,?,'customer',?,NULL,?,?,210000,1)")
               .bind(portalUserId, customerName, customerPhone, phone, customerId, placeholderHash, placeholderSalt)
           ] : [
