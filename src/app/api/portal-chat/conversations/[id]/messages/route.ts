@@ -6,7 +6,7 @@ type Env = { DB: PortalDB };
 
 async function canAccess(db: PortalDB, conversationId: string, identity: NonNullable<Awaited<ReturnType<typeof getPortalIdentity>>>) {
   const result = await db.prepare(
-    "SELECT c.id FROM chat_conversations c WHERE c.id=? AND c.status='open' AND ((c.conversation_type='support' AND ((c.customer_id=? AND ?='customer') OR (c.walker_id=? AND ?='walker'))) OR (c.conversation_type='walk' AND ((c.customer_id=? AND ?='customer' AND EXISTS (SELECT 1 FROM walk_assignments a WHERE a.walk_id=c.walk_id AND a.walker_id=c.walker_id)) OR (c.walker_id=? AND ?='walker' AND EXISTS (SELECT 1 FROM walk_assignments a WHERE a.walk_id=c.walk_id AND a.walker_id=?))))) LIMIT 1"
+    "SELECT c.id FROM chat_conversations c WHERE c.id=? AND c.status='open' AND ((c.conversation_type='support' AND ((c.customer_id=? AND ?='customer') OR (c.walker_id=? AND ?='walker'))) OR (c.conversation_type='walk' AND ((c.customer_id=? AND ?='customer' AND EXISTS (SELECT 1 FROM walk_assignments a WHERE a.walk_id=c.walk_id AND a.walker_id=c.walker_id)) OR (c.walker_id=? AND ?='walker' AND EXISTS (SELECT 1 FROM walk_assignments a WHERE a.walk_id=c.walk_id AND a.walker_id=?)))))) LIMIT 1"
   ).bind(
     conversationId,
     identity.customer_id, identity.role,
