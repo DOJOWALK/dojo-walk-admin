@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createPortalSession, isSameOrigin, PortalDB, setPortalCookie } from "@/lib/portal-auth";
 
-type Env = { DB: PortalDB; OTP_PEPPER?: string };
+type Env = { DB: PortalDB; MSG91_AUTHKEY?: string; OTP_PEPPER?: string };
 
 export async function POST(request: NextRequest) {
   if (!isSameOrigin(request)) return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
   const { env } = getCloudflareContext();
   const config = env as unknown as Env;
-  if (!config.OTP_PEPPER) return NextResponse.json({ error: "OTP service configure nahi hai." }, { status: 503 });
+  if (!config.OTP_PEPPER || !config.MSG91_AUTHKEY) return NextResponse.json({ error: "MSG91 OTP service configure nahi hai." }, { status: 503 });
   const db = config.DB;
 
   try {
@@ -33,6 +33,16 @@ export async function POST(request: NextRequest) {
     if (!constantTimeEqual(expected, String(challenge.code_hash))) {
       await db.prepare("UPDATE portal_otp_challenges SET attempts=attempts+1 WHERE id=? AND attempts<5").bind(challengeId).run();
       return NextResponse.json({ error: "OTP galat hai. Dobara check karein." }, { status: 401 });
+    }
+
+    const verifyUrl = new URL("https://control.msg91.com/api/v5/otp/verify");
+    verifyUrl.searchParams.set("otp", code);
+    verifyUrl.searchParams.set("mobile", phone.replace(/^\+/, ""));
+    const msg91Response = await fetch(verifyUrl, { headers: { authkey: config.MSG91_AUTHKEY } });
+    const msg91Result = await msg91Response.json().catch(() => null) as { type?: string } | null;
+    if (!msg91Response.ok || msg91Result?.type !== "success") {
+      await db.prepare("UPDATE portal_otp_challenges SET attempts=attempts+1 WHERE id=? AND attempts<5").bind(challengeId).run();
+      return NextResponse.json({ error: "MSG91 OTP verify nahi hua. OTP dobara check karein." }, { status: 401 });
     }
 
     const consumed = await db.prepare("UPDATE portal_otp_challenges SET consumed_at=datetime('now') WHERE id=? AND consumed_at IS NULL AND attempts<5 AND datetime(expires_at)>datetime('now') RETURNING id").bind(challengeId).all();
