@@ -90,7 +90,7 @@ export async function getPortalIdentity(db: PortalDB): Promise<PortalIdentity | 
   if (!token || !/^[0-9a-f]{64}$/i.test(token)) return null;
   const tokenHash = await digest(token);
   const result = await db.prepare(
-    "SELECT u.id,u.name,u.phone,u.role,u.customer_id,u.walker_id,s.id AS session_id FROM portal_sessions s JOIN portal_users u ON u.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND datetime(s.expires_at)>datetime('now') AND u.is_active=1 LIMIT 1"
+    "SELECT u.id,u.name,u.phone,u.role,u.customer_id,u.walker_id,s.id AS session_id FROM portal_sessions s JOIN portal_users u ON u.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND datetime(s.expires_at)>datetime('now') AND u.is_active=1 AND ((u.role='customer' AND EXISTS (SELECT 1 FROM customers c WHERE c.id=u.customer_id AND c.status='active')) OR (u.role='walker' AND EXISTS (SELECT 1 FROM walkers w WHERE w.id=u.walker_id AND w.status='active'))) LIMIT 1"
   ).bind(tokenHash).all();
   const row = result.results?.[0];
   if (!row || (row.role !== "walker" && row.role !== "customer")) return null;
