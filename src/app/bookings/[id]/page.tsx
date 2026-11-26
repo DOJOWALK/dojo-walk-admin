@@ -12,6 +12,9 @@ export default function BookingDetail() {
   const { id } = useParams<{ id: string }>();
   const [booking, setBooking] = useState<RecordData | null>(null);
   const [payments, setPayments] = useState<RecordData[]>([]);
+  const [walks, setWalks] = useState<RecordData[]>([]);
+  const [activeWalkers, setActiveWalkers] = useState<RecordData[]>([]);
+  const [assignmentBusy, setAssignmentBusy] = useState<string>("");
   const [form, setForm] = useState<RecordData | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -22,9 +25,10 @@ export default function BookingDetail() {
   const statusLabel = (v: string) => ({ active: "Active", paused: "Paused", completed: "Completed", cancelled: "Cancelled" }[v] || v);
 
   async function load() {
-    const [br, pr] = await Promise.all([fetch("/api/bookings"), fetch("/api/payments")]);
-    if (br.status === 401 || pr.status === 401) { location.assign("/login"); return; }
-    const [bj, pj] = await Promise.all([br.json(), pr.json()]);
+    const [br, pr, wr] = await Promise.all([fetch("/api/bookings"), fetch("/api/payments"), fetch("/api/bookings/"+encodeURIComponent(id)+"/walks")]);
+    if (br.status === 401 || pr.status === 401 || wr.status === 401) { location.assign("/login"); return; }
+    const [bj, pj, wj] = await Promise.all([br.json(), pr.json(), wr.json()]);
+    setWalks(wj.walks || []); setActiveWalkers(wj.walkers || []);
     const item = (bj.bookings || []).find((x: RecordData) => x.id === id) || null;
     setBooking(item);
     setPayments((pj.payments || []).filter((x: RecordData) => x.booking_id === id));
@@ -49,6 +53,18 @@ export default function BookingDetail() {
     }
   }
   useEffect(() => { void load(); }, [id]);
+
+  async function assignWalk(walkId: string, walkerId: string) {
+    if (!walkerId) return;
+    setAssignmentBusy(walkId); setError(""); setSuccess("");
+    try {
+      const r = await fetch("/api/walks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: walkId, action: "assign", walker_id: walkerId }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "Walker could not be assigned.");
+      setSuccess("Walker assignment updated."); await load();
+    } catch (e) { setError(e instanceof Error ? e.message : "Walker could not be assigned."); }
+    finally { setAssignmentBusy(""); }
+  }
 
   function change(key: string, value: string) { setForm((old: RecordData | null) => old ? { ...old, [key]: value } : old); }
 
@@ -128,6 +144,19 @@ export default function BookingDetail() {
         <div className="booking-fact"><span>PIN code</span><strong>{booking.pincode || "—"}</strong></div>
       </div>{!(booking.flat_tower || booking.society || booking.locality || booking.city || booking.state || booking.pincode) && <div className="booking-address"><MapPin size={14}/><span>{[booking.address,booking.area].filter(Boolean).join(", ")}</span></div>}</>}
       {booking.notes && <div className="booking-notes"><strong>Notes:</strong> {booking.notes}</div>}
+    </section>
+    <section className="panel" style={{marginBottom:18}}>
+      <div className="panel-head"><div><h2 className="panel-title">Walker Assignment</h2><p className="panel-note">Assign a walker separately to each scheduled walk in this booking.</p></div><span className="payment-count">{walks.length} {walks.length===1?"walk":"walks"}</span></div>
+      {walks.length ? <div className="payment-history-list">{walks.map(w=><div className="payment-history-row" key={w.id} style={{alignItems:"center",gap:12,flexWrap:"wrap"}}>
+        <div style={{flex:"1 1 160px",minWidth:0}}><strong>{displayDate(w.walk_date)} · {w.scheduled_time || w.slot || "Time not set"}</strong><span>{String(w.status||"scheduled").replace("_"," ")} · {w.walker_name || "Not assigned"}</span><span style={{fontSize:10,color:"#817a73"}}>Walk ID: {w.id}</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:8,flex:"1 1 210px"}}>
+          <select aria-label={"Assign walker for walk "+w.id} value={w.assigned_walker_id||""} disabled={assignmentBusy===w.id} onChange={e=>void assignWalk(w.id,e.target.value)} style={{width:"100%",minWidth:0,border:"1px solid #e7e1dc",borderRadius:9,padding:"10px 9px",background:"#fff",fontSize:12}}>
+            <option value="" disabled>{w.assigned_walker_id?"Change assigned walker":"Assign to Walker"}</option>
+            {activeWalkers.map(a=><option key={a.id} value={a.id}>{a.full_name} · {a.walker_code}</option>)}
+          </select>
+          {assignmentBusy===w.id&&<span style={{fontSize:11,color:"#777"}}>Saving…</span>}
+        </div>
+      </div>)}</div> : <div className="booking-empty-payments"><div className="booking-empty-icon"><Footprints size={22}/></div><strong>No walks generated yet</strong><span>Walker assignment will be available here once walks have been generated for this booking.</span></div>}
     </section>
     <section className="booking-billing panel">
       <div className="booking-section-heading"><ReceiptText size={17}/> Billing summary</div>
