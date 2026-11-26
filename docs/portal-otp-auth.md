@@ -15,6 +15,12 @@
 - If a verified phone matches exactly one active legacy Customer record, the portal account is safely linked to that record instead of creating a duplicate. Multiple matches, inactive records, or conflicting portal links are rejected and sent to Admin support.
 - New registrations are held as short-lived pending details and become a Customer + active portal account together after OTP verification.
 
+## Demo OTP testing mode
+
+- Set `PORTAL_OTP_MODE=demo` only in a non-production testing environment to bypass MSG91 sending and verification.
+- In this mode, the six-digit OTP is returned by the request endpoint and shown on the portal login screen for testing. The OTP is still stored only as an HMAC hash in D1, expires in five minutes, allows at most five attempts, and is one-time use.
+- Clear `PORTAL_OTP_MODE` (or set it to `msg91`) to return to real MSG91 delivery. Do not enable demo mode on a public production login: anyone who can request an OTP can read the displayed code. No SMS is sent in demo mode.
+
 ## MSG91 configuration required
 
 Set these Cloudflare Worker variables/secrets for the `dojo-walk-admin` Worker:
