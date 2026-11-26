@@ -37,7 +37,7 @@ export default function PortalAccessClient() {
 
   useEffect(() => { void load(); }, [load]);
   const people = (role === "walker" ? walkers : customers).filter((person) => person.status === "active");
-  useEffect(() => { if (!people.some((person) => person.id === entityId)) setEntityId(people[0]?.id || ""); }, [role, entityId, people]);
+  const selectedEntity = people.some((person) => person.id === entityId) ? entityId : people[0]?.id || "";
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,7 +46,7 @@ export default function PortalAccessClient() {
     try {
       const response = await fetch("/api/admin/portal-users", {
         method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({role,entity_id:entityId,password})
+        body:JSON.stringify({role,entity_id:selectedEntity,password})
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Account create nahi hua.");
@@ -86,10 +86,10 @@ export default function PortalAccessClient() {
       <form onSubmit={create}>
         <div className="form-grid">
           <label>Account type<select value={role} onChange={(event)=>setRole(event.target.value as "walker"|"customer")}><option value="walker">Walker</option><option value="customer">Customer</option></select></label>
-          <label>Registered person<select value={entityId} onChange={(event)=>setEntityId(event.target.value)} required><option value="">Select person</option>{people.map((person)=><option key={person.id} value={person.id}>{person.full_name} · {person.phone || person.mobile_number}</option>)}</select></label>
+          <label>Registered person<select value={selectedEntity} onChange={(event)=>setEntityId(event.target.value)} required><option value="">Select person</option>{people.map((person)=><option key={person.id} value={person.id}>{person.full_name} · {person.phone || person.mobile_number}</option>)}</select></label>
           <label className="full-field">Temporary password<input type="password" value={password} onChange={(event)=>setPassword(event.target.value)} minLength={12} maxLength={128} autoComplete="new-password" placeholder="At least 12 characters" required/></label>
         </div>
-        <div className="form-actions"><button className="action" type="submit" disabled={busy || !entityId || password.length<12}><Plus size={14}/> {busy?"Saving…":"Create account"}</button></div>
+        <div className="form-actions"><button className="action" type="submit" disabled={busy || !selectedEntity || password.length<12}><Plus size={14}/> {busy?"Saving…":"Create account"}</button></div>
       </form>
     </section>
     <section className="panel portal-account-list">
