@@ -121,15 +121,29 @@ export default function CustomerDetail() {
 
   return <main className="main">
     <Link href="/customers" className="back-link"><ArrowLeft size={15}/> Back to customers</Link>
-    <div className="topbar"><div><div className="eyebrow">Customer profile</div><h1 className="page-title">{customer.full_name}</h1><p className="subtle">Customer contact, address and records.</p></div></div>
-    {error&&<div className="error-box">{error}</div>}{success&&<div className="success-box">{success}</div>}
-    <section className="panel">
-      <div className="panel-head"><div><div className="booking-section-heading">Customer booking access</div><p className="subtle">{customer.status==="inactive"?"New bookings are blocked for this customer.":"This customer can receive new bookings."}</p></div><span className={`record-status status-${customer.status||"active"}`}>{customer.status==="inactive"?"Booking blocked":"Active"}</span></div>
-      <div className="form-actions">
-        <button type="button" className="action" disabled={actionBusy} onClick={()=>customer.status==="inactive"?void changeBookingAccess("active"):(setStateTarget("blocked"),setShowBlockConfirm(true))}>{actionBusy?"Please wait…":customer.status==="inactive"?"Unblock":"Block"}</button>
-        {customer.status!=="inactive"&&<button type="button" className="plain-button" onClick={()=>{setStateTarget("leave");setShowBlockConfirm(true);}}>Leave</button>}
-        <button type="button" className="plain-button" onClick={()=>{setShowDeleteConfirm(true);setAdminPassword("");}}>Delete customer</button>
+    <div className="customer-profile-header" style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:18,flexWrap:"wrap",marginBottom:18}}>
+      <div style={{minWidth:220,flex:"1 1 280px"}}>
+        <h1 className="page-title" style={{marginBottom:5}}>{customer.full_name}</h1>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:6}}>
+          <span className="record-status" style={{background:(customer.customer_state||"active")==="active"?"#eaf6ed":(customer.customer_state==="leave"?"#fff3df":"#fdebea"),color:(customer.customer_state||"active")==="active"?"#27834d":(customer.customer_state==="leave"?"#a66a16":"#b83b32")}}>{(customer.customer_state||"active")==="active"?"Active":customer.customer_state==="leave"?"Leave":"Blocked"}</span>
+          <span className="eyebrow">Customer Profile</span>
+        </div>
+        <p className="subtle">Customer contact, address and records</p>
       </div>
+      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8,flex:"0 1 auto"}}>
+        <div style={{display:"flex",justifyContent:"flex-end",gap:6,flexWrap:"wrap"}}>
+          <button type="button" className="plain-button" style={{color:"#b83b32",borderColor:"#f1c7c3",padding:"7px 10px",fontSize:11}} disabled={actionBusy} onClick={()=>customer.customer_state==="blocked"?void changeBookingAccess("active"):(setStateTarget("blocked"),setShowBlockConfirm(true))}>{customer.customer_state==="blocked"?"Unblock":"Block"}</button>
+          <button type="button" className="plain-button" style={{color:"#a66a16",borderColor:"#f3dfbd",padding:"7px 10px",fontSize:11}} disabled={actionBusy} onClick={()=>{setStateTarget("leave");setShowBlockConfirm(true);}}>Leave</button>
+          <button type="button" className="plain-button" style={{color:"#fff",background:"#a52b2b",borderColor:"#a52b2b",padding:"7px 10px",fontSize:11}} onClick={()=>{setShowDeleteConfirm(true);setAdminPassword("");}}>Delete customer</button>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:9,padding:"7px 10px",border:"1px solid var(--line)",borderRadius:10,background:"#fff"}}>
+          <span style={{fontSize:11,fontWeight:700,color:"var(--ink)"}}>Booking access</span>
+          <span className="record-status" style={{background:customer.status==="inactive"?"#fdebea":"#eaf6ed",color:customer.status==="inactive"?"#b83b32":"#27834d"}}>{customer.status==="inactive"?"OFF":"ON"}</span>
+        </div>
+      </div>
+    </div>
+    {error&&<div className="error-box">{error}</div>}{success&&<div className="success-box">{success}</div>}
+    {(showBlockConfirm||showDeleteConfirm)&&<section className="panel" style={{marginBottom:18}}>
       {showBlockConfirm&&<div className="booking-notes">
         <strong>{stateTarget==="leave"?"Mark "+customer.full_name+" on leave?":"Block "+customer.full_name+"?"}</strong>
         <label>Reason<select value={blockReason} onChange={e=>setBlockReason(e.target.value)}><option>Payment pending</option><option>Customer request</option><option>Misbehaviour</option><option>Repeated cancellations</option><option>Other</option></select></label>
@@ -145,7 +159,7 @@ export default function CustomerDetail() {
         <label>Admin password<input type={showAdminPassword?"text":"password"} autoComplete="current-password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="Enter admin password"/></label>
         <div className="form-actions"><button type="button" className="plain-button" onClick={()=>setShowAdminPassword(!showAdminPassword)}>{showAdminPassword?"Hide password":"Show password"}</button><button type="button" className="action" disabled={actionBusy||!adminPassword} onClick={()=>void deleteCustomer()}>{actionBusy?"Deleting…":"Confirm permanent delete"}</button><button type="button" className="plain-button" onClick={()=>{setShowDeleteConfirm(false);setAdminPassword("");}}>Cancel</button></div>
       </div>}
-    </section>
+    </section>}
     <section className="booking-overview panel">
       <div className="booking-overview-head"><div><div className="eyebrow">Owner information</div><h2 className="booking-overview-title">{customer.full_name}</h2><p className="subtle">{customer.phone || "Mobile number not added"}</p></div><button className="action" type="button" onClick={()=>{setEditingCustomer(!editingCustomer);setError("");}}><Pencil size={14}/> {editingCustomer?"Close edit":"Edit customer"}</button></div>
       <div className="booking-people-grid">
