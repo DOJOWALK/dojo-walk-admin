@@ -19,3 +19,8 @@
 - GPS coordinates can be saved, but an interactive draggable map and saved Home/Work addresses are not implemented yet.
 - Apply `migrations/0012_booking_requests.sql` only after the full D1 backup/restore and migration-history reconciliation gate. Do not apply it to production blindly.
 - No production migration or Worker deployment is included in this change.
+
+## Saved pickup addresses
+- Customers can save one Home, Work, and Other pickup address with optional GPS coordinates.
+- Saved addresses are scoped to the authenticated customer and can be selected again on future booking requests.
+- The migration is `0013_customer_saved_addresses.sql`.
