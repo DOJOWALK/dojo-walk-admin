@@ -29,10 +29,10 @@ export default async function AppShell({ children, active }: { children: React.R
       <aside className="sidebar">
         <a className="brand" href="/">
           <div className="brand-mark">DW</div>
-          <div><div className="brand-name">Dojo Walk</div><div className="brand-sub">ADMIN WORKSPACE</div></div>
+          <div className="brand-copy"><div className="brand-name">Dojo Walk</div><div className="brand-sub">ADMIN WORKSPACE</div></div>
         </a>
         <div><p className="nav-label">WORKSPACE</p><nav className="nav-list" aria-label="Main navigation">
-          {navigation.map(({ label, href, key, icon: Icon, comingSoon }) => comingSoon ? <span key={key} className="nav-link disabled" aria-disabled="true"><Icon size={16}/>{label}<small>Soon</small></span> : <a key={key} href={href} aria-current={active === key ? "page" : undefined} className={`nav-link ${active === key ? "active" : ""}`}><Icon size={16}/>{label}</a>)}
+          {navigation.map(({ label, href, key, icon: Icon, comingSoon }) => comingSoon ? <span key={key} title={label} aria-label={label} className="nav-link disabled" aria-disabled="true"><Icon size={16}/><span className="nav-link-text">{label}</span><small>Soon</small></span> : <a key={key} href={href} title={label} aria-label={label} aria-current={active === key ? "page" : undefined} className={`nav-link ${active === key ? "active" : ""}`}><Icon size={16}/><span className="nav-link-text">{label}</span></a>)}
         </nav></div>
         <div className="sidebar-foot">Gaur City · Crossings Republik<br/>Ghaziabad, Uttar Pradesh<br/><strong>Single-admin system</strong></div>
       </aside>
