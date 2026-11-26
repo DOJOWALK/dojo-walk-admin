@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyAdminSession, getAdminCookieName } from "@/lib/auth";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { Activity, CalendarDays, ChartNoAxesCombined, CircleDollarSign, ClipboardList, House, MessageCircle, Settings, Users, Wallet, Plane, UserRound } from "lucide-react";
+import { Activity, CalendarDays, ChartNoAxesCombined, CircleDollarSign, ClipboardList, House, MessageCircle, MessageSquare, Settings, Users, Wallet, Plane, UserRound } from "lucide-react";
 
 const navigation = [
   { label: "Overview", href: "/", key: "overview", icon: House },
@@ -15,6 +15,7 @@ const navigation = [
   { label: "Payments", href: "/payments", key: "payments", icon: CircleDollarSign },
   { label: "Expenses", href: "/expenses", key: "expenses", icon: Wallet },
   { label: "Reports", href: "/reports", key: "reports", icon: ChartNoAxesCombined },
+  { label: "Support Chat", href: "/support", key: "support", icon: MessageSquare },
   { label: "WhatsApp", href: "/whatsapp", key: "whatsapp", icon: MessageCircle, comingSoon: true },
   { label: "Settings", href: "/settings", key: "settings", icon: Settings, comingSoon: true }
 ];
