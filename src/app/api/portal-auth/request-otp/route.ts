@@ -60,6 +60,9 @@ export async function POST(request: NextRequest) {
         const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
         const address = typeof body.address === "string" ? body.address.trim() : "";
         const area = typeof body.area === "string" ? body.area.trim() : "";
+        if (!fullName && !address && !area) {
+          return NextResponse.json({ ok: true, newCustomer: true });
+        }
         if (fullName.length < 2 || fullName.length > 100 || address.length < 5 || address.length > 500 || area.length > 100) {
           return NextResponse.json({ error: "Naye customer ke liye naam aur poora address bharna zaroori hai." }, { status: 400 });
         }
