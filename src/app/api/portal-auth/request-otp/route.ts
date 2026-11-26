@@ -31,14 +31,42 @@ export async function POST(request: NextRequest) {
       }
       account = rows[0];
     } else {
+      const phoneDigits = normalized.replace(/^\+91/, "");
+      const phoneExpr = "CASE WHEN substr(clean_phone,1,2)='91' THEN substr(clean_phone,3) WHEN substr(clean_phone,1,1)='0' THEN substr(clean_phone,2) ELSE clean_phone END";
       const result = await db.prepare(
-        "SELECT id, phone FROM customers WHERE replace(replace(replace(replace(replace(phone,' ',''),'-',''),'(',''),')',''),'+91','')=? LIMIT 2"
-      ).bind(normalized.replace(/^\+91/, "")).all();
+        "SELECT id,full_name AS name,phone,status FROM (SELECT id,full_name,phone,status,replace(replace(replace(replace(replace(phone,' ',''),'-',''),'(',''),')',''),'+','') AS clean_phone FROM customers) WHERE " + phoneExpr + "=? LIMIT 2"
+      ).bind(phoneDigits).all();
       const rows = result.results || [];
-      if (rows.length !== 1) {
-        return NextResponse.json({ error: rows.length > 1 ? "Is number par multiple customer records mile. Admin support se sampark karein." : "Yeh mobile number registered customer record se match nahi hua. Pehle customer registration complete karein." }, { status: 404 });
+      if (rows.length > 1) {
+        return NextResponse.json({ error: "Is number par multiple customer records mile. Galat account link hone se bachane ke liye Admin support se sampark karein." }, { status: 409 });
       }
-      account = rows[0];
+      if (rows.length === 1) {
+        const customer = rows[0];
+        if (String(customer.status).toLowerCase() !== "active") {
+          return NextResponse.json({ error: "Is number ka existing customer record inactive hai. Admin support se sampark karein." }, { status: 403 });
+        }
+        const conflicting = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND phone_normalized=? AND customer_id<>? LIMIT 1").bind(normalized, String(customer.id)).all();
+        if (conflicting.results?.length) {
+          return NextResponse.json({ error: "Is mobile number se doosra portal account linked hai. Admin support se sampark karein." }, { status: 409 });
+        }
+        account = customer;
+      } else {
+        const existingPortal = await db.prepare("SELECT id FROM portal_users WHERE role='customer' AND phone_normalized=? LIMIT 1").bind(normalized).all();
+        if (existingPortal.results?.length) {
+          return NextResponse.json({ error: "Is mobile number ka portal link pehle se maujood hai. Admin support se sampark karein." }, { status: 409 });
+        }
+        const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
+        const address = typeof body.address === "string" ? body.address.trim() : "";
+        const area = typeof body.area === "string" ? body.area.trim() : "";
+        if (fullName.length < 2 || fullName.length > 100 || address.length < 5 || address.length > 500 || area.length > 100) {
+          return NextResponse.json({ error: "Naye customer ke liye naam aur poora address bharna zaroori hai." }, { status: 400 });
+        }
+        await db.prepare("DELETE FROM portal_customer_registrations WHERE phone_normalized=? OR datetime(expires_at)<=datetime('now')").bind(normalized).run();
+        const registrationId = crypto.randomUUID();
+        await db.prepare("INSERT INTO portal_customer_registrations (id,phone_normalized,full_name,address,area,expires_at) VALUES (?,?,?,?,?,?)")
+          .bind(registrationId, normalized, fullName, address, area || null, new Date(Date.now() + 15 * 60 * 1000).toISOString()).run();
+        account = { id: "registration:" + registrationId, phone: normalized, name: fullName };
+      }
     }
 
     if (!config.MSG91_AUTHKEY || !config.MSG91_OTP_TEMPLATE_ID || !config.OTP_PEPPER) {
