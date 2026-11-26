@@ -44,8 +44,11 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     if (requestRow.service_type !== "single_walk") {
       return NextResponse.json({ error: "Recurring services need a confirmed end date and walk schedule before automatic conversion. Keep this request for manual setup." }, { status: 422 });
     }
-    if (typeof requestRow.proposed_date !== "string" || typeof requestRow.proposed_time !== "string" ||
-        !Number.isInteger(Number(requestRow.final_price_inr)) || Number(requestRow.final_price_inr) < 0) {
+    if (typeof requestRow.proposed_date !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(requestRow.proposed_date) ||
+        typeof requestRow.proposed_time !== "string" || !/^(?:[01]\\d|2[0-3]):[0-5]\\d$/.test(requestRow.proposed_time) ||
+        requestRow.final_price_inr === null || requestRow.final_price_inr === undefined ||
+        !Number.isInteger(Number(requestRow.final_price_inr)) || Number(requestRow.final_price_inr) < 0 ||
+        ![20,30,45,60].includes(Number(requestRow.duration_minutes))) {
       return NextResponse.json({ error: "Confirmed date, time and final price are required." }, { status: 409 });
     }
 
