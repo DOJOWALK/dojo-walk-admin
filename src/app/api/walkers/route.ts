@@ -4,7 +4,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getAdminCookieName, verifyAdminSession } from "@/lib/auth";
 
 type D1Result = { results?: Record<string, unknown>[] };
-type D1Statement = { bind(...values: unknown[]): { all(): Promise<D1Result>; run(): Promise<unknown> }; all(): Promise<D1Result> };
+type D1Statement = { bind(...values: unknown[]): { all(): Promise<D1Result>; run(): Promise<unknown> }; all(): Promise<D1Result>; run(): Promise<unknown> };
 type D1DatabaseLike = { prepare(sql: string): D1Statement };
 type Env = { DB: D1DatabaseLike; SESSION_SECRET?: string };
 
