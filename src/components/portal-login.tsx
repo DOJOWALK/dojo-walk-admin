@@ -5,6 +5,10 @@ import { PawPrint, ShieldCheck } from "lucide-react";
 
 export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
   const [phone, setPhone] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [address, setAddress] = useState("");
+  const [area, setArea] = useState("");
+  const [registering, setRegistering] = useState(false);
   const [code, setCode] = useState("");
   const [challengeId, setChallengeId] = useState("");
   const [error, setError] = useState("");
@@ -23,12 +27,12 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
       const response = await fetch("/api/portal-auth/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, phone })
+        body: JSON.stringify({ role, phone, ...(role === "customer" && registering ? { full_name: fullName, address, area } : {}) })
       });
       const data = await response.json();
       if (!response.ok) { setError(data.error || "OTP request nahi ho payi."); return; }
       setChallengeId(data.challengeId);
-      setNotice("OTP aapke registered mobile number par bhej diya gaya hai. 5 minute mein verify karein.");
+      setNotice("MSG91 ko OTP request bhej di gayi hai. SMS milne par 5 minute ke andar verify karein.");
     } catch {
       setError("Connection problem. Dobara try karein.");
     } finally {
@@ -64,8 +68,17 @@ export default function PortalLogin({ role }: { role: "walker" | "customer" }) {
       {!challengeId ? <form onSubmit={requestOtp} className="login-form">
         <label htmlFor="portal-phone">Mobile number</label>
         <input id="portal-phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="tel" required minLength={10} maxLength={16} placeholder="Registered mobile number"/>
+        {role === "customer" && registering && <>
+          <label htmlFor="portal-full-name">Full name</label>
+          <input id="portal-full-name" type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} autoComplete="name" required minLength={2} maxLength={100} placeholder="Your full name"/>
+          <label htmlFor="portal-address">Full address</label>
+          <textarea id="portal-address" value={address} onChange={(event) => setAddress(event.target.value)} autoComplete="street-address" required minLength={5} maxLength={500} placeholder="Flat, society, street, city"/>
+          <label htmlFor="portal-area">Area (optional)</label>
+          <input id="portal-area" type="text" value={area} onChange={(event) => setArea(event.target.value)} maxLength={100} placeholder="Area / locality"/>
+        </>}
         {error && <p className="login-error" role="alert">{error}</p>}
-        <button type="submit" disabled={busy || !phone.trim()}>{busy ? "Please wait…" : "Send OTP"}</button>
+        <button type="submit" disabled={busy || !phone.trim() || (role === "customer" && registering && (fullName.trim().length < 2 || address.trim().length < 5))}>{busy ? "Please wait…" : "Send OTP"}</button>
+        {role === "customer" && <button type="button" className="portal-other-link" disabled={busy} onClick={() => { setRegistering(!registering); setError(""); setNotice(""); }}>{registering ? "Already registered? Login" : "New customer? Register here"}</button>}
       </form> : <form onSubmit={verifyOtp} className="login-form">
         <label htmlFor="portal-phone-verified">Mobile number</label>
         <input id="portal-phone-verified" type="tel" value={phone} readOnly/>
