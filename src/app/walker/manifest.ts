@@ -1,0 +1,16 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    id: "/walker/",
+    name: "Dojo Walk Walker",
+    short_name: "DW Walker",
+    description: "Manage assigned dog walks and walk history",
+    start_url: "/walker/dashboard",
+    scope: "/walker/",
+    display: "standalone",
+    background_color: "#f0fdf4",
+    theme_color: "#16a34a",
+    icons: [{ src: "/walker-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }]
+  };
+}

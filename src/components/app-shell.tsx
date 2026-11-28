@@ -2,20 +2,22 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyAdminSession, getAdminCookieName } from "@/lib/auth";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { Activity, CalendarDays, ChartNoAxesCombined, CircleDollarSign, ClipboardList, House, MessageCircle, Settings, Users, Wallet, Plane, UserRound } from "lucide-react";
+import { Activity, CalendarDays, ChartNoAxesCombined, CircleDollarSign, ClipboardList, House, MessageSquare, ShieldCheck, Settings, Users, Wallet, Plane, UserRound } from "lucide-react";
 
 const navigation = [
   { label: "Overview", href: "/", key: "overview", icon: House },
   { label: "Customers", href: "/customers", key: "customers", icon: Users },
   { label: "Walkers", href: "/walkers", key: "walkers", icon: UserRound },
   { label: "Bookings", href: "/bookings", key: "bookings", icon: ClipboardList },
+  { label: "Booking Requests", href: "/booking-requests", key: "booking-requests", icon: CalendarDays },
   { label: "Walk Schedule", href: "/schedule", key: "schedule", icon: CalendarDays },
   { label: "Attendance", href: "/attendance", key: "attendance", icon: Activity },
   { label: "Customer Away", href: "/away", key: "away", icon: Plane },
   { label: "Payments", href: "/payments", key: "payments", icon: CircleDollarSign },
   { label: "Expenses", href: "/expenses", key: "expenses", icon: Wallet },
   { label: "Reports", href: "/reports", key: "reports", icon: ChartNoAxesCombined },
-  { label: "WhatsApp", href: "/whatsapp", key: "whatsapp", icon: MessageCircle, comingSoon: true },
+  { label: "Support Chat", href: "/support", key: "support", icon: MessageSquare },
+  { label: "Portal Access", href: "/portal-access", key: "portal-access", icon: ShieldCheck },
   { label: "Settings", href: "/settings", key: "settings", icon: Settings, comingSoon: true }
 ];
 

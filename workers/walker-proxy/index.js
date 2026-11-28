@@ -1,0 +1,65 @@
+const APP_PATH = "/walker";
+const ALLOWED_API = [
+  "/api/portal-auth/request-otp",
+  "/api/portal-auth/verify-otp",
+  "/api/portal-auth/me",
+  "/api/portal-auth/logout",
+  "/api/portal-auth/change-password",
+  "/api/portal-dashboard",
+];
+function allowedApi(path) {
+  return ALLOWED_API.includes(path) ||
+    path.startsWith("/api/portal-chat/conversations") ||
+    /^\/api\/portal-walks\/[^/]+\/action$/.test(path);
+}
+function allowedPage(path) {
+  return path === APP_PATH || path.startsWith(APP_PATH + "/");
+}
+export default {
+  async fetch(request, env) {
+    const incoming = new URL(request.url);
+    const path = incoming.pathname;
+    if (path === "/" || path === "/login") {
+      return Response.redirect(new URL(APP_PATH + "/login", request.url), 302);
+    }
+    if (path === "/walker/manifest.webmanifest") {
+      return new Response(JSON.stringify({
+        id: "/walker/",
+        name: "Dojo Walk Walker",
+        short_name: "DW Walker",
+        description: "Manage assigned dog walks and walk history",
+        start_url: "/walker/dashboard",
+        scope: "/walker/",
+        display: "standalone",
+        background_color: "#f0fdf4",
+        theme_color: "#16a34a",
+        icons: [{ src: "/walker-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }]
+      }), { headers: { "content-type": "application/manifest+json; charset=utf-8", "cache-control": "public, max-age=3600" } });
+    }
+    if (path === "/walker-icon.svg" || path === "/favicon.ico" || path.startsWith("/_next/")) {
+      return env.BACKEND.fetch(request);
+    }
+    if (path.startsWith("/api/")) {
+      if (!allowedApi(path)) return new Response("Not found", { status: 404 });
+      if (request.method === "POST" &&
+          (path === "/api/portal-auth/request-otp" || path === "/api/portal-auth/verify-otp")) {
+        try {
+          const body = await request.clone().json();
+          const headers = new Headers(request.headers);
+          headers.delete("content-length");
+          const forwarded = new Request(request.url, {
+            method: request.method,
+            headers,
+            body: JSON.stringify({ ...body, role: "walker" }),
+          });
+          return env.BACKEND.fetch(forwarded);
+        } catch {
+          return env.BACKEND.fetch(request);
+        }
+      }
+      return env.BACKEND.fetch(request);
+    }
+    if (!allowedPage(path)) return new Response("Not found", { status: 404 });
+    return env.BACKEND.fetch(request);
+  },
+};
